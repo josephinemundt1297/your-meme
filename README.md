@@ -1,76 +1,36 @@
-# React + TypeScript + Vite
+# Your Meme
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Fullstack-Abschlussprojekt einer Meme-Plattform, umgesetzt von zwei Personen.
 
-Currently, two official plugins are available:
+## Bereiche
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `frontend/`: bestehendes React-Projekt mit TypeScript und Vite; Schwerpunkt Dilek.
+- `backend/`: Backend-Planung und später Express, TypeScript, PostgreSQL, Prisma und Clerk.
+- [Backend-Spezifikation](backend/SPECK.md)
+- [Datenmodell](backend/docs/datenmodell.md)
+- [API-Plan](backend/docs/api-plan.md)
+- [Geprüfter Projektstand und Trello-Arbeitsweise](backend/docs/projektstand.md)
+- [Hand-out für die Besprechung am 30.10.2026](backend/docs/handout-2026-10-30.md)
+- [Trello-Board](https://trello.com/b/EpjAfv15/your-meme)
 
-## React Compiler
+## Frontend starten
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Im Ordner `frontend/` die Abhängigkeiten mit `npm install` installieren und anschließend `npm run dev` ausführen.
 
-## Expanding the ESLint configuration
+## Backend
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Das Backend befindet sich in der Planungsphase und hat noch keinen ausführbaren Server.
+Die Regeln in `backend/AGENTS.md` gelten ausschließlich für den Backend-Bereich.
+Frontend-Regeln können unabhängig unter `frontend/AGENTS.md` ergänzt werden.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Vorhandene Git-Branches
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- `Backend`: Josephines Arbeitsbranch.
+- `Frontend`: Dileks Arbeitsbranch.
+- `main`: gemeinsamer Hauptbranch.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Ein Branch ist ein Entwicklungsstand des gesamten Repositorys, kein Ordner.
+Die Branches existieren bereits; sie müssen nicht neu erstellt werden.
+Änderungen erst nach gegenseitiger Prüfung und ausdrücklicher Freigabe zusammenführen.
 
-```
-
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
-# your-meme
+Abgabe: 23.11.2026. Deployment ist freiwillig; eine Präsentation auf localhost ist zulässig.

@@ -1,0 +1,3 @@
+html { scroll-behavior: smooth; }
+body { min-width: 320px; }
+:focus-visible { outline: 3px solid var(--purple, #7357e8); outline-offset: 3px; }
