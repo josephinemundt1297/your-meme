@@ -1,121 +1,57 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
 
+type Meme = { id: number; title: string; category: string; emoji: string; likes: number }
+
+const sampleMemes: Meme[] = [
+  { id: 1, title: 'Wenn der Code beim ersten Versuch funktioniert', category: 'Programmieren', emoji: '🎉', likes: 42 },
+  { id: 2, title: 'Ich: Heute mache ich nur eine kleine Änderung', category: 'Alltag', emoji: '😅', likes: 28 },
+  { id: 3, title: 'Montag und der erste Kaffee', category: 'Arbeit', emoji: '☕', likes: 35 },
+]
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [search, setSearch] = useState('')
+  const [likedMemes, setLikedMemes] = useState<number[]>([])
+  const visibleMemes = sampleMemes.filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase()))
+
+  const toggleLike = (memeId: number) => {
+    setLikedMemes((current) => current.includes(memeId) ? current.filter((id) => id !== memeId) : [...current, memeId])
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <div className="app-shell">
+      <header className="site-header">
+        <a className="logo" href="/" aria-label="Your Meme Startseite">Your Meme</a>
+        <nav aria-label="Hauptnavigation">
+          <a href="#memes">Memes</a><a href="#categories">Kategorien</a><a href="#login">Anmelden</a>
+        </nav>
+      </header>
+      <main>
+        <section className="hero-section">
+          <p className="eyebrow">Deine tägliche Meme-Auszeit</p>
+          <h1>Finde dein nächstes Lieblingsmeme</h1>
+          <p className="intro">Entdecke lustige Memes und teile sie mit der Community.</p>
+          <label className="search-box">
+            <span className="search-icon" aria-hidden="true">⌕</span>
+            <span className="sr-only">Memes durchsuchen</span>
+            <input type="search" placeholder="Memes durchsuchen ..." value={search} onChange={(event) => setSearch(event.target.value)} />
+          </label>
+        </section>
+        <section className="meme-section" id="memes" aria-labelledby="meme-heading">
+          <div className="section-heading"><div><p className="eyebrow">Für dich ausgewählt</p><h2 id="meme-heading">Aktuelle Memes</h2></div><span className="meme-count">{visibleMemes.length} Memes</span></div>
+          {visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme) => {
+            const isLiked = likedMemes.includes(meme.id)
+            return <article className="meme-card" key={meme.id}>
+              <div className="meme-image" role="img" aria-label={`Beispielbild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div>
+              <div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3>
+                <button className={`like-button${isLiked ? ' liked' : ''}`} type="button" aria-pressed={isLiked} onClick={() => toggleLike(meme.id)}><span aria-hidden="true">{isLiked ? '♥' : '♡'}</span>{meme.likes + (isLiked ? 1 : 0)} Likes</button>
+              </div>
+            </article>
+          })}</div> : <p className="empty-state">Keine Memes gefunden.</p>}
+        </section>
+      </main>
+      <footer className="site-footer">Your Meme · Mehr Lachen im Alltag</footer>
+    </div>
   )
 }
 
