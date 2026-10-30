@@ -19,6 +19,26 @@ Stand: 30.10.2026. Abgabe: 23.11.2026. Präsentationstermin noch offen.
 - Kernfunktionen umsetzen und Frontend und Backend verbinden.
 - Tests, vollständige Startanleitung und Präsentation erstellen.
 
+## Welche Schwierigkeiten entstehen könnten
+
+### Weniger verfügbare Zeit durch Termine
+
+- Josephines regulärer Zeitrahmen: Montag bis Freitag, 09:00–16:00 Uhr einschließlich Pausen. Am Wochenende wird in der Regel nicht gearbeitet.
+- Die folgenden Zeiten sind bestätigte Abwesenheiten und stehen nicht für Projektarbeit zur Verfügung. Sie betreffen Josephine; Dileks Verfügbarkeit ist damit nicht festgelegt.
+
+| Datum | Nicht verfügbar | Ausfall innerhalb von 09:00–16:00 Uhr |
+| --- | --- | --- |
+| 03.11.2026 | 09:00–11:45 Uhr und 13:30–16:00 Uhr | 5 Std. 15 Min. |
+| 05.11.2026 | 13:00–16:00 Uhr | 3 Std. |
+| 10.11.2026 | 13:00–14:30 Uhr | 1 Std. 30 Min. |
+| **Bis zur Abgabe insgesamt** | | **9 Std. 45 Min.** |
+| 24.11.2026 | 09:30–10:30 Uhr | 1 Std.; liegt nach der Abgabe am 23.11. und zählt nicht zur obigen Summe. |
+
+- **Mögliche Schwierigkeit:** Für Backend-Arbeit und gemeinsame Abstimmungen bleibt an diesen Tagen weniger Zeit. Offene Fragen können dadurch die jeweils andere Person aufhalten.
+- **Umgang damit:** Gemeinsame Absprachen außerhalb der Abwesenheiten legen und den verkürzten Tagen entsprechend kleine Aufgaben zuordnen. Pausen und Zeit für mögliche Probleme zusätzlich berücksichtigen; die übrigen Stunden sind nicht vollständig als konzentrierte Arbeitszeit verfügbar.
+- **Planungsempfehlung für Puffer:** Nur etwa 70–75 Prozent der tatsächlich verfügbaren Arbeitszeit mit Aufgaben belegen. Der Rest bleibt für Rückfragen, technische Probleme und Nacharbeiten frei. Wochenenden nicht als feste Ausweichzeit einplanen.
+- **Vorgeschlagener Zieltermin:** Kernfunktionen möglichst bis 18.11. fertigstellen; 19.–20.11. für Fehlerbehebung und Abgabevorbereitung freihalten. Am 23.11. letzter Check und Abgabe. Das ist ein Planungsziel, keine Zusage, dass die Umsetzung bis dahin fertig ist.
+
 ## Vorhandene Branches
 
 - `Backend`: Josephines Arbeitsbranch; bei der Prüfung aktiv.
