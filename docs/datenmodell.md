@@ -93,18 +93,19 @@ erDiagram
 
 ## Berechtigungen
 
-| Aktion | Besucher | Angemeldete Nutzer | Administratoren |
-| --- | --- | --- | --- |
-| Memes ansehen und Links teilen | Ja | Ja | Ja |
-| Memes hochladen | Nein | Ja | Ja |
-| Eigene Memes bearbeiten und löschen | Nein | Ja | Ja |
-| Fremde Memes löschen | Nein | Nein | Ja |
-| Memes liken und eigene Likes entfernen | Nein | Ja | Ja |
-| Kommentare schreiben | Nein | Ja | Ja |
-| Eigene Kommentare bearbeiten und löschen | Nein | Ja | Ja |
-| Fremde Kommentare löschen | Nein | Nein | Ja |
-| Eigene Ordner erstellen und verwalten | Nein | Ja | Ja |
-| Auf fremde persönliche Ordner zugreifen | Nein | Nein | Nein |
+| Aktion                                       | Besucher | Angemeldete Nutzer | Administratoren |
+| -------------------------------------------- | -------- | ------------------ | --------------- |
+| Memes ansehen und Links teilen               | Ja       | Ja                 | Ja              |
+| Memes hochladen                              | Nein     | Ja                 | Ja              |
+| Eigene Memes bearbeiten und löschen          | Nein     | Ja                 | Ja              |
+| Fremde Memes löschen                         | Nein     | Nein               | Ja              |
+| Memes liken und eigene Likes entfernen       | Nein     | Ja                 | Ja              |
+| Kommentare schreiben                         | Nein     | Ja                 | Ja              |
+| Eigene Kommentare bearbeiten und löschen     | Nein     | Ja                 | Ja              |
+| Fremde Kommentare löschen                    | Nein     | Nein               | Ja              |
+| Eigene Ordner erstellen und verwalten        | Nein     | Ja                 | Ja              |
+| Auf fremde persönliche Ordner zugreifen      | Nein     | Nein               | Nein            |
+| Eigenes Nutzerkonto nach Bestätigung löschen | Nein     | Ja                 | Ja              |
 
 - Das Backend prüft bei geschützten Anfragen die Clerk-Identität.
 - Die lokale Nutzerzuordnung erfolgt anhand der verifizierten Clerk-ID.
@@ -119,7 +120,53 @@ erDiagram
 - Ordner löschen: zugehörige FolderMeme-Einträge entfernen; die ursprünglichen Memes bleiben erhalten.
 - Meme aus einem Ordner entfernen: ausschließlich die betreffende FolderMeme-Zuordnung löschen.
 - Kommentar oder Like löschen: ausschließlich den jeweiligen Eintrag entfernen.
-- Nutzerkonten löschen: Verhalten noch festzulegen; bisher keine automatische Löschung eigener Inhalte vereinbart.
+- Nutzerkonto löschen: nach ausdrücklicher Bestätigung das eigene Konto und die unten aufgeführten Daten dauerhaft löschen.
+
+### Nutzerkonto dauerhaft löschen
+
+- Alle vom Nutzer hochgeladenen Memes einschließlich ihrer Bilddateien beim Bildspeicherdienst löschen.
+- Alle zu diesen Memes gehörenden Kommentare, Likes und Ordnerzuordnungen entfernen, auch wenn sie von anderen Nutzern stammen.
+- Die gelöschten Memes verschwinden dadurch auch aus den Sammlungen anderer Nutzer; deren Ordner bleiben bestehen.
+- Alle Kommentare des Nutzers entfernen, auch unter Memes anderer Nutzer.
+- Alle Likes des Nutzers entfernen, auch auf Memes anderer Nutzer.
+- Alle persönlichen Ordner des Nutzers einschließlich ihrer FolderMeme-Zuordnungen löschen.
+- Memes anderer Nutzer bleiben erhalten, wenn lediglich eine Speicherung in einem persönlichen Ordner entfernt wird.
+- Das lokale User-Profil einschließlich Name beziehungsweise Benutzername, Clerk-ID und Rolle löschen.
+- Das zugehörige Clerk-Konto löschen und den Login-Zustand beenden.
+- Eine Wiederherstellung über die Anwendung ist nicht vorgesehen.
+
+### Frontend-Anforderung für Dilek: Bestätigungsfenster
+
+- Vor der Kontolöschung ein großes, deutlich sichtbares modales Warnfenster öffnen.
+- Titel: **„Konto dauerhaft löschen?“**
+- Vorgeschlagener Text:
+
+  > Dein Konto und deine bei Your Meme gespeicherten Profildaten, hochgeladenen Memes,
+  > Kommentare, Likes und persönlichen Ordner werden dauerhaft gelöscht. Deine Memes
+  > verschwinden auch aus den Ordnern anderer Nutzer. Kommentare und Likes unter deinen
+  > Memes werden ebenfalls entfernt. Dein Anmeldekonto wird bei Clerk gelöscht.
+  > Diese Aktion kann nicht rückgängig gemacht werden.
+
+- Eine zunächst nicht ausgewählte Checkbox anzeigen:
+  **„Ich verstehe, dass mein Konto und die genannten Daten dauerhaft gelöscht werden.“**
+- Schaltflächen: **„Abbrechen“** und **„Konto dauerhaft löschen“**.
+- Die Löschschaltfläche erst nach Auswahl der Checkbox aktivieren und deutlich als destruktive Aktion kennzeichnen.
+- Abbrechen, Schließen oder Escape löst keine Löschung aus.
+- Den Fokus zunächst auf „Abbrechen“ setzen; der Dialog muss per Tastatur bedienbar und für Screenreader beschriftet sein.
+- Während der Verarbeitung einen Fortschrittszustand anzeigen und wiederholtes Absenden verhindern.
+- Erst nach bestätigtem Abschluss Erfolg anzeigen und auf die öffentliche Startseite wechseln.
+- Bei Fehlern oder noch laufender Bereinigung den tatsächlichen Zustand verständlich anzeigen; keine erfolgreiche vollständige Löschung behaupten.
+
+### Backend-Anforderungen für die Kontolöschung
+
+- Nur das eigene Konto anhand der verifizierten Clerk-Identität löschen; keine beliebige Nutzer-ID aus dem Request übernehmen.
+- Die ausdrückliche Bestätigung zusätzlich im Request prüfen; eine deaktivierte Frontend-Schaltfläche allein genügt nicht.
+- Die Löschung der Datenbankeinträge als zusammenhängende Transaktion planen.
+- PostgreSQL, Clerk und Bildspeicher können nicht gemeinsam durch eine einzelne Datenbanktransaktion zurückgerollt werden.
+- Die Löschung deshalb als wiederholbaren Ablauf planen: betroffene Bildkennungen und Clerk-ID vorab für die Bereinigung sichern, Konto währenddessen für weitere Änderungen sperren und fehlgeschlagene Teilschritte erneut ausführen.
+- Benötigte Bereinigungsdaten nur bis zum Abschluss aufbewahren und anschließend entfernen.
+- Auch eine außerhalb der Anwendung ausgelöste Clerk-Kontolöschung muss den lokalen Bereinigungsablauf anstoßen können; die konkrete Anbindung wird bei der Clerk-Integration festgelegt.
+- Vor Veröffentlichung Löschfristen für Backups und technische Logs separat festlegen; sie werden durch das Entfernen der aktiven Datensätze nicht automatisch bereinigt.
 
 ## Nächste Schritte
 
@@ -130,5 +177,5 @@ erDiagram
 5. Clerk, Zugriffsprüfungen und weitere Funktionen schrittweise ergänzen.
 6. Bildspeicher und Hosting auswählen und die Veröffentlichung frühzeitig testen.
 
-Projektzeitraum: 29.10.2026 bis 23.11.2026. Der Code wird vom Nutzer selbst geschrieben;
+Projektzeitraum: 27.10.2026 bis 23.11.2026. Der Code wird vom Nutzer selbst geschrieben;
 dieses Dokument dient als gemeinsame Planungsgrundlage.
