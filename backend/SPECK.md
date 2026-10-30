@@ -4,9 +4,11 @@
 
 - Dieses Dokument beschreibt ausschließlich das Backend und seine Schnittstelle zum Frontend.
 - Ziel: eine verständliche REST-API für eine Meme-Plattform.
-- Backend-Verantwortung: Nutzer; Frontend-Schwerpunkt: Dilek.
+- Backend-Verantwortung: Josephine; Frontend-Schwerpunkt: Dilek.
 - Leitlinie: **Kein Overengineering. KISS-Prinzip.** Nur benötigte Techniken einsetzen.
 - Der Nutzer schreibt den Anwendungscode selbst; Umsetzung und Erklärungen erfolgen schrittweise.
+- Änderungen durch Chaty erfolgen nur nach ausdrücklicher Freigabe im beschriebenen Umfang. Unklare Anweisungen werden vor der Änderung nachgefragt; zusätzliche Anforderungen oder Fortschritte werden nicht erfunden.
+- Die Git-Branches `Backend`, `Frontend` und `main` sind bereits vorhanden. Zusammenführen, Commit und Push erfolgen nur auf ausdrücklichen Auftrag.
 - Abgabe: 23.11.2026. Deployment ist freiwillig.
 
 ## Festgelegte Technologien
@@ -99,3 +101,6 @@
 
 - Zunächst das Datenmodell gemeinsam in kleinen Teilbildern verstehen.
 - Danach API-Verträge vervollständigen und das Backend-Grundgerüst schrittweise selbst erstellen.
+- Datenvalidierung, Rechteprüfung, passende Tests und Dokumentation gehören zu jeder Funktion und werden nicht auf die letzte Projektphase verschoben.
+- Die Oberfläche wird während der Entwicklung auf kleinen Bildschirmen und mit Tastatur geprüft; die Abschlussprüfung bestätigt diese Arbeit nochmals.
+- [Projektstand und Arbeitsweise](docs/projektstand.md) beschreiben geprüfte Ergebnisse, Reihenfolge und Trello-Farben.

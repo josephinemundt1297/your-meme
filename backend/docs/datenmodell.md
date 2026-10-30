@@ -9,7 +9,7 @@ ein Prisma-Schema und Datenbankmigrationen werden im nächsten Umsetzungsschritt
 - PostgreSQL mit Prisma
 - Clerk für Registrierung, Anmeldung und Passwortverwaltung
 - Dauerhafter Bildspeicher: Anbieter noch offen
-- Hosting: Anbieter noch offen
+- Hosting: optional; Anbieter noch offen
 
 ## Beziehungsdiagramm
 
@@ -170,12 +170,15 @@ erDiagram
 
 ## Nächste Schritte
 
-1. API-Endpunkte, Anfrage- und Antwortformate mit der Frontend-Person abstimmen.
-2. Einen eigenen Backend-Ordner mit Node.js, Express und TypeScript einrichten.
+1. Datenbeziehungen in kleinen Beispielen nachvollziehen und API-Datenformate mit Dilek abstimmen.
+2. Im bereits vorhandenen Backend-Ordner ein ausführbares Node.js-/Express-Projekt mit TypeScript einrichten.
 3. PostgreSQL-Verbindung und Prisma einrichten; dieses Modell in `schema.prisma` übersetzen.
 4. Erste Migration erstellen und Meme-Abfragen mit Postman testen.
 5. Clerk, Zugriffsprüfungen und weitere Funktionen schrittweise ergänzen.
-6. Bildspeicher und Hosting auswählen und die Veröffentlichung frühzeitig testen.
+6. Vor dem Upload den Bildspeicher auswählen. Nur bei gewünschter Veröffentlichung Hosting auswählen und frühzeitig testen.
+
+Validierung, Rechteprüfung, Tests und Dokumentation werden bei jeder Funktion mitgeführt.
+Aktueller Stand und Trello-Arbeitsweise: [projektstand.md](projektstand.md).
 
 Projektzeitraum: 27.10.2026 bis 23.11.2026. Der Code wird vom Nutzer selbst geschrieben;
 dieses Dokument dient als gemeinsame Planungsgrundlage.
