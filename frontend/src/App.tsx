@@ -6,15 +6,15 @@ import { MemeState } from './components/ui/MemeState'
 import './App.css'
 
 function Layout() {
+  const categories = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
   return <div className="app-shell">
     <header className="site-header">
-      <div className="brand-banner"><Link className="logo" to="/" aria-label="Your Meme Startseite">Your Meme</Link><p>Your daily dose of laughing</p></div>
       <Link className="account-link" to="/account">Anmelden / Registrieren</Link>
     </header>
-    <nav className="main-nav" aria-label="Hauptnavigation"><Link to="/">Neu</Link><Link to="/top">Meist geliked</Link><Link to="/upload">Hochladen</Link></nav>
+    <nav className="main-nav" aria-label="Hauptnavigation"><Link to="/">Home</Link><Link to="/top">Popular</Link><Link to="/">New</Link><Link to="/top">Most liked</Link></nav>
     <div className="site-body">
       <aside id="site-sidebar" className="site-sidebar">
-        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p><Link to="/" search={{ category: 'Programmieren' }}>Programmieren</Link><Link to="/" search={{ category: 'Alltag' }}>Alltag</Link><Link to="/" search={{ category: 'Arbeit' }}>Arbeit</Link></div>
+        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category} to="/" search={{ category }}>{category}</Link>)}</div>
         <div className="sidebar-divider" />
         <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p><Link className="add-folder" to="/account" aria-label="Ordner anlegen">＋</Link></div><p className="sidebar-note">Anmelden, um Ordner anzulegen.</p></div>
       </aside>
