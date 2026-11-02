@@ -6,15 +6,14 @@ import { MemeState } from './components/ui/MemeState'
 import './App.css'
 
 function Layout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   return <div className="app-shell">
     <header className="site-header">
-      <button className="menu-button" type="button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-expanded={sidebarOpen} aria-controls="site-sidebar">☰ <span className="sr-only">Menü öffnen</span></button>
-      <Link className="logo" to="/" aria-label="Your Meme Startseite">Your Meme</Link>
-      <nav aria-label="Hauptnavigation"><Link to="/">Neu</Link><Link to="/top">Meist geliked</Link><Link to="/upload">Hochladen</Link><Link to="/account">Anmelden / Profil</Link></nav>
+      <div className="brand-banner"><Link className="logo" to="/" aria-label="Your Meme Startseite">Your Meme</Link><p>Your daily dose of laughing</p></div>
+      <Link className="account-link" to="/account">Anmelden / Registrieren</Link>
     </header>
+    <nav className="main-nav" aria-label="Hauptnavigation"><Link to="/">Neu</Link><Link to="/top">Meist geliked</Link><Link to="/upload">Hochladen</Link></nav>
     <div className="site-body">
-      <aside id="site-sidebar" className={`site-sidebar${sidebarOpen ? ' is-open' : ''}`}>
+      <aside id="site-sidebar" className="site-sidebar">
         <div className="sidebar-section"><p className="sidebar-title">Kategorien</p><Link to="/" search={{ category: 'Programmieren' }}>Programmieren</Link><Link to="/" search={{ category: 'Alltag' }}>Alltag</Link><Link to="/" search={{ category: 'Arbeit' }}>Arbeit</Link></div>
         <div className="sidebar-divider" />
         <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p><Link className="add-folder" to="/account" aria-label="Ordner anlegen">＋</Link></div><p className="sidebar-note">Anmelden, um Ordner anzulegen.</p></div>
