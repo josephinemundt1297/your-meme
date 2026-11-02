@@ -35,8 +35,21 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .like-button { background: var(--purple); border: 0; border-radius: 20px; color: white; cursor: pointer; font-size: .8rem; padding: 7px 17px; } .like-button:hover, .like-button:focus-visible, .like-button.liked { background: #7b32ed; } .like-button span { margin-right: 5px; } .empty-state { color: var(--muted); }
 .site-footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; padding: 22px; text-align: center; }
 .placeholder-page { margin: 0 auto; max-width: 700px; padding: 100px 24px; text-align: center; } .placeholder-page p:not(.eyebrow) { color: var(--muted); margin-bottom: 28px; } .primary-link { background: var(--purple); border-radius: 10px; color: white; display: inline-block; font-weight: 700; padding: 12px 18px; }
+.detail-page { margin: 0 auto; max-width: 900px; padding: 28px 0 72px; }
+.back-link { color: #d8d8d8; display: inline-block; font-size: .9rem; margin-bottom: 18px; }
+.back-link:hover, .back-link:focus-visible { color: white; text-decoration: underline; }
+.detail-card { background: #2b2b2b; display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); }
+.detail-image { align-items: center; background: var(--orange); display: flex; font-size: clamp(5rem, 12vw, 9rem); justify-content: center; min-height: 440px; }
+.detail-content { padding: clamp(24px, 4vw, 48px); }
+.detail-content h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin: 10px 0 14px; }
+.detail-author, .comment-count { color: var(--muted); font-size: .9rem; }
+.detail-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 16px; margin: 26px 0 38px; }
+.comments-section { border-top: 1px solid #484848; padding-top: 24px; }
+.comments-section h2 { font-size: 1.2rem; }
+.comment-placeholder { border: 1px dashed #666; color: var(--muted); font-size: .88rem; padding: 18px; }
 .meme-state { align-items: center; background: #2c2c2c; border: 1px dashed #555; border-radius: 10px; color: var(--muted); display: flex; flex-direction: column; margin: 10px auto; max-width: 560px; padding: 42px 24px; text-align: center; } .meme-state h3 { color: white; margin: 12px 0 6px; } .meme-state p { margin: 0; } .state-icon { align-items: center; background: #3e2968; border-radius: 50%; color: #c3a4ff; display: flex; font-size: 1.8rem; font-weight: 800; height: 52px; justify-content: center; width: 52px; } .state-retry { border: 0; cursor: pointer; margin-top: 20px; } .loading-skeletons { display: flex; gap: 8px; } .loading-skeletons span { animation: pulse 1.2s ease-in-out infinite; background: #777; border-radius: 6px; height: 8px; width: 34px; } .loading-skeletons span:nth-child(2) { animation-delay: .15s; } .loading-skeletons span:nth-child(3) { animation-delay: .3s; } @keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
 .sr-only { height: 1px; margin: -1px; overflow: hidden; position: absolute; width: 1px; clip: rect(0, 0, 0, 0); }
 @media (max-width: 1100px) { .meme-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 820px) { .site-header { padding-top: 0; } .account-link { right: 18px; top: 16px; } .main-nav { gap: 12px; margin-top: 20px; } .main-nav a { min-height: 58px; padding: 10px; width: 100px; } .site-body { gap: 18px; padding: 0 16px 40px; } .site-sidebar { flex-basis: 150px; padding: 22px 14px; } .meme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .site-header { padding: 0 12px; } .brand-banner { min-height: 92px; padding: 14px 20px; } .brand-banner p { font-size: .72rem; } .account-link { font-size: .72rem; max-width: 94px; text-align: right; top: 12px; } .main-nav { gap: 8px; margin: 16px auto 24px; padding: 0 10px; } .main-nav a { font-size: .78rem; min-height: 52px; width: 30%; } .site-body { display: block; padding: 0 12px 32px; } .site-sidebar { min-height: auto; padding: 16px; } .sidebar-section { display: grid; gap: 10px 16px; grid-template-columns: repeat(2, 1fr); } .sidebar-title, .sidebar-heading, .sidebar-note { grid-column: 1 / -1; } .sidebar-divider { margin: 18px 0; } .meme-grid { grid-template-columns: 1fr; } .meme-image { height: 210px; } }
+@media (max-width: 680px) { .detail-page { padding: 18px 0 48px; } .detail-card { display: block; } .detail-image { min-height: 260px; } }

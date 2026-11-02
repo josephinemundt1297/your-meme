@@ -37,7 +37,25 @@ function MemeList({ top = false }: { top?: boolean }) {
 }
 
 function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
-function MemeDetailPage() { const { memeId } = useParams({ from: '/memes/$memeId' }); const memeExists = sampleMemes.some((meme) => meme.id === memeId); return memeExists ? <PlaceholderPage title={`Meme ${memeId}`} text="Die Meme-Detailseite wird als nächster Schritt aufgebaut." /> : <section className="placeholder-page"><MemeState type="not-found" /><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
+function MemeDetailPage() {
+  const { memeId } = useParams({ from: '/memes/$memeId' })
+  const meme = sampleMemes.find((item) => item.id === memeId)
+  if (!meme) return <section className="placeholder-page"><MemeState type="not-found" /><Link className="primary-link" to="/">Zur Übersicht</Link></section>
+
+  return <section className="detail-page">
+    <Link className="back-link" to="/">← Zurück zu den Memes</Link>
+    <article className="detail-card">
+      <div className="detail-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div>
+      <div className="detail-content">
+        <span className="category">{meme.category}</span>
+        <h1>{meme.title}</h1>
+        <p className="detail-author">Von <strong>{meme.author.username}</strong> · {new Date(meme.createdAt).toLocaleDateString('de-DE')}</p>
+        <div className="detail-actions"><button className="like-button liked" type="button"><span aria-hidden="true">♡</span>{meme.likeCount} Likes</button><span className="comment-count">💬 {meme.commentCount} Kommentare</span></div>
+        <section className="comments-section" aria-labelledby="comments-heading"><h2 id="comments-heading">Kommentare</h2><div className="comment-placeholder">Kommentare werden mit dem Backend verbunden.</div></section>
+      </div>
+    </article>
+  </section>
+}
 
 const rootRoute = createRootRoute({ component: Layout })
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <MemeList /> })
