@@ -21,6 +21,17 @@ nav { display: flex; gap: 24px; } nav a { color: var(--muted); font-size: .95rem
 .placeholder-page { margin: 0 auto; max-width: 700px; padding: 100px 24px; text-align: center; }
 .placeholder-page p:not(.eyebrow) { color: var(--muted); margin-bottom: 28px; }
 .primary-link { background: var(--purple); border-radius: 10px; color: white; display: inline-block; font-weight: 700; padding: 12px 18px; }
+.meme-state { align-items: center; background: var(--surface); border: 1px dashed var(--border); border-radius: 18px; color: var(--muted); display: flex; flex-direction: column; margin: 10px auto; max-width: 560px; padding: 42px 24px; text-align: center; }
+.meme-state h3 { color: var(--ink); font-size: 1.15rem; margin: 12px 0 6px; }
+.meme-state p { margin: 0; }
+.state-icon { align-items: center; background: #eeeaff; border-radius: 50%; color: var(--purple); display: flex; font-size: 1.8rem; font-weight: 800; height: 52px; justify-content: center; width: 52px; }
+.meme-state-error .state-icon { background: #ffe8ed; color: #d34870; }
+.meme-state-not-found .state-icon { background: #fff3cf; color: #aa7b00; }
+.state-retry { border: 0; cursor: pointer; margin-top: 20px; }
+.loading-skeletons { display: flex; gap: 8px; }
+.loading-skeletons span { animation: pulse 1.2s ease-in-out infinite; background: #ded8f7; border-radius: 6px; height: 8px; width: 34px; }
+.loading-skeletons span:nth-child(2) { animation-delay: .15s; } .loading-skeletons span:nth-child(3) { animation-delay: .3s; }
+@keyframes pulse { 0%, 100% { opacity: .4; transform: scaleY(.8); } 50% { opacity: 1; transform: scaleY(1.2); } }
 .hero-section { margin: 0 auto; max-width: 850px; padding: 76px 20px 54px; text-align: center; }
 .eyebrow { color: var(--purple); font-size: .75rem; font-weight: 800; letter-spacing: .13em; margin: 0 0 10px; text-transform: uppercase; }
 h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(2.1rem, 5vw, 4rem); letter-spacing: -.05em; line-height: 1.05; margin-bottom: 18px; } .intro { color: var(--muted); margin: 0 auto 28px; }

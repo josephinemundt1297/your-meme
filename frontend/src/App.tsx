@@ -2,6 +2,7 @@ import { Link, Outlet, createRootRoute, createRoute, createRouter, useParams } f
 import { useState } from 'react'
 import { sampleMemes } from './data/sampleMemes'
 import type { Meme } from './types/meme'
+import { MemeState } from './components/ui/MemeState'
 import './App.css'
 
 function Layout() {
@@ -31,13 +32,13 @@ function MemeList({ top = false }: { top?: boolean }) {
   return <>
     <section className="hero-section"><p className="eyebrow">Deine tägliche Meme-Auszeit</p><h1>{top ? 'Die meist gelikten Memes' : 'Finde dein nächstes Lieblingsmeme'}</h1><p className="intro">Entdecke lustige Memes und teile sie mit der Community.</p><label className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><span className="sr-only">Memes durchsuchen</span><input type="search" placeholder="Memes durchsuchen ..." value={search} onChange={(event) => setSearch(event.target.value)} /></label></section>
     <section className="meme-section" aria-labelledby="meme-heading"><div className="section-heading"><div><p className="eyebrow">{top ? 'Community-Favoriten' : 'Für dich ausgewählt'}</p><h2 id="meme-heading">{top ? 'Meist geliked' : 'Neue Memes'}</h2></div><span className="meme-count">{visibleMemes.length} Memes</span></div>
-      {visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme: Meme) => { const isLiked = likedMemes.includes(meme.id); return <article className="meme-card" key={meme.id}><Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Beispielbild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div></Link><div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${isLiked ? ' liked' : ''}`} type="button" aria-pressed={isLiked} onClick={() => setLikedMemes((current) => current.includes(meme.id) ? current.filter((id) => id !== meme.id) : [...current, meme.id])}><span aria-hidden="true">{isLiked ? '♥' : '♡'}</span>{meme.likeCount + (isLiked ? 1 : 0)} Likes</button></div></article> })}</div> : <p className="empty-state">Keine Memes gefunden.</p>}
+      {visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme: Meme) => { const isLiked = likedMemes.includes(meme.id); return <article className="meme-card" key={meme.id}><Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Beispielbild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div></Link><div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${isLiked ? ' liked' : ''}`} type="button" aria-pressed={isLiked} onClick={() => setLikedMemes((current) => current.includes(meme.id) ? current.filter((id) => id !== meme.id) : [...current, meme.id])}><span aria-hidden="true">{isLiked ? '♥' : '♡'}</span>{meme.likeCount + (isLiked ? 1 : 0)} Likes</button></div></article> })}</div> : <MemeState type="empty" />}
     </section>
   </>
 }
 
 function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
-function MemeDetailPage() { const { memeId } = useParams({ from: '/memes/$memeId' }); return <PlaceholderPage title={`Meme ${memeId}`} text="Die Meme-Detailseite wird als nächster Schritt aufgebaut." /> }
+function MemeDetailPage() { const { memeId } = useParams({ from: '/memes/$memeId' }); const memeExists = sampleMemes.some((meme) => meme.id === memeId); return memeExists ? <PlaceholderPage title={`Meme ${memeId}`} text="Die Meme-Detailseite wird als nächster Schritt aufgebaut." /> : <section className="placeholder-page"><MemeState type="not-found" /><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
 
 const rootRoute = createRootRoute({ component: Layout })
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <MemeList /> })
