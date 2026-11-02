@@ -1,12 +1,14 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-Stand: 30.10.2026. Abgabe: 23.11.2026. Präsentationstermin noch offen.
+Backend-Grundgerüst ergänzt am 02.11.2026; übrige Planungsprüfung vom 30.10.2026.
+Abgabe: 23.11.2026. Präsentationstermin noch offen.
 
 ## Tatsächlich erledigt
 
 - **Planungsentwurf gespeichert:** Datenmodell mit sechs Modellen, Beziehungen, Berechtigungen und Kontolöschung; Backend-Anforderungen und Backend-Regeln liegen als Dateien vor.
 - **Ordnerstruktur angelegt:** Das bestehende Vite-Projekt liegt unter `frontend/`; Backend-Planung unter `backend/`; die gemeinsame README verweist auf diese Bereiche.
 - Diese beiden Ergebnisse sind vollständig im genannten kleinen Umfang. Sie bedeuten keine fertige Datenbank, API, Anmeldung oder Anwendung.
+- **Backend-Grundgerüst ergänzt (02.11.):** Express und TypeScript eingerichtet. Statusroute `GET /api/health`, JSON-Antwort für unbekannte Routen, optionale Port-Einstellung und Startanleitung vorhanden. Typprüfung, Build sowie Entwicklungs- und JavaScript-Start geprüft. Datenbank, Anmeldung und Meme-Endpunkte fehlen weiterhin. Details: [Backend-Startanleitung](../README.md).
 - Das gemeinsame Durchsprechen und die fachliche Prüfung des Entwurfs bleiben eine eigene offene Aufgabe.
 - Der Start der Anwendung nach dem Umzug ist noch zu prüfen. Die neue Struktur muss mit Dileks Arbeitsstand abgestimmt werden.
 
@@ -15,7 +17,7 @@ Stand: 30.10.2026. Abgabe: 23.11.2026. Präsentationstermin noch offen.
 - Datenbeziehungen sicher erklären, insbesondere Ersteller, Ordnerbesitzer und FolderMeme.
 - Seitenstruktur und vorläufige Router-Wahl mit Dilek abstimmen.
 - API-Datenformate vollständig festlegen. `api-plan.md` enthält bisher nur die fünf Meme-Endpunkte.
-- Ausführbares Backend, Prisma-Schema, Datenbank, Clerk-Anbindung und Bildspeicher einrichten.
+- Prisma-Schema, Datenbank, Clerk-Anbindung und Bildspeicher einrichten; das ausführbare Backend-Grundgerüst ist jetzt vorhanden.
 - Kernfunktionen umsetzen und Frontend und Backend verbinden.
 - Tests, vollständige Startanleitung und Präsentation erstellen.
 

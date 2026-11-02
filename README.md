@@ -5,7 +5,7 @@ Fullstack-Abschlussprojekt einer Meme-Plattform, umgesetzt von zwei Personen.
 ## Bereiche
 
 - `frontend/`: bestehendes React-Projekt mit TypeScript und Vite; Schwerpunkt Dilek.
-- `backend/`: Backend-Planung und später Express, TypeScript, PostgreSQL, Prisma und Clerk.
+- `backend/`: Express-/TypeScript-Grundgerüst und Backend-Planung; PostgreSQL, Prisma und Clerk folgen.
 - [Backend-Spezifikation](backend/SPECK.md)
 - [Datenmodell](backend/docs/datenmodell.md)
 - [API-Plan](backend/docs/api-plan.md)
@@ -19,7 +19,10 @@ Im Ordner `frontend/` die Abhängigkeiten mit `npm install` installieren und ans
 
 ## Backend
 
-Das Backend befindet sich in der Planungsphase und hat noch keinen ausführbaren Server.
+Im Ordner `backend/` die Abhängigkeiten mit `npm install` installieren und anschließend `npm run dev` ausführen.
+Die Statusroute ist unter `http://localhost:3000/api/health` erreichbar.
+Weitere Befehle und Erklärungen stehen in der [Backend-Startanleitung](backend/README.md).
+Das Grundgerüst enthält noch keine Datenbank, Anmeldung oder Meme-Endpunkte.
 Die Regeln in `backend/AGENTS.md` gelten ausschließlich für den Backend-Bereich.
 Frontend-Regeln können unabhängig unter `frontend/AGENTS.md` ergänzt werden.
 
