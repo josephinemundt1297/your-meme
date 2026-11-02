@@ -1,5 +1,5 @@
 import { Link, Outlet, createRootRoute, createRoute, createRouter, useParams } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { sampleMemes } from './data/sampleMemes'
 import type { Meme } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
@@ -37,6 +37,31 @@ function MemeList({ top = false }: { top?: boolean }) {
 }
 
 function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
+function UploadPage() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [title, setTitle] = useState('')
+  const [category, setCategory] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : null
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (selectedFile && title.trim() && category) setSubmitted(true)
+  }
+
+  return <section className="upload-page">
+    <Link className="back-link" to="/">← Zurück zu den Memes</Link>
+    <div className="upload-intro"><p className="eyebrow">Dein Beitrag</p><h1>Eigenes Meme hochladen</h1><p>Teile dein Meme mit der Your-Meme-Community.</p></div>
+    <form className="upload-form" onSubmit={handleSubmit}>
+      <label className="upload-field"><span>Meme-Bild</span><input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} required />{previewUrl && <img className="upload-preview" src={previewUrl} alt="Vorschau des ausgewählten Memes" />}</label>
+      <label className="upload-field"><span>Titel</span><input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Gib deinem Meme einen Titel" maxLength={100} required /></label>
+      <label className="upload-field"><span>Kategorie</span><select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Kategorie auswählen</option><option value="Programmieren">Programmieren</option><option value="Alltag">Alltag</option><option value="Arbeit">Arbeit</option></select></label>
+      <p className="upload-hint">Der Upload wird später mit Anmeldung und Backend verbunden.</p>
+      <button className="primary-link upload-submit" type="submit">Meme hochladen</button>
+      {submitted && <p className="upload-success" role="status">Dein Meme ist für die Veröffentlichung vorbereitet.</p>}
+    </form>
+  </section>
+}
 function MemeDetailPage() {
   const { memeId } = useParams({ from: '/memes/$memeId' })
   const meme = sampleMemes.find((item) => item.id === memeId)
@@ -60,7 +85,7 @@ function MemeDetailPage() {
 const rootRoute = createRootRoute({ component: Layout })
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <MemeList /> })
 const topRoute = createRoute({ getParentRoute: () => rootRoute, path: '/top', component: () => <MemeList top /> })
-const uploadRoute = createRoute({ getParentRoute: () => rootRoute, path: '/upload', component: () => <PlaceholderPage title="Meme hochladen" text="Melde dich an, um dein eigenes Meme hochzuladen." /> })
+const uploadRoute = createRoute({ getParentRoute: () => rootRoute, path: '/upload', component: UploadPage })
 const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: '/account', component: () => <PlaceholderPage title="Anmelden / Profil" text="Hier erscheinen Anmeldung und Kontoeinstellungen." /> })
 const memeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/memes/$memeId', component: MemeDetailPage })
 const folderRoute = createRoute({ getParentRoute: () => rootRoute, path: '/folders/$folderId', component: () => <PlaceholderPage title="Mein Ordner" text="Dieser persönliche Ordner wird nach der Anmeldung verfügbar." /> })

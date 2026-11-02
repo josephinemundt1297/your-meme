@@ -47,6 +47,18 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .comments-section { border-top: 1px solid #484848; padding-top: 24px; }
 .comments-section h2 { font-size: 1.2rem; }
 .comment-placeholder { border: 1px dashed #666; color: var(--muted); font-size: .88rem; padding: 18px; }
+.upload-page { margin: 0 auto; max-width: 720px; padding: 28px 0 72px; }
+.upload-intro { margin-bottom: 26px; }
+.upload-intro h1 { margin-bottom: 10px; }
+.upload-intro p:not(.eyebrow) { color: var(--muted); }
+.upload-form { background: #2b2b2b; padding: clamp(20px, 4vw, 38px); }
+.upload-field { color: white; display: flex; flex-direction: column; font-weight: 700; gap: 8px; margin-bottom: 20px; }
+.upload-field input, .upload-field select { background: white; border: 0; border-radius: 3px; color: #222; padding: 12px; }
+.upload-field input[type='file'] { color: #555; }
+.upload-preview { background: var(--orange); max-height: 280px; object-fit: contain; padding: 10px; width: 100%; }
+.upload-hint { color: var(--muted); font-size: .85rem; margin: 24px 0 18px; }
+.upload-submit { border: 0; cursor: pointer; }
+.upload-success { color: #8ee39e; font-weight: 700; margin-bottom: 0; }
 .meme-state { align-items: center; background: #2c2c2c; border: 1px dashed #555; border-radius: 10px; color: var(--muted); display: flex; flex-direction: column; margin: 10px auto; max-width: 560px; padding: 42px 24px; text-align: center; } .meme-state h3 { color: white; margin: 12px 0 6px; } .meme-state p { margin: 0; } .state-icon { align-items: center; background: #3e2968; border-radius: 50%; color: #c3a4ff; display: flex; font-size: 1.8rem; font-weight: 800; height: 52px; justify-content: center; width: 52px; } .state-retry { border: 0; cursor: pointer; margin-top: 20px; } .loading-skeletons { display: flex; gap: 8px; } .loading-skeletons span { animation: pulse 1.2s ease-in-out infinite; background: #777; border-radius: 6px; height: 8px; width: 34px; } .loading-skeletons span:nth-child(2) { animation-delay: .15s; } .loading-skeletons span:nth-child(3) { animation-delay: .3s; } @keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
 .sr-only { height: 1px; margin: -1px; overflow: hidden; position: absolute; width: 1px; clip: rect(0, 0, 0, 0); }
 @media (max-width: 1100px) { .meme-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
