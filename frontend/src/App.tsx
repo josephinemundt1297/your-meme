@@ -11,7 +11,7 @@ function Layout() {
     <header className="site-header">
       <Link className="account-link" to="/account">Anmelden / Registrieren</Link>
     </header>
-    <nav className="main-nav" aria-label="Hauptnavigation"><Link to="/">Home</Link><Link to="/top">Popular</Link><Link to="/">New</Link><Link to="/top">Most liked</Link></nav>
+    <nav className="main-nav" aria-label="Hauptnavigation"><Link to="/">Home</Link><Link to="/popular">Popular</Link><Link to="/new">New</Link><Link to="/top">Most liked</Link></nav>
     <div className="site-body">
       <aside id="site-sidebar" className="site-sidebar">
         <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category} to="/" search={{ category }}>{category}</Link>)}</div>
@@ -84,11 +84,13 @@ function MemeDetailPage() {
 
 const rootRoute = createRootRoute({ component: Layout })
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <MemeList /> })
+const popularRoute = createRoute({ getParentRoute: () => rootRoute, path: '/popular', component: () => <MemeList top /> })
+const newRoute = createRoute({ getParentRoute: () => rootRoute, path: '/new', component: () => <MemeList /> })
 const topRoute = createRoute({ getParentRoute: () => rootRoute, path: '/top', component: () => <MemeList top /> })
 const uploadRoute = createRoute({ getParentRoute: () => rootRoute, path: '/upload', component: UploadPage })
 const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: '/account', component: () => <PlaceholderPage title="Anmelden / Profil" text="Hier erscheinen Anmeldung und Kontoeinstellungen." /> })
 const memeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/memes/$memeId', component: MemeDetailPage })
 const folderRoute = createRoute({ getParentRoute: () => rootRoute, path: '/folders/$folderId', component: () => <PlaceholderPage title="Mein Ordner" text="Dieser persönliche Ordner wird nach der Anmeldung verfügbar." /> })
-const routeTree = rootRoute.addChildren([homeRoute, topRoute, uploadRoute, accountRoute, memeRoute, folderRoute])
+const routeTree = rootRoute.addChildren([homeRoute, popularRoute, newRoute, topRoute, uploadRoute, accountRoute, memeRoute, folderRoute])
 export const router = createRouter({ routeTree })
 declare module '@tanstack/react-router' { interface Register { router: typeof router } }
