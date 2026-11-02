@@ -1,14 +1,8 @@
 import { Link, Outlet, createRootRoute, createRoute, createRouter, useParams } from '@tanstack/react-router'
 import { useState } from 'react'
+import { sampleMemes } from './data/sampleMemes'
+import type { Meme } from './types/meme'
 import './App.css'
-
-type Meme = { id: number; title: string; category: string; emoji: string; likes: number }
-
-const sampleMemes: Meme[] = [
-  { id: 1, title: 'Wenn der Code beim ersten Versuch funktioniert', category: 'Programmieren', emoji: '🎉', likes: 42 },
-  { id: 2, title: 'Ich: Heute mache ich nur eine kleine Änderung', category: 'Alltag', emoji: '😅', likes: 28 },
-  { id: 3, title: 'Montag und der erste Kaffee', category: 'Arbeit', emoji: '☕', likes: 35 },
-]
 
 function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -32,12 +26,12 @@ function Layout() {
 
 function MemeList({ top = false }: { top?: boolean }) {
   const [search, setSearch] = useState('')
-  const [likedMemes, setLikedMemes] = useState<number[]>([])
-  const visibleMemes = [...sampleMemes].sort((a, b) => top ? b.likes - a.likes : b.id - a.id).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase()))
+  const [likedMemes, setLikedMemes] = useState<string[]>([])
+  const visibleMemes = [...sampleMemes].sort((a, b) => top ? b.likeCount - a.likeCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase()))
   return <>
     <section className="hero-section"><p className="eyebrow">Deine tägliche Meme-Auszeit</p><h1>{top ? 'Die meist gelikten Memes' : 'Finde dein nächstes Lieblingsmeme'}</h1><p className="intro">Entdecke lustige Memes und teile sie mit der Community.</p><label className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><span className="sr-only">Memes durchsuchen</span><input type="search" placeholder="Memes durchsuchen ..." value={search} onChange={(event) => setSearch(event.target.value)} /></label></section>
     <section className="meme-section" aria-labelledby="meme-heading"><div className="section-heading"><div><p className="eyebrow">{top ? 'Community-Favoriten' : 'Für dich ausgewählt'}</p><h2 id="meme-heading">{top ? 'Meist geliked' : 'Neue Memes'}</h2></div><span className="meme-count">{visibleMemes.length} Memes</span></div>
-      {visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme) => { const isLiked = likedMemes.includes(meme.id); return <article className="meme-card" key={meme.id}><Link to="/memes/$memeId" params={{ memeId: String(meme.id) }}><div className="meme-image" role="img" aria-label={`Beispielbild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div></Link><div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${isLiked ? ' liked' : ''}`} type="button" aria-pressed={isLiked} onClick={() => setLikedMemes((current) => current.includes(meme.id) ? current.filter((id) => id !== meme.id) : [...current, meme.id])}><span aria-hidden="true">{isLiked ? '♥' : '♡'}</span>{meme.likes + (isLiked ? 1 : 0)} Likes</button></div></article> })}</div> : <p className="empty-state">Keine Memes gefunden.</p>}
+      {visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme: Meme) => { const isLiked = likedMemes.includes(meme.id); return <article className="meme-card" key={meme.id}><Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Beispielbild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div></Link><div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${isLiked ? ' liked' : ''}`} type="button" aria-pressed={isLiked} onClick={() => setLikedMemes((current) => current.includes(meme.id) ? current.filter((id) => id !== meme.id) : [...current, meme.id])}><span aria-hidden="true">{isLiked ? '♥' : '♡'}</span>{meme.likeCount + (isLiked ? 1 : 0)} Likes</button></div></article> })}</div> : <p className="empty-state">Keine Memes gefunden.</p>}
     </section>
   </>
 }

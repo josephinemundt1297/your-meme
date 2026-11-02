@@ -1,0 +1,40 @@
+import type { Meme } from '../types/meme'
+
+export const sampleMemes: Meme[] = [
+  {
+    id: 'meme-1',
+    title: 'Wenn der Code beim ersten Versuch funktioniert',
+    imageUrl: '/beispiel-meme-1.jpg',
+    createdAt: '2026-11-02T09:00:00Z',
+    author: { id: 'u1', username: 'Dilek' },
+    category: 'Programmieren',
+    likeCount: 42,
+    commentCount: 3,
+    likedByMe: false,
+    emoji: '🎉',
+  },
+  {
+    id: 'meme-2',
+    title: 'Ich: Heute mache ich nur eine kleine Änderung',
+    imageUrl: '/beispiel-meme-2.jpg',
+    createdAt: '2026-11-02T08:30:00Z',
+    author: { id: 'u2', username: 'Josi' },
+    category: 'Alltag',
+    likeCount: 28,
+    commentCount: 5,
+    likedByMe: false,
+    emoji: '😅',
+  },
+  {
+    id: 'meme-3',
+    title: 'Montag und der erste Kaffee',
+    imageUrl: '/beispiel-meme-3.jpg',
+    createdAt: '2026-11-02T08:00:00Z',
+    author: { id: 'u3', username: 'MemeFan' },
+    category: 'Arbeit',
+    likeCount: 35,
+    commentCount: 2,
+    likedByMe: false,
+    emoji: '☕',
+  },
+]
