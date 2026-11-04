@@ -17,3 +17,6 @@ Sie legen keine Regeln für Dileks Frontend fest.
 - Schwierige Konzepte wie Datenbeziehungen mit kleinen Teilbildern und konkreten Beispieldaten erklären. Erst das Verständnis festigen, bevor der nächste Umsetzungsschritt beginnt.
 - Vereinbarter Backend-Stack: Node.js, Express, TypeScript, PostgreSQL, Prisma und Clerk. Bildspeicher noch offen; Deployment ist freiwillig.
 - Fachliche Backend-Anforderungen stehen in `SPECK.md`; Datenmodell und API-Plan in `docs/`. Widersprüche prüfen, nötige Änderungen vorschlagen und nur mit ausdrücklicher Freigabe ausführen.
+- Den geprüften Umsetzungsstand in `docs/projektstand.md` festhalten. Anforderungen in `SPECK.md` sind keine Erledigt-Meldungen; historische Tagespläne bleiben als solche gekennzeichnet.
+- Ein vorhandenes Prisma-Schema, eine Migrationsdatei oder ein erzeugter Client belegen noch keine erfolgreiche Datenbankverbindung oder angewendete Migration. Prüfungen und ihre Grenzen ausdrücklich nennen.
+- Installierte Skills unter `.agents/skills` sind Werkzeughilfen. Sie legen weder zusätzliche Projektanforderungen noch die Freigabe für Paket-Upgrades, neue Dienste oder Datenbankänderungen fest.

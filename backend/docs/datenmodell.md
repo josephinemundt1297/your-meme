@@ -1,7 +1,12 @@
 # Your Meme – Datenmodell
 
-Planungsgrundlage für das Backend. Dieses Dokument beschreibt das Datenmodell;
-ein Prisma-Schema und Datenbankmigrationen werden im nächsten Umsetzungsschritt erstellt.
+Stand: 04.11.2026. Mit `prisma/schema.prisma` und der ersten Migration
+`prisma/migrations/20261104125318_init/migration.sql` abgeglichen.
+Die sechs Modelle, Felder, Beziehungen, Schlüssel und Löschkaskaden sind dort enthalten.
+Ob die Migration in der konfigurierten Datenbank angewendet ist, wurde bei dieser Dokumentationsprüfung nicht geprüft.
+
+Die Berechtigungen und dienstübergreifende Kontolöschung in diesem Dokument beschreiben Anforderungen.
+Die API setzt sie noch nicht um; Clerk und Bildspeicher sind noch nicht angebunden.
 
 ## Technische Grundlage
 
@@ -84,14 +89,16 @@ erDiagram
 - `User.clerkId` ist eindeutig; Passwörter werden ausschließlich von Clerk verwaltet.
 - `User.username` ist ein öffentlicher Anzeigename und in diesem Entwurf nicht eindeutig.
 - Die Standardrolle neuer Nutzer ist `USER`; `ADMIN` wird ausschließlich über einen vertrauenswürdigen serverseitigen Prozess vergeben.
-- Eigenständige IDs von User, Meme, Comment und Folder werden als UUIDs automatisch erzeugt.
+- Eigenständige IDs von User, Meme, Comment und Folder werden beim Anlegen über Prisma als UUIDs erzeugt (`@default(uuid())`). Die SQL-Migration enthält dafür keinen Datenbank-Standardwert; bei direkten SQL-Inserts müssen IDs mitgegeben werden.
 - Like hat einen zusammengesetzten Primärschlüssel aus `userId` und `memeId`.
 - FolderMeme hat einen zusammengesetzten Primärschlüssel aus `folderId` und `memeId`.
 - Dadurch kann ein Nutzer ein Meme höchstens einmal liken und ein Meme höchstens einmal pro Ordner speichern.
 - Ein Meme kann gleichzeitig in mehreren Ordnern gespeichert sein.
-- `createdAt` wird automatisch gesetzt; `updatedAt` bei Änderungen automatisch aktualisiert.
+- `createdAt` wird automatisch gesetzt. Bei Meme und Comment verwaltet Prisma zusätzlich `updatedAt`; für direkte SQL-Updates gibt es in der Migration keinen entsprechenden Trigger.
 
 ## Berechtigungen
+
+Geplante Zugriffsregeln für die noch umzusetzenden fachlichen Endpunkte:
 
 | Aktion                                       | Besucher | Angemeldete Nutzer | Administratoren |
 | -------------------------------------------- | -------- | ------------------ | --------------- |
@@ -114,6 +121,11 @@ erDiagram
 - Das Backend übernimmt die Identität und Rolle nicht ungeprüft aus dem Request-Body.
 
 ## Löschregeln
+
+Die relationalen Löschkaskaden sind in Schema und Migration definiert (`onDelete: Cascade`).
+Für ihre Wirkung muss die Migration in der Datenbank angewendet sein.
+Bilddateien, Clerk-Konto, Bestätigung und wiederholbare Bereinigung benötigen zusätzliche Anwendungslogik;
+diese ist noch nicht implementiert.
 
 - Meme löschen: zugehörige Kommentare, Likes und FolderMeme-Einträge entfernen.
 - Die Bilddatei zusätzlich beim Bildspeicherdienst löschen; Datenbankregeln allein entfernen keine externen Dateien.
@@ -171,9 +183,9 @@ erDiagram
 ## Nächste Schritte
 
 1. Datenbeziehungen in kleinen Beispielen nachvollziehen und API-Datenformate mit Dilek abstimmen.
-2. Im bereits vorhandenen Backend-Ordner ein ausführbares Node.js-/Express-Projekt mit TypeScript einrichten.
-3. PostgreSQL-Verbindung und Prisma einrichten; dieses Modell in `schema.prisma` übersetzen.
-4. Erste Migration erstellen und Meme-Abfragen mit Postman testen.
+2. PostgreSQL-Verbindung und angewendeten Migrationsstand prüfen; Schema, erste Migrationsdatei und Prisma-Client-Modul sind bereits vorhanden.
+3. Einen ersten Datenbankzugriff umsetzen und den Prisma-Client in den benötigten API-Code einbinden.
+4. Geplante Meme-Endpunkte umsetzen und ihre Antworten mit Postman prüfen.
 5. Clerk, Zugriffsprüfungen und weitere Funktionen schrittweise ergänzen.
 6. Vor dem Upload den Bildspeicher auswählen. Nur bei gewünschter Veröffentlichung Hosting auswählen und frühzeitig testen.
 
