@@ -1,11 +1,11 @@
-import { Link, Outlet, createRootRoute, createRoute, createRouter, useParams } from '@tanstack/react-router'
+import { Link, Outlet, useParams } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
 import { sampleMemes } from './data/sampleMemes'
 import type { Meme } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
 import './App.css'
 
-function Layout() {
+export function Layout() {
   const categories = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
   return <div className="app-shell">
     <header className="site-header">
@@ -24,7 +24,7 @@ function Layout() {
   </div>
 }
 
-function MemeList({ top = false }: { top?: boolean }) {
+export function MemeList({ top = false }: { top?: boolean }) {
   const [search, setSearch] = useState('')
   const [likedMemes, setLikedMemes] = useState<string[]>([])
   const visibleMemes = [...sampleMemes].sort((a, b) => top ? b.likeCount - a.likeCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase()))
@@ -36,8 +36,8 @@ function MemeList({ top = false }: { top?: boolean }) {
   </>
 }
 
-function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
-function UploadPage() {
+export function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
+export function UploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
@@ -62,7 +62,7 @@ function UploadPage() {
     </form>
   </section>
 }
-function MemeDetailPage() {
+export function MemeDetailPage() {
   const { memeId } = useParams({ from: '/memes/$memeId' })
   const meme = sampleMemes.find((item) => item.id === memeId)
   if (!meme) return <section className="placeholder-page"><MemeState type="not-found" /><Link className="primary-link" to="/">Zur Übersicht</Link></section>
@@ -82,15 +82,3 @@ function MemeDetailPage() {
   </section>
 }
 
-const rootRoute = createRootRoute({ component: Layout })
-const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <MemeList /> })
-const popularRoute = createRoute({ getParentRoute: () => rootRoute, path: '/popular', component: () => <MemeList top /> })
-const newRoute = createRoute({ getParentRoute: () => rootRoute, path: '/new', component: () => <MemeList /> })
-const topRoute = createRoute({ getParentRoute: () => rootRoute, path: '/top', component: () => <MemeList top /> })
-const uploadRoute = createRoute({ getParentRoute: () => rootRoute, path: '/upload', component: UploadPage })
-const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: '/account', component: () => <PlaceholderPage title="Anmelden / Profil" text="Hier erscheinen Anmeldung und Kontoeinstellungen." /> })
-const memeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/memes/$memeId', component: MemeDetailPage })
-const folderRoute = createRoute({ getParentRoute: () => rootRoute, path: '/folders/$folderId', component: () => <PlaceholderPage title="Mein Ordner" text="Dieser persönliche Ordner wird nach der Anmeldung verfügbar." /> })
-const routeTree = rootRoute.addChildren([homeRoute, popularRoute, newRoute, topRoute, uploadRoute, accountRoute, memeRoute, folderRoute])
-export const router = createRouter({ routeTree })
-declare module '@tanstack/react-router' { interface Register { router: typeof router } }
