@@ -21,6 +21,17 @@
 - Bildspeicher und gegebenenfalls Hosting: noch auszuwählen.
 - Unterrichtsgrundlagen für Validierung und Tests: Zod, Postman, Jest und Supertest; schrittweise nach Bedarf einrichten.
 
+## Umsetzungsstand am 04.11.2026
+
+Diese Spezifikation beschreibt den vereinbarten Zielumfang. Die folgenden Abschnitte sind Anforderungen, soweit sie nicht ausdrücklich als umgesetzt bezeichnet werden.
+
+- Express-/TypeScript-Grundgerüst mit `GET /api/health` und JSON-Antwort für unbekannte Routen vorhanden.
+- Prisma 7 mit PostgreSQL-Adapter eingerichtet; Schema mit sechs Modellen, erste SQL-Migration und Modul zur Client-Initialisierung vorhanden.
+- `src/server.ts` verwendet den Prisma-Client bisher nicht. Eine funktionierende Datenbankverbindung und der angewendete Migrationsstand werden durch die vorhandenen Dateien allein nicht belegt.
+- Meme-Endpunkte, Clerk-Anbindung, Bildspeicher und weitere fachliche Funktionen sind noch nicht umgesetzt.
+- Zod, Jest und Supertest sind noch nicht installiert; ein automatisiertes Testskript fehlt. TypeScript- und Schema-Prüfung ersetzen keine Funktionstests.
+- Geprüfte Ergebnisse und offene technische Punkte stehen in [docs/projektstand.md](docs/projektstand.md).
+
 ## Funktionen und Zugriffsrechte
 
 - Besucher können Memes ansehen und Meme-Links teilen.
@@ -99,8 +110,9 @@
 
 ## Nächster Arbeitsschritt
 
-- Zunächst das Datenmodell gemeinsam in kleinen Teilbildern verstehen.
-- Danach API-Verträge vervollständigen und das Backend-Grundgerüst schrittweise selbst erstellen.
+- Das vorhandene Datenmodell bei Bedarf gemeinsam in kleinen Teilbildern nachvollziehen.
+- Datenbankverbindung und angewendeten Migrationsstand prüfen; danach einen ersten Datenbankzugriff schrittweise selbst umsetzen.
+- API-Verträge mit dem Frontend vervollständigen und die erste öffentliche Meme-Abfrage umsetzen. Das Backend-Grundgerüst und die erste Migrationsdatei sind bereits vorhanden.
 - Datenvalidierung, Rechteprüfung, passende Tests und Dokumentation gehören zu jeder Funktion und werden nicht auf die letzte Projektphase verschoben.
 - Die Oberfläche wird während der Entwicklung auf kleinen Bildschirmen und mit Tastatur geprüft; die Abschlussprüfung bestätigt diese Arbeit nochmals.
 - [Projektstand und Arbeitsweise](docs/projektstand.md) beschreiben geprüfte Ergebnisse, Reihenfolge und Trello-Farben.

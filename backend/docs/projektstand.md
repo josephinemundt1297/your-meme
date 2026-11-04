@@ -1,29 +1,50 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-Backend-Grundgerüst ergänzt am 02.11.2026; übrige Planungsprüfung vom 30.10.2026.
+Stand: 04.11.2026. Backend-Dateien und Dokumentation abgeglichen; frühere Planungs- und Board-Angaben sind unten als historisch gekennzeichnet.
 Abgabe: 23.11.2026. Präsentationstermin noch offen.
 
 ## Tatsächlich erledigt
 
 - **Planungsentwurf gespeichert:** Datenmodell mit sechs Modellen, Beziehungen, Berechtigungen und Kontolöschung; Backend-Anforderungen und Backend-Regeln liegen als Dateien vor.
 - **Ordnerstruktur angelegt:** Das bestehende Vite-Projekt liegt unter `frontend/`; Backend-Planung unter `backend/`; die gemeinsame README verweist auf diese Bereiche.
-- Diese beiden Ergebnisse sind vollständig im genannten kleinen Umfang. Sie bedeuten keine fertige Datenbank, API, Anmeldung oder Anwendung.
-- **Backend-Grundgerüst ergänzt (02.11.):** Express und TypeScript eingerichtet. Statusroute `GET /api/health`, JSON-Antwort für unbekannte Routen, optionale Port-Einstellung und Startanleitung vorhanden. Typprüfung, Build sowie Entwicklungs- und JavaScript-Start geprüft. Datenbank, Anmeldung und Meme-Endpunkte fehlen weiterhin. Details: [Backend-Startanleitung](../README.md).
+- **Backend-Grundgerüst vorhanden:** Express und TypeScript eingerichtet. Statusroute `GET /api/health`, JSON-Antwort für unbekannte Routen und optionale Port-Einstellung vorhanden. Details: [Backend-Startanleitung](../README.md).
+- **Prisma vorbereitet:** Prisma 7.10.1, PostgreSQL-Adapter und `pg` installiert. `prisma7.config.ts` wird von der installierten CLI erkannt. Schema mit sechs Modellen, erste Migration `20261104125318_init` und Client-Modul `src/lib/prisma.ts` vorhanden. Der generierte Client liegt lokal unter `src/generated/prisma/` und ist aus Git ausgeschlossen.
+- **Datenmodell abgeglichen:** Modelle, Felder, Schlüssel, Beziehungen und Löschkaskaden stimmen zwischen Dokumentation, Schema und erster Migrationsdatei überein. Passwörter sind nicht im Schema enthalten; neue Nutzer haben standardmäßig die Rolle `USER`.
+- **Dokumentation aktualisiert:** Startanleitung um Datenbankkonfiguration und Client-Generierung ergänzt, `.env.example` um einen PostgreSQL-Platzhalter erweitert, geplante API und implementierte Statusroute getrennt. Das Hand-out vom 30.10. ist als historischer Tagesplan gekennzeichnet.
+- Diese Ergebnisse belegen noch keine vollständige Anwendung. `src/server.ts` importiert das Client-Modul nicht und führt keine Datenbankabfragen aus.
 - Das gemeinsame Durchsprechen und die fachliche Prüfung des Entwurfs bleiben eine eigene offene Aufgabe.
-- Der Start der Anwendung nach dem Umzug ist noch zu prüfen. Die neue Struktur muss mit Dileks Arbeitsstand abgestimmt werden.
+- Die Abstimmung der Ordnerstruktur und der Frontend-Anbindung mit Dilek ist durch diese Backend-Prüfung nicht nachgewiesen.
+
+## Prüfungen und Grenzen am 04.11.2026
+
+- Node.js 24.14.0 und npm 11.9.0 lokal vorhanden.
+- TypeScript-Typprüfung, TypeScript-Build und Prisma-Schema-Validierung erfolgreich. Der Build wurde für diese Prüfung außerhalb des Backend-Ordners erzeugt.
+- `.env`, `node_modules/`, `dist/` und der generierte Prisma-Client sind durch die vorhandenen Git-Regeln ausgeschlossen. `.env.example` enthält nur Beispielwerte.
+- Skill-Verzeichnis, Lockdatei und vorhandene Werkzeug-Verknüpfungen sind konsistent; sie gehören nicht zur laufenden API.
+- Keine Live-Datenbankabfrage, kein Abgleich angewendeter Migrationen und kein aktueller HTTP-Funktionstest im Rahmen dieser Dokumentationsprüfung. Das Trello-Board und das Frontend wurden nicht geprüft oder geändert.
+- Historisch dokumentierte Starttests vom 02.11. sind keine erneuten Funktionstests am 04.11.
 
 ## Noch offen
 
 - Datenbeziehungen sicher erklären, insbesondere Ersteller, Ordnerbesitzer und FolderMeme.
 - Seitenstruktur und vorläufige Router-Wahl mit Dilek abstimmen.
-- API-Datenformate vollständig festlegen. `api-plan.md` enthält bisher nur die fünf Meme-Endpunkte.
-- Prisma-Schema, Datenbank, Clerk-Anbindung und Bildspeicher einrichten; das ausführbare Backend-Grundgerüst ist jetzt vorhanden.
+- API-Datenformate vollständig festlegen. `api-plan.md` dokumentiert die vorhandene Statusroute und fünf noch geplante Meme-Endpunkte.
+- Datenbankverbindung und angewendeten Migrationsstand prüfen; danach erste Abfragen und Endpunkte mit dem vorhandenen Prisma-Client verbinden.
+- Clerk-Anbindung, lokale Nutzeranlage und Bildspeicher umsetzen.
 - Kernfunktionen umsetzen und Frontend und Backend verbinden.
-- Tests, vollständige Startanleitung und Präsentation erstellen.
+- Laufzeitvalidierung, JSON-Body-Verarbeitung, Berechtigungsprüfungen, passende CORS-Einstellungen und zentrale Fehlerbehandlung mit den fachlichen Endpunkten ergänzen. Diese fehlen derzeit; der vorhandene öffentliche Statusendpunkt benötigt noch keine Anmeldung.
+- Automatisierte Tests und ein Testskript nach Bedarf einrichten; Zod, Jest und Supertest sind nicht installiert. Postman ist kein npm-Paket und wurde nicht auf Verfügbarkeit geprüft.
+- **Node-Versionsangabe korrigieren:** `package.json` und der Wurzeintrag von `package-lock.json` erlauben noch `>=22.9.0`. Die installierten Prisma-Pakete verlangen laut ihren lokalen Paketmetadaten `^20.19 || ^22.12 || >=24.0`. Damit ist beispielsweise Node.js 22.9 erlaubt, obwohl Prisma es nicht unterstützt. Die Anleitung verwendet Node.js 24; die Paketkonfiguration wurde bei dieser Dokumentationsprüfung nicht geändert.
+- Dienstübergreifende Kontolöschung konkretisieren. Die Löschkaskaden decken nur Datenbankbeziehungen ab; für Bildspeicher, Clerk und Wiederholungen bei Teilausfällen fehlt die Anwendungslogik.
+- Startanleitung bei neuen Funktionen fortführen und Präsentation erstellen.
 
 ## Welche Schwierigkeiten entstehen könnten
 
 ### Weniger verfügbare Zeit durch Termine
+
+Die folgende Terminplanung stammt vom 30.10.2026. Der 03.11. liegt inzwischen in der Vergangenheit;
+aus den eingetragenen Terminen verbleiben ab 04.11. bis zur Abgabe 4 Std. 30 Min. Abwesenheit (05.11. und 10.11.).
+Ob die damalige Tagesplanung eingehalten wurde, ist hier nicht geprüft.
 
 - Josephines regulärer Zeitrahmen: Montag bis Freitag, 09:00–16:00 Uhr einschließlich Pausen. Am Wochenende wird in der Regel nicht gearbeitet.
 - Die folgenden Zeiten sind bestätigte Abwesenheiten und stehen nicht für Projektarbeit zur Verfügung. Sie betreffen Josephine; Dileks Verfügbarkeit ist damit nicht festgelegt.
@@ -52,7 +73,7 @@ Abgabe: 23.11.2026. Präsentationstermin noch offen.
 ## Sinnvolle Reihenfolge
 
 1. Datenmodell verstehen, Seiten skizzieren und benötigte Daten gemeinsam festlegen.
-2. Backend-Grundgerüst einrichten; Datenbank mit Prisma anbinden.
+2. Mit dem vorhandenen Backend-Grundgerüst Datenbankverbindung und Migrationsstand prüfen; erste Prisma-Abfrage anbinden.
 3. Öffentliche Meme-Liste und Detailseite mit Testdaten verbinden. Die Anmeldung kann parallel vorbereitet werden.
 4. Clerk-Anmeldung und lokale Nutzerprofile verbinden, bevor geschützte Schreibfunktionen genutzt werden.
 5. Bildspeicher auswählen; Upload, Bearbeiten und Löschen eigener Memes umsetzen.
@@ -64,6 +85,9 @@ Abgabe: 23.11.2026. Präsentationstermin noch offen.
 Begleitende Karten stehen deshalb im Board früh in der Liste; sie müssen nicht vollständig abgeschlossen sein, bevor die erste Funktion beginnt.
 
 ## Trello lesen
+
+Die folgenden Board-Regeln und Farbangaben stammen aus der dokumentierten Planung vom 30.10.2026.
+Sie wurden am 04.11. nicht mit dem Live-Board abgeglichen.
 
 [Board öffnen](https://trello.com/b/EpjAfv15/your-meme).
 
@@ -91,7 +115,7 @@ Die breiten farbigen Kartenköpfe aus der Vorlage kennzeichnen keine Person oder
 
 - 29 Karten gelesen; keine Karte ohne Titel oder Beschreibung gefunden.
 - 24 leere, nicht benötigte Checklisten aus der Vorlage nach ausdrücklicher Bestätigung entfernt. Alle 29 Karten und alle bisherigen Arbeitsschritte wurden erhalten.
-- Es gibt nun 145 Arbeitsschritte: die bisherigen 144 sowie einen zusätzlichen Schritt zum Prüfen des Frontend-Starts und Abstimmen des Ordnerumzugs mit Dilek.
+- Damals wurden 145 Arbeitsschritte dokumentiert: die bisherigen 144 sowie ein zusätzlicher Schritt zum Prüfen des Frontend-Starts und Abstimmen des Ordnerumzugs mit Dilek.
 - Die befüllten Arbeitsschritte gehören zu den jeweiligen Funktionen beziehungsweise Prüfaufgaben.
 - Doppelte Planungsarbeit wurde abgegrenzt: API-Inhalte werden auf der API-Planungskarte ergänzt; die Dokumentenprüfung liest und prüft diese Unterlagen.
 - Die beiden erledigten Karten anhand der vorhandenen Projektdateien geprüft und als reine Dokumentations- beziehungsweise Strukturarbeit bezeichnet.
@@ -101,9 +125,9 @@ Die breiten farbigen Kartenköpfe aus der Vorlage kennzeichnen keine Person oder
 
 Dieser Stand beschreibt eine Prüfung der Planung und Dateien. Er ersetzt keinen erfolgreichen Start oder Funktionstest der späteren Anwendung.
 
-## Ergänzung nach der Prüfung
+## Historische Ergänzung zur Prüfung vom 30.10.2026
 
 - Die fünf Prüfspalten enthalten jetzt je eine zusätzliche Erklärungskarte mit dem Etikett „Information“.
 - Diese Karten erklären Zweck, Beispiel, Einstieg und Abschlusskriterien. Sie sind keine zusätzlichen Funktionsaufgaben und werden nicht als abgeschlossene Entwicklung gezählt.
-- Das Board enthält dadurch 34 Karten: die bisherigen 29 und fünf Erklärungskarten. Die 145 Arbeitsschritte bleiben erhalten.
+- Der damals dokumentierte Stand betrug dadurch 34 Karten: die bisherigen 29 und fünf Erklärungskarten. Die 145 Arbeitsschritte blieben erhalten. Das ist kein aktueller Live-Abgleich.
 - Die aktualisierte Rücksprache-Regel steht in `backend/AGENTS.md` und gilt für die Zusammenarbeit mit Josephine. Sie ersetzt keine separat vereinbarten Regeln für Dileks Frontend.

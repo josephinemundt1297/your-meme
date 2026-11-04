@@ -1,14 +1,25 @@
 # Your Meme – API-Plan (Entwurf)
 
-Stand: 30.10.2026. Bisher sind die folgenden fünf Meme-Endpunkte geplant, noch nicht implementiert.
+Stand: 04.11.2026, mit `src/server.ts` abgeglichen. Die folgenden fünf Meme-Endpunkte sind geplant, noch nicht implementiert.
 Die Formate für Anfragen und Antworten werden mit Dilek abgestimmt.
+
+## Bereits implementiert
+
+### GET /api/health – Serverstatus abrufen
+
+- Öffentlich zugänglich.
+- HTTP 200 mit `{ "status": "ok" }`.
+- Prüft ausschließlich, ob der Express-Server antwortet; keine Datenbank- oder Clerk-Prüfung.
+
+Unbekannte Routen liefern HTTP 404 mit `{ "error": "Route nicht gefunden." }`.
+Das gilt derzeit auch für alle unten geplanten Meme-Endpunkte.
 
 ## Geplante Meme-Endpunkte
 
 ### GET /api/memes – Meme-Liste abrufen
 
 - Öffentlich zugänglich
-- Seitenweise laden, beispielsweise mit ?page=1&limit=20
+- Seitenweise laden; `?page=1&limit=20` ist ein Beispiel, noch kein abgestimmter Vertrag. Standardwerte und maximale Seitengröße sind noch festzulegen.
 
 ### GET /api/memes/:id – Ein bestimmtes Meme abrufen
 
