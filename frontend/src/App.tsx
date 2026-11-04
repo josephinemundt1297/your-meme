@@ -1,5 +1,6 @@
 import { Link, Outlet, useParams } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
+import { Show, SignIn, SignUp, UserButton } from '@clerk/react'
 import { sampleMemes } from './data/sampleMemes'
 import type { Meme } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
@@ -28,7 +29,7 @@ export function Layout() {
   return <div className="app-shell">
     <header className="site-header">
       <button className="menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="main-navigation"><span aria-hidden="true">☰</span><span className="sr-only">{menuOpen ? 'Menü schließen' : 'Menü öffnen'}</span></button>
-      <Link className="account-link" to="/account">Anmelden / Registrieren</Link>
+      <div className="account-link"><Show when="signed-out"><Link to="/account">Anmelden / Registrieren</Link></Show><Show when="signed-in"><UserButton /></Show></div>
     </header>
     <nav id="main-navigation" className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Hauptnavigation"><Link to="/" onClick={() => setMenuOpen(false)}>Home</Link><Link to="/popular" onClick={() => setMenuOpen(false)}>Popular</Link><Link to="/new" onClick={() => setMenuOpen(false)}>New</Link><Link to="/top" onClick={() => setMenuOpen(false)}>Most liked</Link></nav>
     <div className="site-body">
@@ -56,6 +57,10 @@ export function MemeList({ top = false }: MemeListProps) {
 }
 
 export function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
+export function AccountPage() {
+  const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in')
+  return <section className="account-page"><Show when="signed-in"><div className="account-signed-in"><p className="eyebrow">Dein Konto</p><h1>Willkommen zurück!</h1><p>Du bist bereits angemeldet.</p><UserButton showName /></div></Show><Show when="signed-out"><div className="auth-switcher" role="group" aria-label="Anmeldung auswählen"><button className={mode === 'sign-in' ? 'active' : ''} type="button" onClick={() => setMode('sign-in')}>Anmelden</button><button className={mode === 'sign-up' ? 'active' : ''} type="button" onClick={() => setMode('sign-up')}>Registrieren</button></div>{mode === 'sign-in' ? <SignIn routing="hash" /> : <SignUp routing="hash" />}</Show></section>
+}
 export function UploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
