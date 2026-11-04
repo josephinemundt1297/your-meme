@@ -5,6 +5,23 @@ import type { Meme } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
 import './App.css'
 
+type MemeListProps = {
+  top?: boolean
+}
+
+type MemeCardProps = {
+  meme: Meme
+  liked: boolean
+  onToggleLike: (memeId: string) => void
+}
+
+function MemeCard({ meme, liked, onToggleLike }: MemeCardProps) {
+  return <article className="meme-card">
+    <Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Beispielbild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div></Link>
+    <div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${liked ? ' liked' : ''}`} type="button" aria-pressed={liked} onClick={() => onToggleLike(meme.id)}><span aria-hidden="true">{liked ? '♥' : '♡'}</span>{meme.likeCount + (liked ? 1 : 0)} Likes</button></div>
+  </article>
+}
+
 export function Layout() {
   const categories = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
   return <div className="app-shell">
@@ -24,14 +41,14 @@ export function Layout() {
   </div>
 }
 
-export function MemeList({ top = false }: { top?: boolean }) {
+export function MemeList({ top = false }: MemeListProps) {
   const [search, setSearch] = useState('')
   const [likedMemes, setLikedMemes] = useState<string[]>([])
   const visibleMemes = [...sampleMemes].sort((a, b) => top ? b.likeCount - a.likeCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase()))
   return <>
     <section className="hero-section"><p className="eyebrow">Deine tägliche Meme-Auszeit</p><h1>{top ? 'Die meist gelikten Memes' : 'Finde dein nächstes Lieblingsmeme'}</h1><p className="intro">Entdecke lustige Memes und teile sie mit der Community.</p><label className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><span className="sr-only">Memes durchsuchen</span><input type="search" placeholder="Memes durchsuchen ..." value={search} onChange={(event) => setSearch(event.target.value)} /></label></section>
     <section className="meme-section" aria-labelledby="meme-heading"><div className="section-heading"><div><p className="eyebrow">{top ? 'Community-Favoriten' : 'Für dich ausgewählt'}</p><h2 id="meme-heading">{top ? 'Meist geliked' : 'Neue Memes'}</h2></div><span className="meme-count">{visibleMemes.length} Memes</span></div>
-      {visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme: Meme) => { const isLiked = likedMemes.includes(meme.id); return <article className="meme-card" key={meme.id}><Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Beispielbild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div></Link><div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${isLiked ? ' liked' : ''}`} type="button" aria-pressed={isLiked} onClick={() => setLikedMemes((current) => current.includes(meme.id) ? current.filter((id) => id !== meme.id) : [...current, meme.id])}><span aria-hidden="true">{isLiked ? '♥' : '♡'}</span>{meme.likeCount + (isLiked ? 1 : 0)} Likes</button></div></article> })}</div> : <MemeState type="empty" />}
+      {visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme) => <MemeCard key={meme.id} meme={meme} liked={likedMemes.includes(meme.id)} onToggleLike={(memeId) => setLikedMemes((current) => current.includes(memeId) ? current.filter((id) => id !== memeId) : [...current, memeId])} />)}</div> : <MemeState type="empty" />}
     </section>
   </>
 }
