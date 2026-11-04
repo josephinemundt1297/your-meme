@@ -23,12 +23,14 @@ function MemeCard({ meme, liked, onToggleLike }: MemeCardProps) {
 }
 
 export function Layout() {
+  const [menuOpen, setMenuOpen] = useState(false)
   const categories = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
   return <div className="app-shell">
     <header className="site-header">
+      <button className="menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="main-navigation"><span aria-hidden="true">☰</span><span className="sr-only">{menuOpen ? 'Menü schließen' : 'Menü öffnen'}</span></button>
       <Link className="account-link" to="/account">Anmelden / Registrieren</Link>
     </header>
-    <nav className="main-nav" aria-label="Hauptnavigation"><Link to="/">Home</Link><Link to="/popular">Popular</Link><Link to="/new">New</Link><Link to="/top">Most liked</Link></nav>
+    <nav id="main-navigation" className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Hauptnavigation"><Link to="/" onClick={() => setMenuOpen(false)}>Home</Link><Link to="/popular" onClick={() => setMenuOpen(false)}>Popular</Link><Link to="/new" onClick={() => setMenuOpen(false)}>New</Link><Link to="/top" onClick={() => setMenuOpen(false)}>Most liked</Link></nav>
     <div className="site-body">
       <aside id="site-sidebar" className="site-sidebar">
         <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category} to="/" search={{ category }}>{category}</Link>)}</div>
