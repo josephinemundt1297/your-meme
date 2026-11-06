@@ -45,13 +45,7 @@ app.get("/api/memes", async (_req, res) => {
       },
     });
 
-    res.json(
-      memes.map((meme) => {
-        const { _count, ...memeData } = meme;
-
-        res.json(memes.map(formatMeme));
-      }),
-    );
+    res.json(memes.map(formatMeme));
   } catch (error) {
     console.error("Fehler beim Laden der Memes:", error);
 
