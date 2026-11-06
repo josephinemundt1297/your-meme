@@ -83,6 +83,54 @@ app.get("/api/memes/:id", async (req, res) => {
     });
   }
 });
+// Lädt alle Kommentare zu einem bestimmten Meme.
+app.get("/api/memes/:id/comments", async (req, res) => {
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
+  try {
+    // Zuerst prüfen, ob das Meme existiert.
+    const meme = await prisma.meme.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    // Erst danach die Kommentare laden.
+    const comments = await prisma.comment.findMany({
+      where: {
+        memeId: id,
+      },
+      select: {
+        id: true,
+        content: true,
+        userId: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    res.json(comments);
+  } catch (error) {
+    console.error("Fehler beim Laden der Kommentare:", error);
+
+    res.status(500).json({
+      error: "Kommentare konnten nicht geladen werden.",
+    });
+  }
+});
 app.post("/api/memes", (req, res) => {
   const result = createMemeSchema.safeParse(req.body);
 
