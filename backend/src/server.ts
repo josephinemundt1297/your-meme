@@ -1,7 +1,10 @@
 import express from "express";
 import { prisma } from "./lib/prisma.js";
+import { createMemeSchema } from "./validators/meme.js";
+import { isValidUuid } from "./utils/isValidUuid.js";
 
 const app = express();
+app.use(express.json());
 const port = Number(process.env.PORT ?? 3000);
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -49,6 +52,62 @@ app.get("/api/memes", async (_req, res) => {
   }
 });
 
+app.get("/api/memes/:id", async (req, res) => {
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+  try {
+    const meme = await prisma.meme.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    res.json(meme);
+  } catch (error) {
+    console.error("Fehler beim Laden des Memes:", error);
+
+    res.status(500).json({
+      error: "Meme konnte nicht geladen werden.",
+    });
+  }
+});
+app.post("/api/memes", (req, res) => {
+  const result = createMemeSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Ungültige Meme-Daten.",
+    });
+  }
+
+  return res.status(503).json({
+    error: "Meme-Erstellung ist noch nicht verfügbar.",
+  });
+});
+app.delete("/api/memes/:id", (req, res) => {
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
+  return res.status(503).json({
+    error: "Meme-Löschung ist noch nicht verfügbar.",
+  });
+});
 app.use((_req, res) => {
   res.status(404).json({ error: "Route nicht gefunden." });
 });
