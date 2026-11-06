@@ -3,6 +3,7 @@ import { prisma } from "./lib/prisma.js";
 import { createMemeSchema } from "./validators/meme.js";
 import { isValidUuid } from "./utils/isValidUuid.js";
 import { memeSelect } from "./lib/memeSelect.js";
+import { formatMeme } from "./utils/formatMeme.js";
 
 const app = express();
 app.use(express.json());
@@ -44,7 +45,13 @@ app.get("/api/memes", async (_req, res) => {
       },
     });
 
-    res.json(memes);
+    res.json(
+      memes.map((meme) => {
+        const { _count, ...memeData } = meme;
+
+        res.json(memes.map(formatMeme));
+      }),
+    );
   } catch (error) {
     console.error("Fehler beim Laden der Memes:", error);
 
@@ -73,7 +80,7 @@ app.get("/api/memes/:id", async (req, res) => {
       });
     }
 
-    res.json(meme);
+    res.json(formatMeme(meme));
   } catch (error) {
     console.error("Fehler beim Laden des Memes:", error);
 
