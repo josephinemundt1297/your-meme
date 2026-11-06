@@ -2,6 +2,7 @@ import express from "express";
 import { prisma } from "./lib/prisma.js";
 import { createMemeSchema } from "./validators/meme.js";
 import { isValidUuid } from "./utils/isValidUuid.js";
+import { memeSelect } from "./lib/memeSelect.js";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +38,7 @@ app.get("/api/health/db", async (_req, res) => {
 app.get("/api/memes", async (_req, res) => {
   try {
     const memes = await prisma.meme.findMany({
+      select: memeSelect,
       orderBy: {
         createdAt: "desc",
       },
@@ -62,11 +64,9 @@ app.get("/api/memes/:id", async (req, res) => {
   }
   try {
     const meme = await prisma.meme.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
+      select: memeSelect,
     });
-
     if (!meme) {
       return res.status(404).json({
         error: "Meme nicht gefunden.",
