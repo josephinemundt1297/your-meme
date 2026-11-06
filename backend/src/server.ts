@@ -116,6 +116,11 @@ app.get("/api/memes/:id/comments", async (req, res) => {
         content: true,
         userId: true,
         createdAt: true,
+        user: {
+          select: {
+            username: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "asc",
