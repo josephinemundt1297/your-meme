@@ -1,6 +1,7 @@
 import express from "express";
 import { prisma } from "./lib/prisma.js";
 import { createMemeSchema } from "./validators/meme.js";
+import { isValidUuid } from "./utils/isValidUuid.js";
 
 const app = express();
 app.use(express.json());
@@ -54,10 +55,7 @@ app.get("/api/memes", async (_req, res) => {
 app.get("/api/memes/:id", async (req, res) => {
   const { id } = req.params;
 
-  if (
-    !id ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
-  ) {
+  if (!id || !isValidUuid(id)) {
     return res.status(400).json({
       error: "Ungültige Meme-ID.",
     });
@@ -97,7 +95,15 @@ app.post("/api/memes", (req, res) => {
     error: "Meme-Erstellung ist noch nicht verfügbar.",
   });
 });
-app.delete("/api/memes/:id", (_req, res) => {
+app.delete("/api/memes/:id", (req, res) => {
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
   return res.status(503).json({
     error: "Meme-Löschung ist noch nicht verfügbar.",
   });
