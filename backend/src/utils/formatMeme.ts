@@ -6,10 +6,12 @@ type MemeWithCount = Prisma.MemeGetPayload<{
 }>;
 
 export function formatMeme(meme: MemeWithCount) {
-  const { _count, ...memeData } = meme;
+  const { _count, user, ...memeData } = meme;
 
   return {
     ...memeData,
+    author: user,
     likeCount: _count.likes,
+    commentCount: _count.comments,
   };
 }

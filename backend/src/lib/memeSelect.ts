@@ -6,9 +6,16 @@ export const memeSelect = {
   imageUrl: true,
   userId: true,
   createdAt: true,
+  user: {
+    select: {
+      id: true,
+      username: true,
+    },
+  },
   _count: {
     select: {
       likes: true,
+      comments: true,
     },
   },
 } satisfies Prisma.MemeSelect;

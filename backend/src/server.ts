@@ -4,9 +4,18 @@ import { createMemeSchema } from "./validators/meme.js";
 import { isValidUuid } from "./utils/isValidUuid.js";
 import { memeSelect } from "./lib/memeSelect.js";
 import { formatMeme } from "./utils/formatMeme.js";
+import cors from "cors";
+import { clerkMiddleware, getAuth } from "@clerk/express";
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  }),
+);
 app.use(express.json());
+app.use(clerkMiddleware());
 const port = Number(process.env.PORT ?? 3000);
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -34,6 +43,20 @@ app.get("/api/health/db", async (_req, res) => {
       database: "disconnected",
     });
   }
+});
+
+app.get("/api/me", (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  return res.json({
+    clerkId: userId,
+  });
 });
 
 app.get("/api/memes", async (_req, res) => {
