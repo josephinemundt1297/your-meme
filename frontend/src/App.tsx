@@ -1,9 +1,10 @@
 import { Link, Outlet, useParams } from '@tanstack/react-router'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Show, SignIn, SignUp, UserButton } from '@clerk/react'
 import { sampleMemes } from './data/sampleMemes'
 import type { Meme } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
+import { fetchMemes } from './api/memes'
 import './App.css'
 
 type MemeListProps = {
@@ -18,7 +19,7 @@ type MemeCardProps = {
 
 function MemeCard({ meme, liked, onToggleLike }: MemeCardProps) {
   return <article className="meme-card">
-    <Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Beispielbild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div></Link>
+    <Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} /> : <span aria-hidden="true">{meme.emoji}</span>}</div></Link>
     <div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${liked ? ' liked' : ''}`} type="button" aria-pressed={liked} onClick={() => onToggleLike(meme.id)}><span aria-hidden="true">{liked ? '♥' : '♡'}</span>{meme.likeCount + (liked ? 1 : 0)} Likes</button></div>
   </article>
 }
@@ -47,11 +48,19 @@ export function Layout() {
 export function MemeList({ top = false }: MemeListProps) {
   const [search, setSearch] = useState('')
   const [likedMemes, setLikedMemes] = useState<string[]>([])
-  const visibleMemes = [...sampleMemes].sort((a, b) => top ? b.likeCount - a.likeCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase()))
+  const [memes, setMemes] = useState<Meme[] | null>(null)
+  const [loadError, setLoadError] = useState(false)
+  const loadMemeList = () => { setLoadError(false); setMemes(null); void fetchMemes().then(setMemes).catch(() => setLoadError(true)) }
+  useEffect(() => {
+    let active = true
+    void fetchMemes().then((data) => { if (active) setMemes(data) }).catch(() => { if (active) setLoadError(true) })
+    return () => { active = false }
+  }, [])
+  const visibleMemes = memes ? [...memes].sort((a, b) => top ? b.likeCount - a.likeCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase())) : []
   return <>
     <section className="hero-section"><p className="eyebrow">Deine tägliche Meme-Auszeit</p><h1>{top ? 'Die meist gelikten Memes' : 'Finde dein nächstes Lieblingsmeme'}</h1><p className="intro">Entdecke lustige Memes und teile sie mit der Community.</p><label className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><span className="sr-only">Memes durchsuchen</span><input type="search" placeholder="Memes durchsuchen ..." value={search} onChange={(event) => setSearch(event.target.value)} /></label></section>
     <section className="meme-section" aria-labelledby="meme-heading"><div className="section-heading"><div><p className="eyebrow">{top ? 'Community-Favoriten' : 'Für dich ausgewählt'}</p><h2 id="meme-heading">{top ? 'Meist geliked' : 'Neue Memes'}</h2></div><span className="meme-count">{visibleMemes.length} Memes</span></div>
-      {visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme) => <MemeCard key={meme.id} meme={meme} liked={likedMemes.includes(meme.id)} onToggleLike={(memeId) => setLikedMemes((current) => current.includes(memeId) ? current.filter((id) => id !== memeId) : [...current, memeId])} />)}</div> : <MemeState type="empty" />}
+      {loadError ? <MemeState type="error" onRetry={loadMemeList} /> : !memes ? <MemeState type="loading" /> : visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme) => <MemeCard key={meme.id} meme={meme} liked={likedMemes.includes(meme.id)} onToggleLike={(memeId) => setLikedMemes((current) => current.includes(memeId) ? current.filter((id) => id !== memeId) : [...current, memeId])} />)}</div> : <MemeState type="empty" />}
     </section>
   </>
 }
