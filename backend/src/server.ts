@@ -5,7 +5,7 @@ import { isValidUuid } from "./utils/isValidUuid.js";
 import { memeSelect } from "./lib/memeSelect.js";
 import { formatMeme } from "./utils/formatMeme.js";
 import cors from "cors";
-import { clerkMiddleware, getAuth } from "@clerk/express";
+import { clerkMiddleware, getAuth, clerkClient } from "@clerk/express";
 
 const app = express();
 
@@ -57,6 +57,49 @@ app.get("/api/me", (req, res) => {
   return res.json({
     clerkId: userId,
   });
+});
+
+app.post("/api/me/sync", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  try {
+    const clerkUser = await clerkClient.users.getUser(userId);
+
+    const username = clerkUser.username ?? clerkUser.firstName ?? "MemeFan";
+
+    const user = await prisma.user.upsert({
+      where: {
+        clerkId: userId,
+      },
+      update: {
+        username,
+      },
+      create: {
+        clerkId: userId,
+        username,
+      },
+      select: {
+        id: true,
+        clerkId: true,
+        username: true,
+        role: true,
+      },
+    });
+
+    return res.json(user);
+  } catch (error) {
+    console.error("Fehler beim Abgleichen des Nutzerprofils:", error);
+
+    return res.status(500).json({
+      error: "Nutzerprofil konnte nicht abgeglichen werden.",
+    });
+  }
 });
 
 app.get("/api/memes", async (_req, res) => {
