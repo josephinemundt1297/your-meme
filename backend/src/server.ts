@@ -154,6 +154,73 @@ app.get("/api/memes/:id", async (req, res) => {
     });
   }
 });
+
+app.patch("/api/memes/:id", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
+  const result = createMemeSchema.pick({ title: true }).safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Bitte einen Titel mit 1 bis 100 Zeichen angeben.",
+    });
+  }
+
+  try {
+    const meme = await prisma.meme.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    if (meme.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Memes bearbeiten.",
+      });
+    }
+
+    const updatedMeme = await prisma.meme.update({
+      where: { id, userId: meme.userId },
+      data: {
+        title: result.data.title,
+      },
+      select: memeSelect,
+    });
+
+    return res.json(formatMeme(updatedMeme));
+  } catch (error) {
+    console.error("Fehler beim Bearbeiten des Memes:", error);
+
+    return res.status(500).json({
+      error: "Meme konnte nicht bearbeitet werden.",
+    });
+  }
+});
+
 // Lädt alle Kommentare zu einem bestimmten Meme.
 app.get("/api/memes/:id/comments", async (req, res) => {
   const { id } = req.params;
