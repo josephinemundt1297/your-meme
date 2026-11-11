@@ -1,6 +1,6 @@
 # Your Meme – API: Implementierung und Planung
 
-Stand: 10.11.2026, mit `src/server.ts`, Auswahl und Formatierung abgeglichen. Implementierte Antworten und noch geplante Funktionen werden getrennt beschrieben.
+Stand: 11.11.2026, mit `src/server.ts`, Auswahl und Formatierung abgeglichen. Implementierte Antworten und noch geplante Funktionen werden getrennt beschrieben.
 
 Basis: `http://localhost:3000`. CORS erlaubt `http://localhost:5173`. Öffentliche Abfragen benötigen keinen Login. Geschützte Anfragen verwenden einen gültigen Clerk-Session-Token als `Authorization: Bearer <SESSION_TOKEN>`.
 
@@ -15,6 +15,7 @@ Basis: `http://localhost:3000`. CORS erlaubt `http://localhost:5173`. Öffentlic
 | `GET /api/memes/:id/comments` | Öffentlich | 200, Array, älteste zuerst; ungültige UUID 400, Meme nicht vorhanden 404 |
 | `GET /api/me` | Angemeldet | 200, `{ "clerkId": "user_BEISPIEL" }`; ohne Anmeldung 401 |
 | `POST /api/me/sync` | Angemeldet | Ohne Body; 200, lokales Profil anlegen/aktualisieren; ohne Anmeldung 401, Dienst-/DB-Fehler 500 |
+| `POST /api/memes` | Angemeldet | Multipart-Upload-Prüfung; 200 ohne Speicherung, Details unten |
 
 ### Meme-Antwort
 
@@ -73,14 +74,42 @@ Wiederholte Aufrufe verwenden dieselbe lokale ID. Der Aufruf aus der Anmeldeober
 
 Anwendungsrouten liefern Fehler als `{ "error": "Verständliche Meldung" }`, z. B. 401 mit `Bitte zuerst anmelden.`. Unbekannte Routen liefern 404 mit `Route nicht gefunden.`. Datenbankabfragen fangen Fehler ab und liefern 500 mit einer fachlichen Meldung. Eine zentrale Fehlerbehandlung für JSON-Parser-, Clerk- und sonstige Middlewarefehler fehlt noch; das JSON-Format ist deshalb noch nicht für alle Fehler garantiert.
 
-## Vorhandene Platzhalter, noch keine Schreibfunktionen
+## POST /api/memes – implementierte Upload-Prüfung
 
-- `POST /api/memes`: JSON-Schema für `title` (getrimmt, 1–100 Zeichen), `imageUrl` (URL) und `imageStorageId` (nicht leer). Ungültige Daten: 400. Gültige Daten: 503, `Meme-Erstellung ist noch nicht verfügbar.` Keine Speicherung, keine Bilddatei-Verarbeitung und noch keine routenspezifische Anmeldungspflicht.
+Anmeldung wird vor der Dateiannahme geprüft. Request: `multipart/form-data`, vom Client samt Boundary setzen lassen.
+
+| Feld | Typ | Regel |
+| --- | --- | --- |
+| `title` | Text | Getrimmt, 1–100 Zeichen |
+| `image` | Datei | Genau ein PNG; höchstens 5 × 1024 × 1024 Bytes (5 MiB) |
+
+Multer hält die Datei im Arbeitsspeicher und prüft die MIME-Angabe. Anschließend erkennt `isPng` die PNG-Signatur mittels file-type. Das ist keine vollständige Dekodierung oder Garantie einer unbeschädigten Bilddatei. `imageUrl`, `imageStorageId` und Ersteller-ID werden nicht vom Formular verlangt.
+
+Aktuelle Erfolgsantwort: HTTP 200, ausdrücklich noch keine Anlage und kein 201:
+
+```json
+{
+  "message": "Upload-Prüfung erfolgreich. Noch nichts gespeichert.",
+  "title": "Mein Upload-Test"
+}
+```
+
+- Ohne gültige Anmeldung: 401.
+- Ungültiger Titel, fehlende/falsche Datei, mehrere Dateien oder falsches Dateifeld: 400.
+- Datei über dem Größenlimit: 413.
+- Eine generische 400-Meldung lautet noch `Bitte genau ein JPG/JPEG-Bild im Feld image senden.` Das ist ein bekannter Textfehler; MIME- und Signaturprüfung erlauben PNG.
+
+Josephine bestätigt den erfolgreichen PNG-Test mit obiger Antwort. Mehrfachauswahl und PNG-Formatumstellung wurden im Gespräch geprüft. Vollständige Tests aller Titel-, Größen- und Fehlerfälle stehen noch aus.
+
+`src/lib/uploadImage.ts` ist separat implementiert: PNG-Upload-Stream, Cloudinary-Ordner `your-meme`, Ergebnis `imageUrl`/`imageStorageId`. Die Route importiert oder verwendet diese Funktion noch nicht. Lokalen Ersteller zuordnen, Bild übertragen, Meme speichern und bei DB-Fehler das neue Bild bereinigen bleiben nächste Schritte. Noch kein vollständiger Upload-Vertrag für eine gespeicherte Erfolgsantwort.
+
+## Verbleibender Lösch-Platzhalter
+
 - `DELETE /api/memes/:id`: UUID-Prüfung, danach 503, `Meme-Löschung ist noch nicht verfügbar.` Keine Löschung und noch keine Eigentümer-/Adminprüfung.
 
 ## Geplanter Umfang
 
-- Automatischer Bild-Upload mit Cloudinary, Titelprüfung, erlaubten Formaten und Dateigrößenlimit. Request-Format und Feldnamen noch gemeinsam festlegen; der bisherige JSON-Platzhalter ist kein fertiger Upload-Vertrag.
+- PNG-Upload-Prüfung mit Cloudinary-Hilfsfunktion und lokaler Ersteller-/Meme-Speicherung verbinden; Fehlerbereinigung und abschließende Erfolgsantwort ergänzen. Regeln und Feldnamen für neue Uploads sind jetzt festgelegt; das vorhandene Frontend-Formular muss noch darauf ausgerichtet werden.
 - `PATCH /api/memes/:id`: Bearbeiten durch Ersteller; noch nicht implementiert.
 - Meme-Löschung durch Ersteller oder Administrator einschließlich Cloudinary-Datei.
 - Endpunkte für Likes, Kommentaränderungen, persönliche Ordner, Moderation und Kontolöschung konkretisieren und implementieren.

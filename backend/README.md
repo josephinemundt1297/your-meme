@@ -1,6 +1,6 @@
 # Your Meme – Backend starten
 
-Stand: 10.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und vorbereiteter Cloudinary-Anbindung. Der automatische Bild-Upload ist noch nicht implementiert.
+Stand: 11.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und vorbereiteter Cloudinary-Anbindung. Die Upload-Prüfung ist implementiert; Cloudinary-Upload und Meme-Speicherung sind noch nicht an die Route angeschlossen.
 
 ## Voraussetzungen und Installation
 
@@ -56,7 +56,13 @@ npx prisma migrate deploy
 
 Dieser Befehl verändert die ausgewählte Datenbank. Bei einer befüllten Datenbank zuerst den Migrationsstand klären. Die Migration `20261104125318_init` ist vorhanden; keine zweite Init-Migration erzeugen.
 
-Git überträgt keine lokalen Datensätze. Eine frische Datenbank liefert `[]`. Mit `npx prisma studio` können Testnutzer und Test-Memes angelegt werden. Ein Meme braucht einen vorhandenen Ersteller, Titel, Bildadresse und Cloudinary-Public-ID als `imageStorageId`. UUIDs und `updatedAt` erzeugt der Prisma Client; die SQL-Migration enthält dafür keinen Datenbank-Standardwert. Studio kann deshalb manuelle Werte verlangen. Testdaten-Anlage ist noch keine Upload-Funktion.
+Git überträgt keine Datenbankinhalte automatisch. Eine frische Datenbank liefert `[]`. Die versionierten Testdaten lassen sich nach Einrichtung der Tabellen und Client-Generierung importieren:
+
+```bash
+npx tsx prisma/import-test-memes.ts
+```
+
+Das Skript schreibt in die Datenbank aus `DATABASE_URL`: 29 Meme-Vorlagen aus `prisma/test-memes.json`, zugeordnet zum Demo-Nutzer `Meme-Testdaten`. Vorhandene IDs werden übersprungen; wiederholter Import erzeugt keine doppelten Meme-IDs. Keine echten Clerk-IDs, Kommentare, Likes oder Ordner werden übernommen. Das Demo-Profil hat keine echte Clerk-Anmeldung. Cloudinary-Bilder werden nicht neu hochgeladen; die vorhandenen öffentlichen Adressen bleiben gemeinsam genutzt. Josephine bestätigt den funktionierenden Import-/Anzeigestand bei Dilek. Alternativ können einzelne Testdatensätze mit `npx prisma studio` angelegt werden. Ein Meme braucht einen vorhandenen Ersteller, Titel, Bildadresse und Cloudinary-Public-ID als `imageStorageId`. UUIDs und `updatedAt` erzeugt der Prisma Client; die SQL-Migration enthält dafür keinen Datenbank-Standardwert. Studio kann deshalb manuelle Werte verlangen. Testdaten-Anlage ist noch keine Upload-Funktion.
 
 ## Server starten und prüfen
 
@@ -75,6 +81,7 @@ Standardadresse: `http://localhost:3000`. Nach Env-Änderungen den Server neu st
 | `GET /api/memes/:id/comments` | 200, Kommentar-Array; ohne Kommentare `[]` |
 | `GET /api/me` | Ohne Anmeldung 401; mit gültigem Session-Token 200 und Clerk-ID |
 | `POST /api/me/sync` | Ohne Anmeldung 401; mit gültiger Anmeldung lokales Profil anlegen/aktualisieren |
+| `POST /api/memes` | Angemeldete multipart-Prüfung für PNG und Titel; 200 bedeutet derzeit nur Prüfung, keine Speicherung |
 
 Unbekannte Routen liefern 404 als JSON. Vollständige Formate und Grenzen stehen im [API-Plan](docs/api-plan.md).
 
@@ -108,14 +115,20 @@ npm start
 
 | Datei | Aufgabe |
 | --- | --- |
-| `src/server.ts` | Express, CORS, Clerk, öffentliche Abfragen, Nutzer-Synchronisation, Platzhalter für Meme-Schreibaktionen |
+| `src/server.ts` | Express, CORS, Clerk, öffentliche Abfragen, Nutzer-Synchronisation, Upload-Prüfung und Lösch-Platzhalter |
 | `src/lib/prisma.ts` | Prisma-Client mit PostgreSQL-Adapter |
 | `src/lib/memeSelect.ts` | Öffentliche Meme-Felder, Ersteller und Zähler auswählen |
 | `src/utils/formatMeme.ts` | `author`, `likeCount` und `commentCount` ausgeben |
 | `src/utils/isValidUuid.ts` | UUID-Grundform prüfen |
 | `src/validators/meme.ts` | Zod-Schema; enthält noch ausführbaren Beispieltestcode |
-| `src/lib/cloudinary.ts` | Cloudinary-SDK konfigurieren; noch keine Upload-Verarbeitung |
+| `src/lib/cloudinary.ts` | Cloudinary-SDK konfigurieren |
+| `src/lib/uploadImage.ts` | PNG per Upload-Stream übertragen; liefert Bildadresse/Public ID, noch nicht in der Route verwendet |
+| `src/middleware/upload.ts` | Multer: eine Datei im Speicher, maximal 5 MiB, MIME-Vorprüfung auf PNG |
+| `src/utils/isPng.ts` | PNG-Dateisignatur mit file-type erkennen; keine vollständige Bilddekodierung |
+| `prisma/import-test-memes.ts`, `prisma/test-memes.json` | Gemeinsame lokale Bild-Testdaten importieren |
 | `prisma/` | Schema und vorhandene Migration |
 | `.agents/skills/`, `.claude/skills/`, `.windsurf/skills/` | Werkzeughilfen und Verknüpfungen, kein Anwendungscode |
 
-`POST /api/memes` liefert bei ungültigem JSON-Inhalt 400, bei gültigen Schemafeldern weiterhin 503. `DELETE /api/memes/:id` ist ebenfalls ein Platzhalter. Upload, Bearbeiten/Löschen mit Rechteprüfung, Likes, Kommentarverwaltung, Ordner, Moderation und Kontolöschung fehlen. Details: [Projektstand](docs/projektstand.md), [Spezifikation](SPECK.md).
+`POST /api/memes` erwartet jetzt `multipart/form-data`: `title` als Text, `image` als Datei, gültiger Bearer-Session-Token. Nur PNG, genau ein Bild, maximal 5 × 1024 × 1024 Bytes; Titel getrimmt mit 1–100 Zeichen. Erfolg liefert 200 mit `Upload-Prüfung erfolgreich. Noch nichts gespeichert.` Fehler: ohne Anmeldung 401, ungültige Eingaben 400, zu große Datei 413. Postman/FormData setzen den Content-Type samt Boundary automatisch. Eine generische Fehlerantwort sagt im Code noch fälschlich JPG/JPEG; tatsächlich wird PNG geprüft.
+
+`uploadImage` wird noch nicht aufgerufen; lokale Erstellerzuordnung, Cloudinary-Upload, Datenbankanlage und Bereinigung bei Teilausfällen fehlen in der Route. `DELETE /api/memes/:id` bleibt ein 503-Platzhalter. Bearbeiten/Löschen mit Rechteprüfung, Likes, Kommentarverwaltung, Ordner, Moderation und Kontolöschung fehlen. Details: [Projektstand](docs/projektstand.md), [Spezifikation](SPECK.md).

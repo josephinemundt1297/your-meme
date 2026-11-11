@@ -21,15 +21,15 @@
 - Cloudinary als Bildspeicher; Hosting optional und noch offen.
 - Unterrichtsgrundlagen für Validierung und Tests: Zod, Postman, Jest und Supertest; schrittweise nach Bedarf einrichten.
 
-## Umsetzungsstand am 10.11.2026
+## Umsetzungsstand am 11.11.2026
 
 Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind keine Erledigt-Meldungen.
 
 - Express, Prisma/PostgreSQL, Statusrouten, öffentliche Meme-Liste, Detail- und Kommentarabfrage sind implementiert. Meme-Antworten enthalten Ersteller und Zähler.
 - Clerk-Middleware, geschützte Identitätsabfrage und `POST /api/me/sync` mit lokaler Nutzeranlage/-aktualisierung sind implementiert. Angemeldete Tests wurden von Josephine bestätigt. Der automatische Frontend-Aufruf fehlt noch.
 - CORS für `http://localhost:5173` ist implementiert und lesend getestet.
-- Cloudinary-SDK und Konfiguration vorhanden; Josephine bestätigt erfolgreichen Ping. Testbilder wurden manuell hochgeladen und in PostgreSQL verknüpft. Automatischer Upload ist noch nicht implementiert.
-- POST/DELETE für Memes sind weiterhin Platzhalter mit 503; Bearbeiten, Rechteprüfung, Likes, Kommentarverwaltung, Ordner, Moderation und Kontolöschung sind offen.
+- Cloudinary-SDK, Konfiguration und Upload-Hilfsfunktion vorhanden; Josephine bestätigt erfolgreichen Ping. Upload-Hilfsfunktion noch nicht in die Route integriert. Versionierte Testdaten und Importskript ermöglichen dieselben Bilder bei Dilek.
+- POST /api/memes prüft jetzt Anmeldung, Titel und eine PNG-Datei bis 5 MiB; Erfolg derzeit 200 ohne Speicherung. Josephine bestätigt den PNG-Test. Lokaler Ersteller, Cloudinary-Aufruf und Datenbankanlage fehlen noch. DELETE bleibt 503-Platzhalter; Bearbeiten, Inhaltsrechte, Likes, Kommentarverwaltung, Ordner, Moderation und Kontolöschung sind offen.
 - Zod ist installiert. Jest, Supertest und automatisiertes Testskript fehlen noch. Detailergebnisse und Prüfgrenzen: [Projektstand](docs/projektstand.md).
 
 ## Funktionen und Zugriffsrechte
@@ -90,7 +90,7 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 - Identität über Clerk und Eigentümer- beziehungsweise Administratorrechte serverseitig prüfen.
 - CORS passend zum Frontend konfigurieren; CORS ersetzt keine Berechtigungsprüfung.
 - Missbrauchsanfällige Endpunkte durch angemessene Begrenzungen schützen.
-- Bei Uploads Dateityp und Größe prüfen; erlaubte Formate und Limits noch festlegen.
+- Neue Uploads: genau ein PNG bis 5 × 1024 × 1024 Bytes, Textfeld title und Dateifeld image. MIME-Vorprüfung und Signaturerkennung vorhanden; vollständige Fehlerfalltests offen. Die frühere JPG-Idee wurde zugunsten von PNG ersetzt.
 - Keine Geheimnisse, Passwörter oder internen Fehlerdetails in API-Antworten ausgeben.
 - Zugangsdaten über Umgebungsvariablen verwalten und aus Git ausschließen.
 - Verständliche Modulstruktur und zentrale Fehlerbehandlung verwenden, ohne unnötige Abstraktionen.
@@ -100,7 +100,7 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 ## Noch offen
 
-- Erlaubte Upload-Formate und maximale Dateigröße; Cloudinary ist ausgewählt.
+- Fehlende Integration der bestehenden PNG-Upload-Prüfung und Cloudinary-Hilfsfunktion in den vollständigen Speicherablauf.
 - Ob beim Bearbeiten eines Memes neben dem Titel auch das Bild ersetzt werden kann.
 - Automatischer Aufruf der vorhandenen Nutzer-Synchronisation aus dem Frontend nach Clerk-Anmeldung.
 - Technische Einzelheiten der Kontolöschung über Datenbank, Clerk und Bildspeicher.
@@ -110,7 +110,7 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 ## Nächster Arbeitsschritt
 
-- Dateiupload mit Anmeldung, lokalem Ersteller, Titel-/Dateiprüfung und Cloudinary-Verarbeitung ergänzen; Format- und Größenlimits vorher festlegen.
+- Bestehende Upload-Prüfung um lokalen Ersteller, Cloudinary-Aufruf, Meme-Speicherung und Fehlerbereinigung erweitern; PNG-/5-MiB-Regel beibehalten.
 - Cloudinary-Antwort und lokalen Nutzer sicher mit einem Meme verknüpfen; Teilausfälle zwischen Cloudinary und PostgreSQL behandeln.
 - Parallel Frontend-Detailseite an die vorhandene API anschließen und gelieferten Ersteller übernehmen.
 - Danach Bearbeiten/Löschen und weitere Nutzeraktionen mit Rechteprüfung ergänzen.

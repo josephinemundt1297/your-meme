@@ -1,6 +1,6 @@
 # Your Meme – Datenmodell
 
-Stand: 10.11.2026. Schema und erste Migration sind unverändert; die sechs Modelle, Felder, Schlüssel und Löschkaskaden stimmen weiterhin überein. Die lokale Datenbank ist erreichbar und enthält Testdaten. Der angewendete Migrationsstand wurde bei der aktuellen Prüfung nicht erneut mit `migrate status` abgefragt; die Anwendung der ersten Migration ist zuvor dokumentiert.
+Stand: 11.11.2026. Schema und erste Migration sind unverändert; die sechs Modelle, Felder, Schlüssel und Löschkaskaden stimmen weiterhin überein. Die lokale Datenbank ist erreichbar und enthält Testdaten. Der angewendete Migrationsstand wurde bei der aktuellen Prüfung nicht erneut mit `migrate status` abgefragt; die Anwendung der ersten Migration ist zuvor dokumentiert.
 
 Clerk-Identität und lokale Nutzer-Synchronisation sind implementiert. Eigentümer-/Administratorprüfungen für die geplanten Inhaltsänderungen und dienstübergreifende Kontolöschung fehlen noch. Die folgenden Berechtigungs- und Löschregeln bleiben Zielanforderungen.
 
@@ -9,7 +9,7 @@ Clerk-Identität und lokale Nutzer-Synchronisation sind implementiert. Eigentüm
 - Node.js, Express und TypeScript
 - PostgreSQL mit Prisma
 - Clerk für Registrierung, Anmeldung und Passwortverwaltung
-- Bildspeicher: Cloudinary; Testbilder manuell hochgeladen, automatische Upload-Verarbeitung noch offen
+- Bildspeicher: Cloudinary; Testbilder manuell hochgeladen, Upload-Prüfung und Hilfsfunktion vorhanden, automatischer Speicherablauf noch offen
 - Hosting: optional; Anbieter noch offen
 
 ## Beziehungsdiagramm
@@ -176,10 +176,14 @@ diese ist noch nicht implementiert.
 - Auch eine außerhalb der Anwendung ausgelöste Clerk-Kontolöschung muss den lokalen Bereinigungsablauf anstoßen können; die konkrete Anbindung wird bei der Clerk-Integration festgelegt.
 - Vor Veröffentlichung Löschfristen für Backups und technische Logs separat festlegen; sie werden durch das Entfernen der aktiven Datensätze nicht automatisch bereinigt.
 
+## Gemeinsame Bild-Testdaten
+
+`prisma/test-memes.json` enthält 29 Meme-Vorlagen; `npx tsx prisma/import-test-memes.ts` legt sie in der lokalen Projektdatenbank an. Vorhandene IDs werden übersprungen. Neue Datensätze gehören zum Demo-Nutzer Meme-Testdaten mit künstlicher Clerk-Kennung, nicht zu einem echten Anmeldungskonto. Echte Nutzerkonten, Likes, Kommentare und Ordner werden nicht kopiert. Josephine bestätigt, dass die Anzeige bei Dilek nach dem Import funktioniert. Cloudinary-Adressen werden gemeinsam genutzt; Löschen der Originaldatei betrifft beide Anzeigen.
+
 ## Nächste Schritte
 
 1. Bestehende Nutzer-Synchronisation nach Anmeldung im Frontend aufrufen; die verifizierte Clerk-ID bleibt die Grundlage der lokalen Zuordnung.
-2. Automatischen Cloudinary-Upload und Meme-Anlage mit dem lokalen Ersteller implementieren. UUID und `updatedAt` über den Prisma Client erzeugen lassen.
+2. Vorhandene PNG-Upload-Prüfung (ein Bild, 5 MiB) mit Cloudinary-Hilfsfunktion und Meme-Anlage für den lokalen Ersteller verbinden. UUID und `updatedAt` über den Prisma Client erzeugen lassen.
 3. Bearbeiten/Löschen sowie Likes, Kommentare und Ordner mit den vereinbarten Rechten umsetzen.
 4. Cloudinary-Dateilöschung, Clerk-Kontolöschung und wiederholbare Bereinigung bei Teilausfällen implementieren und testen.
 5. Der vorgeschlagene Alternativtext `altText` ist noch kein Schemafeld; eine mögliche Erweiterung separat abstimmen.

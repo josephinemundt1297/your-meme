@@ -9,6 +9,9 @@ import { clerkMiddleware, getAuth, clerkClient } from "@clerk/express";
 import multer from "multer";
 import { upload } from "./middleware/upload.js";
 import { isPng } from "./utils/isPng.js";
+import { uploadImage } from "./lib/uploadImage.js";
+import { cloudinary } from "./lib/cloudinary.js";
+import { createCommentSchema } from "./validators/comment.js";
 
 const app = express();
 
@@ -152,6 +155,73 @@ app.get("/api/memes/:id", async (req, res) => {
     });
   }
 });
+
+app.patch("/api/memes/:id", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
+  const result = createMemeSchema.pick({ title: true }).safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Bitte einen Titel mit 1 bis 100 Zeichen angeben.",
+    });
+  }
+
+  try {
+    const meme = await prisma.meme.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    if (meme.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Memes bearbeiten.",
+      });
+    }
+
+    const updatedMeme = await prisma.meme.update({
+      where: { id, userId: meme.userId },
+      data: {
+        title: result.data.title,
+      },
+      select: memeSelect,
+    });
+
+    return res.json(formatMeme(updatedMeme));
+  } catch (error) {
+    console.error("Fehler beim Bearbeiten des Memes:", error);
+
+    return res.status(500).json({
+      error: "Meme konnte nicht bearbeitet werden.",
+    });
+  }
+});
+
 // Lädt alle Kommentare zu einem bestimmten Meme.
 app.get("/api/memes/:id/comments", async (req, res) => {
   const { id } = req.params;
@@ -205,6 +275,84 @@ app.get("/api/memes/:id/comments", async (req, res) => {
     });
   }
 });
+
+app.post("/api/memes/:id/comments", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
+  const result = createCommentSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Bitte einen Kommentar mit 1 bis 1000 Zeichen angeben.",
+    });
+  }
+
+  try {
+    const meme = await prisma.meme.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return res.status(409).json({
+        error: "Bitte zuerst dein Nutzerprofil synchronisieren.",
+      });
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        content: result.data.content,
+        memeId: id,
+        userId: user.id,
+      },
+      select: {
+        id: true,
+        content: true,
+        userId: true,
+        createdAt: true,
+        user: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    return res.status(201).json(comment);
+  } catch (error) {
+    console.error("Fehler beim Speichern des Kommentars:", error);
+
+    return res.status(500).json({
+      error: "Kommentar konnte nicht gespeichert werden.",
+    });
+  }
+});
+
 app.post(
   "/api/memes",
 
@@ -235,7 +383,7 @@ app.post(
 
       if (error) {
         return res.status(400).json({
-          error: "Bitte genau ein JPG/JPEG-Bild im Feld image senden.",
+          error: "Bitte genau ein JPNG-Bild im Feld image senden.",
         });
       }
 
@@ -265,13 +413,77 @@ app.post(
       });
     }
 
-    return res.json({
-      message: "Upload-Prüfung erfolgreich. Noch nichts gespeichert.",
-      title: result.data.title,
-    });
+    const { userId } = getAuth(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Bitte zuerst anmelden.",
+      });
+    }
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: { clerkId: userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        return res.status(409).json({
+          error: "Bitte zuerst dein Nutzerprofil synchronisieren.",
+        });
+      }
+
+      const image = await uploadImage(req.file.buffer);
+
+      const meme = await prisma.meme
+        .create({
+          data: {
+            title: result.data.title,
+            imageUrl: image.imageUrl,
+            imageStorageId: image.imageStorageId,
+            userId: user.id,
+          },
+          select: memeSelect,
+        })
+        .catch(async (databaseError) => {
+          // Bei fehlgeschlagener Speicherung das neue Bild bereinigen.
+          try {
+            const cleanup = await cloudinary.uploader.destroy(
+              image.imageStorageId,
+            );
+
+            if (cleanup.result !== "ok" && cleanup.result !== "not found") {
+              throw new Error("Bild konnte nicht entfernt werden.");
+            }
+          } catch {
+            console.error(
+              "Cloudinary-Bereinigung fehlgeschlagen. Public ID:",
+              image.imageStorageId,
+            );
+          }
+
+          throw databaseError;
+        });
+
+      return res.status(201).json(formatMeme(meme));
+    } catch (error) {
+      console.error("Fehler beim Erstellen des Memes:", error);
+
+      return res.status(500).json({
+        error: "Meme konnte nicht gespeichert werden.",
+      });
+    }
   },
 );
-app.delete("/api/memes/:id", (req, res) => {
+app.delete("/api/memes/:id", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
   const { id } = req.params;
 
   if (!id || !isValidUuid(id)) {
@@ -280,12 +492,327 @@ app.delete("/api/memes/:id", (req, res) => {
     });
   }
 
-  return res.status(503).json({
-    error: "Meme-Löschung ist noch nicht verfügbar.",
-  });
+  try {
+    const meme = await prisma.meme.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        imageStorageId: true,
+        user: {
+          select: {
+            clerkId: true,
+          },
+        },
+      },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    if (meme.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Memes löschen.",
+      });
+    }
+
+    const imageResult = await cloudinary.uploader.destroy(meme.imageStorageId, {
+      resource_type: "image",
+      invalidate: true,
+    });
+
+    if (imageResult.result !== "ok" && imageResult.result !== "not found") {
+      throw new Error("Bild konnte nicht gelöscht werden.");
+    }
+
+    await prisma.meme.delete({
+      where: {
+        id,
+        userId: meme.userId,
+      },
+    });
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Fehler beim Löschen des Memes:", error);
+
+    return res.status(500).json({
+      error: "Meme konnte nicht gelöscht werden.",
+    });
+  }
 });
+
+app.patch("/api/comments/:id", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Kommentar-ID.",
+    });
+  }
+
+  const result = createCommentSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Bitte einen Kommentar mit 1 bis 1000 Zeichen angeben.",
+    });
+  }
+
+  try {
+    const comment = await prisma.comment.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!comment) {
+      return res.status(404).json({
+        error: "Kommentar nicht gefunden.",
+      });
+    }
+
+    if (comment.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Kommentare bearbeiten.",
+      });
+    }
+
+    const updatedComment = await prisma.comment.update({
+      where: {
+        id,
+        userId: comment.userId,
+      },
+      data: {
+        content: result.data.content,
+      },
+      select: {
+        id: true,
+        content: true,
+        userId: true,
+        createdAt: true,
+        user: {
+          select: { username: true },
+        },
+      },
+    });
+
+    return res.json(updatedComment);
+  } catch (error) {
+    console.error("Fehler beim Bearbeiten des Kommentars:", error);
+
+    return res.status(500).json({
+      error: "Kommentar konnte nicht bearbeitet werden.",
+    });
+  }
+});
+
+app.delete("/api/comments/:id", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Kommentar-ID.",
+    });
+  }
+
+  try {
+    const comment = await prisma.comment.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!comment) {
+      return res.status(404).json({
+        error: "Kommentar nicht gefunden.",
+      });
+    }
+
+    if (comment.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Kommentare löschen.",
+      });
+    }
+
+    await prisma.comment.delete({
+      where: {
+        id,
+        userId: comment.userId,
+      },
+    });
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Fehler beim Löschen des Kommentars:", error);
+
+    return res.status(500).json({
+      error: "Kommentar konnte nicht gelöscht werden.",
+    });
+  }
+});
+
+app.post("/api/memes/:id/like", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
+  try {
+    const meme = await prisma.meme.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return res.status(409).json({
+        error: "Bitte zuerst dein Nutzerprofil synchronisieren.",
+      });
+    }
+
+    await prisma.like.createMany({
+      data: {
+        userId: user.id,
+        memeId: id,
+      },
+      skipDuplicates: true,
+    });
+
+    const likeCount = await prisma.like.count({
+      where: { memeId: id },
+    });
+
+    return res.status(200).json({
+      memeId: id,
+      liked: true,
+      likeCount,
+    });
+  } catch (error) {
+    console.error("Fehler beim Liken des Memes:", error);
+
+    return res.status(500).json({
+      error: "Like konnte nicht gespeichert werden.",
+    });
+  }
+});
+
+app.delete("/api/memes/:id/like", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
+  try {
+    const meme = await prisma.meme.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return res.status(409).json({
+        error: "Bitte zuerst dein Nutzerprofil synchronisieren.",
+      });
+    }
+
+    await prisma.like.deleteMany({
+      where: {
+        userId: user.id,
+        memeId: id,
+      },
+    });
+
+    const likeCount = await prisma.like.count({
+      where: { memeId: id },
+    });
+
+    return res.json({
+      memeId: id,
+      liked: false,
+      likeCount,
+    });
+  } catch (error) {
+    console.error("Fehler beim Entfernen des Likes:", error);
+
+    return res.status(500).json({
+      error: "Like konnte nicht entfernt werden.",
+    });
+  }
+});
+
 app.use((_req, res) => {
-  res.status(404).json({ error: "Route nicht gefunden." });
+  res.status(404).json({
+    error: "Route nicht gefunden.",
+  });
 });
 
 app.listen(port, () => {

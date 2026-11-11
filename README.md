@@ -1,13 +1,13 @@
 # Your Meme
 
 Fullstack-Abschlussprojekt von Dilek (Frontend) und Josephine (Backend).
-Stand: 10.11.2026. Abgabe: 23.11.2026; Präsentationstermin offen. Deployment ist freiwillig, eine lokale Präsentation ist zulässig.
+Stand: 11.11.2026. Abgabe: 23.11.2026; Präsentationstermin offen. Deployment ist freiwillig, eine lokale Präsentation ist zulässig.
 
 ## Aktueller Stand
 
 - Frontend: React, TypeScript, Vite, TanStack Router und Clerk. Die Übersicht lädt echte API-Daten und zeigt Bilder; die Detailseite verwendet noch Beispieldaten. Upload und Likes sind bisher lokale Demonstrationen.
 - Backend: Express, TypeScript, PostgreSQL und Prisma. Öffentliche Meme- und Kommentarabfragen, CORS, Clerk-Identitätsprüfung und lokale Nutzer-Synchronisation sind implementiert.
-- Cloudinary ist als Bildspeicher eingerichtet. Manuell hochgeladene Bilder sind mit Test-Memes verknüpft; der automatische Upload über die API fehlt noch.
+- Cloudinary ist als Bildspeicher eingerichtet. Die API prüft nun angemeldete PNG-Uploads (ein Bild, maximal 5 MiB), speichert aber noch nichts. Die Cloudinary-Uploadfunktion ist als noch nicht angebundene Hilfsfunktion vorhanden.
 - Bearbeiten/Löschen, echte Likes, Kommentarverwaltung, persönliche Ordner, Moderation und Kontolöschung sind noch nicht vollständig umgesetzt.
 - Geprüfte Ergebnisse und Grenzen: [Projektstand](backend/docs/projektstand.md).
 
@@ -40,7 +40,13 @@ npm run dev
 - Datenbank: `http://localhost:3000/api/health/db`
 - Meme-Liste: `http://localhost:3000/api/memes`
 
-Lokale Datenbanken und Testdaten werden nicht über Git geteilt. Eine neue Datenbank liefert zunächst eine leere Meme-Liste.
+Lokale Datenbankinhalte werden nicht automatisch über Git geteilt. Für eine neue Projektdatenbank stehen inzwischen versionierte Bild-Testdaten bereit. Nach Migration und Client-Generierung im Ordner `backend/` einmal ausführen:
+
+```bash
+npx tsx prisma/import-test-memes.ts
+```
+
+Das Skript importiert 29 Meme-Datensätze aus `prisma/test-memes.json` und ordnet neue Einträge dem Demo-Profil `Meme-Testdaten` zu. Vorhandene Meme-IDs werden übersprungen. Keine echten Clerk-Konten, Kommentare, Likes oder Ordner werden übernommen. Die Bilder bleiben bei Cloudinary; verwendet werden dieselben öffentlichen Bildadressen. Vor dem Import muss `DATABASE_URL` auf die eigene lokale Projektdatenbank zeigen. Josephine bestätigt inzwischen den funktionierenden Start und die Anzeige bei Dilek.
 
 ### Frontend – normalerweise Port 5173
 
@@ -78,6 +84,7 @@ Die im Terminal angezeigte Adresse öffnen, normalerweise `http://localhost:5173
 - [Datenmodell](backend/docs/datenmodell.md)
 - [Implementierte API und Planung](backend/docs/api-plan.md)
 - [Projektstand und Arbeitsweise](backend/docs/projektstand.md)
+- [Zwischenbericht für Dilek vom 11.11.2026](backend/docs/zwischenbericht-2026-11-11.md)
 - [Historisches Hand-out vom 30.10.2026](backend/docs/handout-2026-10-30.md)
 - [Trello-Board](https://trello.com/b/EpjAfv15/your-meme)
 
