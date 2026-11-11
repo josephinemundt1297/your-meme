@@ -1,6 +1,6 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-Stand: 11.11.2026, nach Umsetzung von Meme-, Kommentar- und Like-Aktionen. Geprüfter lokaler Backend-Commit: `6d476f4`. GitHub-main bei Prüfung: `9990879`; Frontend-Branch: `5d966ef`. Nicht veröffentlichte Änderungen auf Dileks Rechner sind nicht bewertet. Abgabe: 23.11.2026; Deployment freiwillig.
+Stand: 11.11.2026, nach Umsetzung von Meme-, Kommentar- und Like-Aktionen. Geprüfter lokaler Backend-Commit: `6d476f4`. GitHub-main bei Prüfung: `9990879`; Frontend-Branch: `4b9947e` (Upload-Nachtrag). Nicht veröffentlichte Änderungen auf Dileks Rechner sind nicht bewertet. Abgabe: 23.11.2026; Deployment freiwillig.
 
 ## Tatsächlicher Stand
 
@@ -12,7 +12,11 @@ Stand: 11.11.2026, nach Umsetzung von Meme-, Kommentar- und Like-Aktionen. Gepr�
 - Kommentare erstellen (1–1000 Zeichen), eigene bearbeiten und löschen.
 - Eigenen Like setzen und entfernen; Datenbank verhindert Duplikate. Schreibantwort enthält `liked` und `likeCount`; persönliche Like-Markierung fehlt noch in GET-Antworten.
 - Gemeinsame Bild-Testdaten: 29 versionierte Vorlagen und Importskript. Bereits vorhandene IDs werden übersprungen. Keine echten Clerk-Konten oder Interaktionen werden kopiert; Cloudinary-Originale werden gemeinsam genutzt.
-- Frontend lädt Übersicht, Detail und Kommentare aus der API. Clerk-Oberfläche, Lade-/Leer-/Fehlerzustände und responsive Styles vorhanden. Schreibende API-Anbindung, automatischer Sync und persönliche Ordner fehlen im geprüften Frontend-Code.
+- Frontend lädt Übersicht, Detail und Kommentare aus der API. Clerk-Oberfläche, Lade-/Leer-/Fehlerzustände und responsive Styles vorhanden. Auf dem Frontend-Branch `4b9947e` sind automatischer Sync und echter Upload implementiert. Kommentar-/Like-Schreibaktionen, eigene Bearbeiten-/Löschoberflächen und Ordner fehlen noch.
+
+## Upload-Nachtrag: Dileks Frontend-Branch
+
+Commit `4b9947e` geprüft: automatischer Clerk-Sync im Layout, Token, PNG-MIME-/Größenprüfung bis 5 MiB, FormData title/image und Weiterleitung zur neuen Detailseite vorhanden. Die drei geänderten Frontend-Dateien wurden in einer isolierten Kopie mit vorhandenen Abhängigkeiten geprüft: Lint und Build erfolgreich. Kein Branchwechsel oder Merge und kein neuer Browser-Upload. Der Frontend-Branch liegt gegenüber dem zuvor geprüften main zwei Commits voraus und sieben zurück; insbesondere enthält sein Backend noch den alten Upload-Prüfstand. Für Integration aktuellen main-Backend-Stand verwenden. Upload wartet nicht auf Sync-Abschluss; Layout unterdrückt Sync-Fehler. Das ist ein offener Erstlogin-/409-Fehlerfall.
 
 ## Belege und Prüfgrenzen
 
@@ -36,7 +40,7 @@ Die Löschung wurde mit einem Meme ohne zugehörige Interaktionen geprüft. Das 
 
 ## Kritische Restpunkte
 
-1. **Frontend-Anbindung:** automatischer Nutzer-Sync und Bearer-Token, echter Upload, Meme-Aktionen, Kommentarformular/-aktionen und Likes. Client übernimmt den gelieferten Meme-Ersteller noch nicht und zeigt Community. Uploadformular fordert Kategorie und erlaubt zusätzliche Dateiformate; Backend akzeptiert ausschließlich PNG.
+1. **Frontend-Anbindung:** Sync, Token und PNG-Upload sind im Branch `4b9947e` implementiert und Lint/Build in einer isolierten Prüfkopie erfolgreich. Gemeinsamer Browser-Erfolg ist nicht neu bestätigt. Eigene Meme-Aktionen, Kommentarformular/-aktionen und Likes fehlen noch. Client zeigt statt geliefertem Meme-Ersteller Community. Upload wartet nicht auf Sync, dessen Fehler im Layout verschluckt werden: mögliches 409 beim Erstlogin. Branch liegt gegenüber geprüftem main sieben Commits zurück; vor gemeinsamem Test aktuellen Backend-Stand verwenden.
 2. **Persönlicher Like-Status:** GET-Liste/-Detail liefern kein `likedByMe`. Ohne diese Ergänzung bleibt der Button-Zustand nach Neuladen unzuverlässig; lokale Zusatz-Zähler im Frontend müssen bei Integration ersetzt werden.
 3. **Fehlerbehandlung:** zentrale JSON-Fehlerantworten für Parser und Middleware fehlen. Ungültiges JSON legt im Entwicklungsbetrieb interne Details offen. Generische Upload-Meldung enthält den Tippfehler `JPNG`.
 4. **Löschen über zwei Dienste:** Bild wird vor DB-Eintrag gelöscht. Bei anschließendem DB-Fehler bleibt ein Eintrag ohne Bild; erneuter Löschversuch akzeptiert Cloudinary `not found`. Kein dauerhafter Wiederholungs-/Bereinigungsablauf. Upload-Bereinigung wird versucht, bei deren Fehlschlag nur protokolliert.
@@ -65,23 +69,23 @@ Bewertet wird der vollständige vereinbarte Umfang, nicht nur die sichtbare Ober
 | Frontend-Bereich | Gewicht | Erreicht |
 | --- | ---: | ---: |
 | Layout und Navigation | 15 | 15 |
-| Clerk und Nutzeranbindung | 10 | 7 |
+| Clerk und Nutzeranbindung | 10 | 9 |
 | API-Übersicht und Detail | 15 | 14 |
-| Upload und Meme-Verwaltung | 15 | 1 |
+| Upload und Meme-Verwaltung | 15 | 9 |
 | Kommentare anzeigen und verwalten | 10 | 4 |
 | Dauerhafte Likes | 10 | 1 |
 | Persönliche Ordner | 10 | 1 |
 | Moderation | 5 | 0 |
 | Kontolöschung | 5 | 0 |
 | Integration, Zugänglichkeit und Abnahme | 5 | 2 |
-| **Frontend gesamt** | **100** | **45** |
+| **Frontend gesamt** | **100** | **55** |
 
-**Backend etwa 65 %, Frontend etwa 45 %, Gesamt etwa 55 %.** Gesamt ist hier der transparente Mittelwert bei gleicher Gewichtung beider Teile. Eigenständige API-Funktionstests zählen nicht als abgeschlossene Frontend-Integration. Die frühere Angabe Backend 65–70 % war eine grobe Schätzung; die aktuelle Bewertung berücksichtigt nun ausdrücklich Like-Status, Fehlerbehandlung und Abnahme.
+**Backend etwa 65 %, Frontend etwa 55 %, Gesamt etwa 60 %.** Der Upload-Nachtrag erhöht die frühere Frontend-Schätzung von 45 % um zehn Punkte; gemeinsame Browser-Abnahme und Erstlogin-Rennen bleiben offen. Gesamt ist hier der transparente Mittelwert bei gleicher Gewichtung beider Teile. Eigenständige API-Funktionstests zählen nicht als abgeschlossene Frontend-Integration. Die frühere Angabe Backend 65–70 % war eine grobe Schätzung; die aktuelle Bewertung berücksichtigt nun ausdrücklich Like-Status, Fehlerbehandlung und Abnahme.
 
 ## Reihenfolge und Zeitlage
 
 1. Backend: persönlichen Like-Status und sichere JSON-Fehlerantworten ergänzen; danach private Ordner mit Besitzerprüfung.
-2. Frontend parallel: automatischer Sync, echter PNG-Upload, Autor aus API, Kommentar- und Like-Aktionen; anschließend eigene Inhalte bearbeiten/löschen.
+2. Frontend parallel: Upload mit aktuellem Backend gemeinsam testen und Sync-Abschluss absichern; danach Autor aus API, Kommentar-/Like-Aktionen und eigene Inhalte bearbeiten/löschen.
 3. Danach Moderation und abgestimmte, wiederholbare Kontolöschung. Teilausfälle und Rechte mit zwei Konten prüfen.
 4. Gemeinsame Durchläufe einschließlich Neuladen, Handy/Tastatur, Start nach README und Abschlussdokumentation.
 

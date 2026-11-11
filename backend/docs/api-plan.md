@@ -77,7 +77,7 @@ Nach Clerk-Anmeldung `POST /api/me/sync` mit Token und ohne Body. Route lädt Cl
 }
 ```
 
-Automatischer Frontend-Aufruf fehlt noch. Ohne lokales Profil liefern Upload, Kommentar-POST und Like-Aktionen 409. Ersteller und Rollen werden nicht aus Formularangaben übernommen.
+Automatischer Frontend-Aufruf ist im Branch `4b9947e` implementiert; Upload und Sync sind noch nicht zeitlich abgesichert. Erstlogin-/Fehlertest steht aus. Ohne lokales Profil liefern Upload, Kommentar-POST und Like-Aktionen 409. Ersteller und Rollen werden nicht aus Formularangaben übernommen.
 
 ## Upload und Titeländerung
 

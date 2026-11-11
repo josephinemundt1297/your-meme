@@ -181,7 +181,7 @@ Meme-Bildlöschung ist implementiert: erst Cloudinary, dann PostgreSQL. Ein sepa
 
 ## Nächste Schritte
 
-1. Frontend-Nutzer-Synchronisation anbinden; lokale UUID aus Sync und Clerk-ID nicht verwechseln.
+1. Bereits implementierten Frontend-Sync vor dem ersten Upload zuverlässig abschließen; lokale UUID aus Sync und Clerk-ID nicht verwechseln.
 2. Persönlichen Like-Status in Leseantworten ergänzen; private Ordner und Meme-Zuordnungen umsetzen.
 3. Administrator-Löschrechte ausschließlich serverseitig prüfen und Rechtevergabe festlegen.
 4. Kontolöschung über PostgreSQL, Clerk und Cloudinary einschließlich wiederholbarer Bereinigung umsetzen; befüllte Löschkaskaden und Teilausfälle testen.
