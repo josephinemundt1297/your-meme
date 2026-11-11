@@ -15,7 +15,7 @@ Sie legen keine Regeln für Dileks Frontend fest.
 - Der Nutzer möchte den Anwendungscode selbst tippen. In kleinen, erklärten Schritten begleiten; Anwendungscode nur auf ausdrücklichen Wunsch ändern.
 - Dokumentation und Projektregeln nur im ausdrücklich beauftragten Umfang und am genannten Speicherort speichern oder ändern.
 - Schwierige Konzepte wie Datenbeziehungen mit kleinen Teilbildern und konkreten Beispieldaten erklären. Erst das Verständnis festigen, bevor der nächste Umsetzungsschritt beginnt.
-- Vereinbarter Backend-Stack: Node.js, Express, TypeScript, PostgreSQL, Prisma und Clerk. Bildspeicher noch offen; Deployment ist freiwillig.
+- Vereinbarter Backend-Stack: Node.js, Express, TypeScript, PostgreSQL, Prisma und Clerk. Cloudinary als Bildspeicher; Deployment ist freiwillig.
 - Fachliche Backend-Anforderungen stehen in `SPECK.md`; Datenmodell und API-Plan in `docs/`. Widersprüche prüfen, nötige Änderungen vorschlagen und nur mit ausdrücklicher Freigabe ausführen.
 - Den geprüften Umsetzungsstand in `docs/projektstand.md` festhalten. Anforderungen in `SPECK.md` sind keine Erledigt-Meldungen; historische Tagespläne bleiben als solche gekennzeichnet.
 - Ein vorhandenes Prisma-Schema, eine Migrationsdatei oder ein erzeugter Client belegen noch keine erfolgreiche Datenbankverbindung oder angewendete Migration. Prüfungen und ihre Grenzen ausdrücklich nennen.

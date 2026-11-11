@@ -1,33 +1,44 @@
 # Your Meme – API: Implementierung und Planung
 
-Stand: 11.11.2026, mit `src/server.ts`, Auswahl und Formatierung abgeglichen. Implementierte Antworten und noch geplante Funktionen werden getrennt beschrieben.
+Stand: 11.11.2026, nach Meme-, Kommentar- und Like-Schreibfunktionen; mit `src/server.ts` abgeglichen.
 
-Basis: `http://localhost:3000`. CORS erlaubt `http://localhost:5173`. Öffentliche Abfragen benötigen keinen Login. Geschützte Anfragen verwenden einen gültigen Clerk-Session-Token als `Authorization: Bearer <SESSION_TOKEN>`.
+Basis: `http://localhost:3000`. CORS: `http://localhost:5173`. Geschützte Anfragen: `Authorization: Bearer <SESSION_TOKEN>`. Kein Clerk Secret Key als Nutzer-Token. Browser-Anmeldung wird nicht automatisch an Postman übertragen.
 
 ## Implementierte Endpunkte
 
-| Methode und Pfad | Zugriff | Ergebnis |
+| Methode und Pfad | Zugriff | Erfolg und wichtige Fehler |
 | --- | --- | --- |
-| `GET /api/health` | Öffentlich | 200, `{ "status": "ok" }` |
-| `GET /api/health/db` | Öffentlich | 200, `{ "status": "ok", "database": "connected" }`; bei DB-Fehler 503 mit `status: "error"`, `database: "disconnected"` |
-| `GET /api/memes` | Öffentlich | 200, Array, neueste zuerst; noch ohne Pagination oder Mengenlimit |
-| `GET /api/memes/:id` | Öffentlich | 200, Meme-Objekt; ungültige UUID 400, nicht vorhanden 404 |
-| `GET /api/memes/:id/comments` | Öffentlich | 200, Array, älteste zuerst; ungültige UUID 400, Meme nicht vorhanden 404 |
-| `GET /api/me` | Angemeldet | 200, `{ "clerkId": "user_BEISPIEL" }`; ohne Anmeldung 401 |
-| `POST /api/me/sync` | Angemeldet | Ohne Body; 200, lokales Profil anlegen/aktualisieren; ohne Anmeldung 401, Dienst-/DB-Fehler 500 |
-| `POST /api/memes` | Angemeldet | Multipart-Upload-Prüfung; 200 ohne Speicherung, Details unten |
+| GET /api/health | Öffentlich | 200 `{ "status": "ok" }` |
+| GET /api/health/db | Öffentlich | 200 connected; bei DB-Ausfall 503 disconnected |
+| GET /api/memes | Öffentlich | 200 Array, neueste zuerst; noch unbegrenzt |
+| GET /api/memes/:id | Öffentlich | 200 Meme; ungültige ID 400, fehlendes Meme 404 |
+| GET /api/memes/:id/comments | Öffentlich | 200 Array, älteste zuerst; ID 400, Meme fehlt 404 |
+| GET /api/me | Angemeldet | 200 `{ "clerkId": "user_BEISPIEL" }`; 401 |
+| POST /api/me/sync | Angemeldet | Ohne Body; 200 lokales Profil; 401/500 |
+| POST /api/memes | Angemeldet + lokales Profil | Multipart; 201 Meme; 400/401/409/413/500 |
+| PATCH /api/memes/:id | Nur Ersteller | JSON title; 200 Meme; 400/401/403/404/500 |
+| DELETE /api/memes/:id | Nur Ersteller | Ohne Body; 204 leer; 400/401/403/404/500 |
+| POST /api/memes/:id/comments | Angemeldet + lokales Profil | JSON content; 201 Kommentar; 400/401/404/409/500 |
+| PATCH /api/comments/:id | Nur Verfasser | JSON content; 200 Kommentar; 400/401/403/404/500 |
+| DELETE /api/comments/:id | Nur Verfasser | Ohne Body; 204 leer; 400/401/403/404/500 |
+| POST /api/memes/:id/like | Angemeldet + lokales Profil | Ohne Body; 200 Like-Zustand; 400/401/404/409/500 |
+| DELETE /api/memes/:id/like | Angemeldet + lokales Profil | Ohne Body; 200 Like-Zustand; 400/401/404/409/500 |
 
-### Meme-Antwort
+Unbekannte Routen: 404 `{ "error": "Route nicht gefunden." }`. Geschützte Routen prüfen zuerst Anmeldung; deshalb kann ohne Token auch bei ungültiger ID zunächst 401 kommen. `:id` durch die tatsächliche jeweilige UUID ersetzen. Kommentare verwenden bei PATCH/DELETE die Kommentar-ID, nicht die Meme-ID. Ressourcenrennen zwischen Lesen und Schreiben können derzeit in generischem 500 enden.
 
-Beispiel mit erfundenen IDs; Liste liefert ein Array solcher Objekte, Detail liefert ein einzelnes Objekt:
+## Antwortformate
+
+Die folgenden IDs, Namen und Bildadresse sind Beispiele, keine echten Zugangsdaten oder garantierten Testressourcen.
+
+Meme (Liste enthält ein Array dieser Objekte, GET-Detail und Meme-POST/PATCH ein einzelnes):
 
 ```json
 {
   "id": "11111111-1111-4111-8111-111111111111",
   "title": "Beispiel-Meme",
-  "imageUrl": "https://BILDADRESSE.example/meme.png",
+  "imageUrl": "https://bilder.example/meme.png",
   "userId": "22222222-2222-4222-8222-222222222222",
-  "createdAt": "2026-11-10T09:00:00.000Z",
+  "createdAt": "2026-11-11T09:00:00.000Z",
   "author": {
     "id": "22222222-2222-4222-8222-222222222222",
     "username": "Beispielnutzer"
@@ -37,27 +48,25 @@ Beispiel mit erfundenen IDs; Liste liefert ein Array solcher Objekte, Detail lie
 }
 ```
 
-Die Bildadresse ist ein Platzhalter, keine funktionierende Testdatei. Die API liefert aktuell weder `category`, `emoji`, `likedByMe`, `altText` noch `imageStorageId`. Der Frontend-Client setzt bisher Ersatzwerte und ersetzt sogar den gelieferten Erstellernamen durch `Community`; die Übernahme von `author` ist noch offen.
+Aktuell kein `category`, `likedByMe`, `altText`, `emoji` oder `imageStorageId` in öffentlichen Meme-Antworten. `userId` und `author.id` sind lokale UUIDs; `GET /api/me` liefert dagegen die Clerk-ID. Für eigene Schaltflächen die lokale ID aus `/api/me/sync` verwenden. Das Backend prüft Rechte unabhängig von der Oberfläche. Der Frontend-Client ersetzt `author` noch durch Community; das ist offen.
 
-### Kommentar-Antwort
-
-Beispiel eines Elements im Array:
+Kommentar (GET-Liste als Array, POST/PATCH als einzelnes Objekt):
 
 ```json
 {
   "id": "33333333-3333-4333-8333-333333333333",
   "content": "Beispielkommentar",
   "userId": "22222222-2222-4222-8222-222222222222",
-  "createdAt": "2026-11-10T09:05:00.000Z",
+  "createdAt": "2026-11-11T09:05:00.000Z",
   "user": { "username": "Beispielnutzer" }
 }
 ```
 
-Ohne Kommentare lautet die Antwort `[]`. Kommentare werden erst nach Prüfung der Meme-Existenz abgefragt.
+Leere Listen: `[]`. DELETE mit 204 hat keinen JSON-Body; im Frontend dafür nicht `response.json()` aufrufen.
 
-### Nutzer-Synchronisation
+## Nutzer-Synchronisation
 
-`POST /api/me/sync` ermittelt die Clerk-ID ausschließlich aus der geprüften Anmeldung. Clerk liefert den Anzeigenamen; Prisma sucht über die eindeutige `clerkId`. Ein vorhandener Nutzer wird aktualisiert, andernfalls neu angelegt. Beispielantwort:
+Nach Clerk-Anmeldung `POST /api/me/sync` mit Token und ohne Body. Route lädt Clerk-Profil und führt `upsert` anhand eindeutiger `clerkId` aus. Bestehende lokale ID bleibt erhalten; neue Nutzer erhalten USER. Anzeigename: Username, alternativ Vorname, alternativ MemeFan. Beispielantwort:
 
 ```json
 {
@@ -68,55 +77,40 @@ Ohne Kommentare lautet die Antwort `[]`. Kommentare werden erst nach Prüfung de
 }
 ```
 
-Wiederholte Aufrufe verwenden dieselbe lokale ID. Der Aufruf aus der Anmeldeoberfläche ist noch nicht automatisch angebunden. `GET /api/me` liefert bisher nur die Clerk-ID, nicht dieses lokale Profil.
+Automatischer Frontend-Aufruf fehlt noch. Ohne lokales Profil liefern Upload, Kommentar-POST und Like-Aktionen 409. Ersteller und Rollen werden nicht aus Formularangaben übernommen.
 
-### Fehler
+## Upload und Titeländerung
 
-Anwendungsrouten liefern Fehler als `{ "error": "Verständliche Meldung" }`, z. B. 401 mit `Bitte zuerst anmelden.`. Unbekannte Routen liefern 404 mit `Route nicht gefunden.`. Datenbankabfragen fangen Fehler ab und liefern 500 mit einer fachlichen Meldung. Eine zentrale Fehlerbehandlung für JSON-Parser-, Clerk- und sonstige Middlewarefehler fehlt noch; das JSON-Format ist deshalb noch nicht für alle Fehler garantiert.
+POST /api/memes: `FormData` mit genau einer PNG-Datei im Feld `image` (höchstens 5 × 1024 × 1024 Bytes) und Textfeld `title` (getrimmt 1–100 Zeichen). Content-Type samt Boundary vom Browser/Postman setzen lassen. Kein Kategorie-Feld erforderlich. MIME-Vorprüfung und PNG-Signaturerkennung; keine vollständige Bilddekodierung. Lokales Profil wird vor Cloudinary-Upload gesucht. Bild wird im Cloudinary-Ordner `your-meme` gespeichert, Bildadresse/Public ID und lokale Ersteller-ID in PostgreSQL. Erfolg 201 mit Meme-Objekt.
 
-## POST /api/memes – implementierte Upload-Prüfung
+Fehler: 401 Anmeldung; 400 Titel/Datei/Anzahl/Format; 413 Größe; 409 Profil fehlt; 500 Dienst-/DB-Fehler. Eine generische 400-Meldung enthält derzeit den Tippfehler `JPNG`; technisch gilt PNG. Bei DB-Fehler nach Upload wird versucht, das neue Bild zu löschen. Fehlgeschlagene Bereinigung wird protokolliert, nicht dauerhaft erneut eingeplant.
 
-Anmeldung wird vor der Dateiannahme geprüft. Request: `multipart/form-data`, vom Client samt Boundary setzen lassen.
+PATCH /api/memes/:id: JSON `{ "title": "Neuer Titel" }`, nur eigener Titel. Kein Bildaustausch implementiert; Entscheidung dazu offen.
 
-| Feld | Typ | Regel |
-| --- | --- | --- |
-| `title` | Text | Getrimmt, 1–100 Zeichen |
-| `image` | Datei | Genau ein PNG; höchstens 5 × 1024 × 1024 Bytes (5 MiB) |
+DELETE /api/memes/:id: Besitzerprüfung, anschließend Cloudinary `destroy` mit resource_type image und invalidate true, dann Datenbanklöschung. `ok` und `not found` werden akzeptiert. Zugehörige Interaktionen werden durch die angewendeten FK-Kaskaden entfernt; Ordner selbst bleiben. Bei DB-Fehler nach erfolgreicher Bildlöschung bleibt vorübergehend ein Eintrag ohne Bild. Kein atomarer Ablauf über beide Dienste. Gemeinsam genutzte Cloudinary-Testoriginale nicht für Löschtests verwenden.
 
-Multer hält die Datei im Arbeitsspeicher und prüft die MIME-Angabe. Anschließend erkennt `isPng` die PNG-Signatur mittels file-type. Das ist keine vollständige Dekodierung oder Garantie einer unbeschädigten Bilddatei. `imageUrl`, `imageStorageId` und Ersteller-ID werden nicht vom Formular verlangt.
+## Kommentare
 
-Aktuelle Erfolgsantwort: HTTP 200, ausdrücklich noch keine Anlage und kein 201:
+POST und PATCH erwarten JSON `{ "content": "Mein Kommentar" }`. Getrimmt 1–1000 Zeichen. POST verknüpft Meme und lokalen angemeldeten Benutzer. PATCH/DELETE prüfen den Verfasser anhand der verifizierten Clerk-ID; fremde Kommentare 403. Erfolgreiches DELETE: 204. Anschließendes erneutes DELETE: 404. Administrator-Ausnahme noch nicht implementiert.
+
+## Likes
+
+POST und DELETE /api/memes/:id/like brauchen keinen Body. POST verwendet `createMany` mit `skipDuplicates`, DELETE `deleteMany` für eigene userId/memeId. Wiederholungen sind zulässig; sie erzeugen keine zusätzlichen eigenen Likes und entfernen keine fremden Likes. Jeweils 200, beispielsweise:
 
 ```json
 {
-  "message": "Upload-Prüfung erfolgreich. Noch nichts gespeichert.",
-  "title": "Mein Upload-Test"
+  "memeId": "11111111-1111-4111-8111-111111111111",
+  "liked": true,
+  "likeCount": 1
 }
 ```
 
-- Ohne gültige Anmeldung: 401.
-- Ungültiger Titel, fehlende/falsche Datei, mehrere Dateien oder falsches Dateifeld: 400.
-- Datei über dem Größenlimit: 413.
-- Eine generische 400-Meldung lautet noch `Bitte genau ein JPG/JPEG-Bild im Feld image senden.` Das ist ein bekannter Textfehler; MIME- und Signaturprüfung erlauben PNG.
+Nach DELETE ist `liked` false; `likeCount` enthält weiterhin Likes anderer Nutzer. Mutation und anschließende Zählung sind getrennte DB-Abfragen. GET-Liste/-Detail geben noch keinen persönlichen Like-Status aus; Vertrag dafür als nächsten Integrationsschritt ergänzen. Das Frontend darf einen bereits gespeicherten Zähler nicht zusätzlich lokal erhöhen.
 
-Josephine bestätigt den erfolgreichen PNG-Test mit obiger Antwort. Mehrfachauswahl und PNG-Formatumstellung wurden im Gespräch geprüft. Vollständige Tests aller Titel-, Größen- und Fehlerfälle stehen noch aus.
+## Fehlerformat und verbleibender Umfang
 
-`src/lib/uploadImage.ts` ist separat implementiert: PNG-Upload-Stream, Cloudinary-Ordner `your-meme`, Ergebnis `imageUrl`/`imageStorageId`. Die Route importiert oder verwendet diese Funktion noch nicht. Lokalen Ersteller zuordnen, Bild übertragen, Meme speichern und bei DB-Fehler das neue Bild bereinigen bleiben nächste Schritte. Noch kein vollständiger Upload-Vertrag für eine gespeicherte Erfolgsantwort.
+Anwendungsrouten verwenden `{ "error": "Meldung" }`. Zentrale Parser-/Clerk-/Middlewarefehlerbehandlung fehlt: ungültiges JSON liefert aktuell 400 HTML mit internen Details, live bestätigt. Vor Abnahme korrigieren.
 
-## Verbleibender Lösch-Platzhalter
+Noch keine Ordner-, Moderations- oder Kontolösch-Endpunkte. Pagination und Rate-Limits fehlen. `page=1&limit=20` ist weiterhin nur ein Planungsbeispiel, kein unterstützter Vertrag. Detail-Links lassen sich ohne zusätzlichen Backend-Teilen-Endpunkt verwenden. Kategorien, Suche und Editor gehören nicht zum vereinbarten Pflichtumfang; `altText` wäre eine gesondert abzustimmende Erweiterung.
 
-- `DELETE /api/memes/:id`: UUID-Prüfung, danach 503, `Meme-Löschung ist noch nicht verfügbar.` Keine Löschung und noch keine Eigentümer-/Adminprüfung.
-
-## Geplanter Umfang
-
-- PNG-Upload-Prüfung mit Cloudinary-Hilfsfunktion und lokaler Ersteller-/Meme-Speicherung verbinden; Fehlerbereinigung und abschließende Erfolgsantwort ergänzen. Regeln und Feldnamen für neue Uploads sind jetzt festgelegt; das vorhandene Frontend-Formular muss noch darauf ausgerichtet werden.
-- `PATCH /api/memes/:id`: Bearbeiten durch Ersteller; noch nicht implementiert.
-- Meme-Löschung durch Ersteller oder Administrator einschließlich Cloudinary-Datei.
-- Endpunkte für Likes, Kommentaränderungen, persönliche Ordner, Moderation und Kontolöschung konkretisieren und implementieren.
-- Pagination mit Standardwert und maximaler Seitengröße festlegen; `page=1&limit=20` bleibt nur ein Planungsbeispiel.
-- Eingaben, Rechte, Erfolgs- und Fehlerfälle pro Funktion dokumentieren und testen.
-- Teilen zunächst über Detail-Links; kein eigener Backend-Endpunkt nötig. Frontend-Detailseite verwendet noch Beispieldaten.
-
-Der vorgeschlagene Alternativtext `altText` wurde noch nicht als Schemafeld umgesetzt. Keine Erweiterung des Datenmodells allein durch diese Dokumentation.
-
-[Geprüfter Projektstand](projektstand.md) · [Backend-Start](../README.md)
+[Prüfbelege und Restplan](projektstand.md) · [Backend starten](../README.md)

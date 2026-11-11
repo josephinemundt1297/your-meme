@@ -100,14 +100,21 @@ Dieses Protokoll dokumentiert Dileks Frontend-Arbeiten für das Projekt **Your M
 - `npm run build` erfolgreich ausgeführt.
 - Git-Status geprüft: Branch `Frontend` ist sauber.
 
-## Offene Punkte und Warten auf Josi
+## Gemeinsamer Statusabgleich vom 11.11.2026
 
-- Josi muss das Kategorie-Feld im Backend-Datenmodell und in den API-Antworten ergänzen oder bestätigen, wie Kategorien umgesetzt werden sollen.
-- Danach muss das Frontend die echten Kategorien statt des Fallbacks `Community` anzeigen und filtern.
-- Kommentare sind technisch vorbereitet; echte Kommentare müssen noch im Backend/Testdatenbestand vorhanden sein.
-- Clerk muss im Backend abgesichert und mit dem Frontend abgestimmt werden.
-- Bild-Uploads, Likes und persönliche Ordner sind noch gemeinsame nächste Ausbauschritte.
-- Für die weitere API-Prüfung müssen Backend, PostgreSQL und Josis Testdaten lokal laufen.
+Dieser Nachtrag stammt aus dem gemeinsamen Code-/Dokumentationsabgleich und beschreibt keine zusätzlich von Dilek erledigten Aufgaben. Die historischen Tagesabschnitte oben bleiben erhalten.
+
+- Backend-Clerk-Prüfung und `/api/me/sync` sind inzwischen implementiert und authentifiziert getestet. Offen ist der automatische Aufruf aus dem Frontend, einschließlich Bearer-Token für Schreibanfragen.
+- Vollständiger PNG-Upload, Titeländerung, eigene Meme-Löschung, Kommentar-Schreibaktionen und Like-POST/DELETE sind verfügbar. Die Meme-Löschung wurde separat über API, Datenbank und Cloudinary erfolgreich geprüft.
+- Der veröffentlichte Frontend-Code lädt Übersicht, Detail und Kommentar-Liste bereits aus der API. Upload und Listen-Likes sind weiterhin lokal; Kommentarformular, Bearbeiten und Löschen fehlen.
+- Kategorien sind laut vereinbartem Backend-Umfang aus der ersten Version ausgeschlossen. Ein Kategorie-Feld ist daher keine Voraussetzung für die übrige Integration. Optionale Erweiterung nur gemeinsam abstimmen; Community bleibt vorerst ein technischer Ersatzwert.
+- Ersteller aus der API übernehmen; Client ersetzt ihn bisher durch Community.
+- Backend-Leseantworten brauchen noch einen persönlichen Like-Status, damit der Button nach Neuladen korrekt bleibt.
+- Echte Interaktionen liegen in der jeweils lokalen Datenbank. Die gemeinsamen Bild-Fixtures übertragen keine Kommentare oder Likes.
+- Nächste Frontend-Reihenfolge: Sync und Token, echter Upload, Meme-/Kommentaraktionen und Likes. Ordner/Moderation/Kontolöschung folgen mit den noch fehlenden Backend-Routen.
+- Frontend-Lint und Build wurden im gemeinsamen Abgleich erneut erfolgreich ausgeführt. Keine neue vollständige mobile/Screenreader-Abnahme.
+
+Details: [Frontend-Start](../README.md), [API-Vertrag](../../backend/docs/api-plan.md), [Prüfbelege und Aufwandsschätzung](../../backend/docs/projektstand.md).
 
 ## Zuständigkeiten
 

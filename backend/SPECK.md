@@ -25,12 +25,12 @@
 
 Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind keine Erledigt-Meldungen.
 
-- Express, Prisma/PostgreSQL, Statusrouten, öffentliche Meme-Liste, Detail- und Kommentarabfrage sind implementiert. Meme-Antworten enthalten Ersteller und Zähler.
-- Clerk-Middleware, geschützte Identitätsabfrage und `POST /api/me/sync` mit lokaler Nutzeranlage/-aktualisierung sind implementiert. Angemeldete Tests wurden von Josephine bestätigt. Der automatische Frontend-Aufruf fehlt noch.
-- CORS für `http://localhost:5173` ist implementiert und lesend getestet.
-- Cloudinary-SDK, Konfiguration und Upload-Hilfsfunktion vorhanden; Josephine bestätigt erfolgreichen Ping. Upload-Hilfsfunktion noch nicht in die Route integriert. Versionierte Testdaten und Importskript ermöglichen dieselben Bilder bei Dilek.
-- POST /api/memes prüft jetzt Anmeldung, Titel und eine PNG-Datei bis 5 MiB; Erfolg derzeit 200 ohne Speicherung. Josephine bestätigt den PNG-Test. Lokaler Ersteller, Cloudinary-Aufruf und Datenbankanlage fehlen noch. DELETE bleibt 503-Platzhalter; Bearbeiten, Inhaltsrechte, Likes, Kommentarverwaltung, Ordner, Moderation und Kontolöschung sind offen.
-- Zod ist installiert. Jest, Supertest und automatisiertes Testskript fehlen noch. Detailergebnisse und Prüfgrenzen: [Projektstand](docs/projektstand.md).
+- Express, PostgreSQL/Prisma, öffentliche Meme-/Detail-/Kommentarabfragen sowie Clerk-Prüfung und lokale Nutzer-Synchronisation sind implementiert.
+- Vollständiger PNG-Upload nach Cloudinary und PostgreSQL (201), eigener Meme-Titel bearbeiten und eigene Memes einschließlich Bild löschen sind implementiert; Erstellerprüfung vorhanden.
+- Kommentare erstellen, eigene bearbeiten/löschen und eigene Likes setzen/entfernen sind implementiert. Kommentartext getrimmt 1–1000 Zeichen, Meme-Titel 1–100 Zeichen.
+- Frontend lädt Liste, Detail und Kommentare; schreibende Anbindung und automatischer Sync fehlen im geprüften Stand. API-Leseantworten enthalten noch keinen persönlichen Like-Status.
+- Offen: Ordner, Administrator-Moderation, Kontolöschung, Pagination, Missbrauchsbegrenzung, zentrale JSON-Fehlerbehandlung und vollständige Tests. Cloudinary-/DB-Teilausfälle sind noch nicht dauerhaft wiederholbar abgesichert.
+- Backend-Typprüfung/Build, Prisma-Validierung und Frontend-Lint/Build erfolgreich. Live-Prüfungen und gewichtete Bewertung (Backend ca. 65 %, Frontend ca. 45 %, gesamt ca. 55 %): [Projektstand](docs/projektstand.md). Keine automatisierte Backend-Testsuite eingerichtet.
 
 ## Funktionen und Zugriffsrechte
 
@@ -57,7 +57,7 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 - Schnittstellen vor der Umsetzung mit dem Frontend abstimmen.
 - Bereits geplante Meme-Endpunkte stehen in [docs/api-plan.md](docs/api-plan.md).
-- Weitere Endpunkte für Kommentare, Likes, Ordner und das eigene Konto werden noch konkretisiert.
+- Kommentar- und Like-Endpunkte sind implementiert; Ordner, Moderation und Kontolöschung werden noch konkretisiert.
 - Aussagekräftige HTTP-Methoden und Statuscodes sowie konsistente JSON-Antworten verwenden.
 - Meme-Listen seitenweise ausliefern und die angeforderte Seitengröße begrenzen.
 - Anfrage- und Antwortformate einschließlich Fehlerfällen vor der Frontend-Anbindung dokumentieren.
@@ -100,7 +100,9 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 ## Noch offen
 
-- Fehlende Integration der bestehenden PNG-Upload-Prüfung und Cloudinary-Hilfsfunktion in den vollständigen Speicherablauf.
+- Persönlicher Like-Status beim Laden, Pagination, Missbrauchsbegrenzung und sichere zentrale Fehlerantworten.
+- Persönliche Ordner, Administrator-Moderation und vollständige Kontolöschung.
+- Dauerhafte Behandlung von Cloudinary-/Datenbank-Teilausfällen.
 - Ob beim Bearbeiten eines Memes neben dem Titel auch das Bild ersetzt werden kann.
 - Automatischer Aufruf der vorhandenen Nutzer-Synchronisation aus dem Frontend nach Clerk-Anmeldung.
 - Technische Einzelheiten der Kontolöschung über Datenbank, Clerk und Bildspeicher.
@@ -110,9 +112,8 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 ## Nächster Arbeitsschritt
 
-- Bestehende Upload-Prüfung um lokalen Ersteller, Cloudinary-Aufruf, Meme-Speicherung und Fehlerbereinigung erweitern; PNG-/5-MiB-Regel beibehalten.
-- Cloudinary-Antwort und lokalen Nutzer sicher mit einem Meme verknüpfen; Teilausfälle zwischen Cloudinary und PostgreSQL behandeln.
-- Parallel Frontend-Detailseite an die vorhandene API anschließen und gelieferten Ersteller übernehmen.
-- Danach Bearbeiten/Löschen und weitere Nutzeraktionen mit Rechteprüfung ergänzen.
-- Validierung, passende Tests, Dokumentation sowie Handy- und Tastaturprüfung bei jeder Funktion mitführen.
-- [Projektstand und Arbeitsweise](docs/projektstand.md) dokumentieren Ergebnisse, Grenzen und weitere Reihenfolge.
+- Persönlichen Like-Status für das Frontend ergänzen und Parser-/Middlewarefehler als sichere JSON-Antworten behandeln.
+- Persönliche Ordner und Meme-Zuordnungen ausschließlich für den Besitzer umsetzen.
+- Parallel Frontend: automatischer Sync, echter Upload, Autor übernehmen sowie Kommentar-/Like-Aktionen und eigene Meme-Verwaltung anbinden.
+- Danach Moderation und Kontolöschung einschließlich Teilausfällen; abschließende Rechte-, Integrations- und Abnahmetests.
+- Validierung, Tests und Dokumentation mitführen. [Projektstand](docs/projektstand.md) enthält Belege und Grenzen.

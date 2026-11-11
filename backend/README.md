@@ -1,13 +1,13 @@
 # Your Meme – Backend starten
 
-Stand: 11.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und vorbereiteter Cloudinary-Anbindung. Die Upload-Prüfung ist implementiert; Cloudinary-Upload und Meme-Speicherung sind noch nicht an die Route angeschlossen.
+Stand: 11.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und vollständiger Cloudinary-Anbindung für Meme-Upload und -Löschung. Kommentar-Schreibaktionen, Titeländerung und Likes sind ebenfalls implementiert.
 
 ## Voraussetzungen und Installation
 
 - Node.js 24 und npm verwenden. Die Paketkonfiguration erlaubt noch `>=22.9.0`, obwohl Prisma laut Lockdatei mindestens Node 22.12 im 22er-Zweig benötigt; diese Angabe ist noch zu korrigieren.
 - PostgreSQL muss laufen; eigene Projektdatenbank und Benutzerzugang einrichten.
 - Zugriff auf dieselbe Clerk-Anwendung wie das Frontend.
-- Cloudinary-Zugangsdaten für den Cloudinary-Client und den späteren Upload.
+- Cloudinary-Zugangsdaten für den Cloudinary-Client und den Upload.
 
 Alle folgenden Befehle im Ordner `backend/` ausführen:
 
@@ -17,7 +17,7 @@ npm ci
 
 ## Lokale Konfiguration
 
-Falls noch keine `.env` vorhanden ist, `.env.example` kopieren und ergänzen. Eine vorhandene `.env` beibehalten. Die Vorlage enthält noch keine Cloudinary-Einträge; diese wie unten ergänzen.
+Falls noch keine `.env` vorhanden ist, `.env.example` kopieren und ergänzen. Eine vorhandene `.env` beibehalten. Die Vorlage enthält die benötigten Variablennamen; die eigenen Werte lokal ergänzen.
 
 ```env
 PORT=3000
@@ -33,7 +33,7 @@ Dies sind Platzhalter, keine gültigen Zugangsdaten. `PORT` ist optional. Postgr
 
 Express erwartet `CLERK_PUBLISHABLE_KEY`, ohne `NEXT_PUBLIC_` oder `VITE_`. Nur im Frontend heißt die Variable `VITE_CLERK_PUBLISHABLE_KEY`. API-Secret und Clerk Secret Key niemals im Frontend speichern. `.env` ist aus Git ausgeschlossen.
 
-Der Cloudinary-Client liest die drei Cloudinary-Variablen beim Import. Er wird noch nicht von einer Upload-Route verwendet; öffentliche Meme-Abfragen lesen nur die gespeicherten Bildadressen.
+Der Cloudinary-Client liest die drei Cloudinary-Variablen beim Import. Er wird von Upload und Löschung verwendet. Fehlende Cloudinary-Variablen verhindern deshalb den Serverstart; öffentliche Meme-Abfragen selbst lesen gespeicherte Bildadressen.
 
 ## Prisma und Datenbank
 
@@ -81,7 +81,13 @@ Standardadresse: `http://localhost:3000`. Nach Env-Änderungen den Server neu st
 | `GET /api/memes/:id/comments` | 200, Kommentar-Array; ohne Kommentare `[]` |
 | `GET /api/me` | Ohne Anmeldung 401; mit gültigem Session-Token 200 und Clerk-ID |
 | `POST /api/me/sync` | Ohne Anmeldung 401; mit gültiger Anmeldung lokales Profil anlegen/aktualisieren |
-| `POST /api/memes` | Angemeldete multipart-Prüfung für PNG und Titel; 200 bedeutet derzeit nur Prüfung, keine Speicherung |
+| `POST /api/memes` | PNG und Titel als multipart; 201 mit gespeichertem Meme |
+| `PATCH /api/memes/:id` | Eigenen Titel ändern, JSON title; 200 |
+| `DELETE /api/memes/:id` | Eigenes Meme und Bild löschen; 204 ohne Body |
+| `POST /api/memes/:id/comments` | JSON content, Kommentar erstellen; 201 |
+| `PATCH /api/comments/:id` | Eigenen Kommentar ändern; 200 |
+| `DELETE /api/comments/:id` | Eigenen Kommentar löschen; 204 |
+| `POST` / `DELETE /api/memes/:id/like` | Eigenen Like setzen/entfernen; 200 mit liked und likeCount |
 
 Unbekannte Routen liefern 404 als JSON. Vollständige Formate und Grenzen stehen im [API-Plan](docs/api-plan.md).
 
@@ -115,20 +121,29 @@ npm start
 
 | Datei | Aufgabe |
 | --- | --- |
-| `src/server.ts` | Express, CORS, Clerk, öffentliche Abfragen, Nutzer-Synchronisation, Upload-Prüfung und Lösch-Platzhalter |
+| `src/server.ts` | Express, CORS, Clerk, Lese-API, Nutzer-Sync, Meme-/Kommentar-/Like-Schreibaktionen |
 | `src/lib/prisma.ts` | Prisma-Client mit PostgreSQL-Adapter |
 | `src/lib/memeSelect.ts` | Öffentliche Meme-Felder, Ersteller und Zähler auswählen |
 | `src/utils/formatMeme.ts` | `author`, `likeCount` und `commentCount` ausgeben |
 | `src/utils/isValidUuid.ts` | UUID-Grundform prüfen |
 | `src/validators/meme.ts` | Zod-Schema; enthält noch ausführbaren Beispieltestcode |
 | `src/lib/cloudinary.ts` | Cloudinary-SDK konfigurieren |
-| `src/lib/uploadImage.ts` | PNG per Upload-Stream übertragen; liefert Bildadresse/Public ID, noch nicht in der Route verwendet |
+| `src/lib/uploadImage.ts` | PNG per Upload-Stream übertragen; wird von der POST-Route verwendet |
 | `src/middleware/upload.ts` | Multer: eine Datei im Speicher, maximal 5 MiB, MIME-Vorprüfung auf PNG |
 | `src/utils/isPng.ts` | PNG-Dateisignatur mit file-type erkennen; keine vollständige Bilddekodierung |
 | `prisma/import-test-memes.ts`, `prisma/test-memes.json` | Gemeinsame lokale Bild-Testdaten importieren |
 | `prisma/` | Schema und vorhandene Migration |
 | `.agents/skills/`, `.claude/skills/`, `.windsurf/skills/` | Werkzeughilfen und Verknüpfungen, kein Anwendungscode |
 
-`POST /api/memes` erwartet jetzt `multipart/form-data`: `title` als Text, `image` als Datei, gültiger Bearer-Session-Token. Nur PNG, genau ein Bild, maximal 5 × 1024 × 1024 Bytes; Titel getrimmt mit 1–100 Zeichen. Erfolg liefert 200 mit `Upload-Prüfung erfolgreich. Noch nichts gespeichert.` Fehler: ohne Anmeldung 401, ungültige Eingaben 400, zu große Datei 413. Postman/FormData setzen den Content-Type samt Boundary automatisch. Eine generische Fehlerantwort sagt im Code noch fälschlich JPG/JPEG; tatsächlich wird PNG geprüft.
+`POST /api/memes` erwartet `FormData`: `title` als Text, `image` als Datei und Bearer-Token. Genau ein PNG bis 5 MiB, Titel getrimmt 1–100 Zeichen. Erfolg 201 liefert das gespeicherte Meme. Kommentare erwarten JSON `content` (1–1000 Zeichen), Titeländerung JSON `title`. DELETE und Like-Anfragen benötigen keinen Body. Bei 204 keine JSON-Antwort auslesen.
 
-`uploadImage` wird noch nicht aufgerufen; lokale Erstellerzuordnung, Cloudinary-Upload, Datenbankanlage und Bereinigung bei Teilausfällen fehlen in der Route. `DELETE /api/memes/:id` bleibt ein 503-Platzhalter. Bearbeiten/Löschen mit Rechteprüfung, Likes, Kommentarverwaltung, Ordner, Moderation und Kontolöschung fehlen. Details: [Projektstand](docs/projektstand.md), [Spezifikation](SPECK.md).
+Vor Upload, Kommentar-Erstellung und Likes muss das lokale Profil über `/api/me/sync` vorhanden sein, sonst 409. Profil-ID aus der Sync-Antwort ist eine lokale UUID; Clerk-ID ist ein anderer Wert. Vollständige Anfrage-/Antwortformate und Statuscodes: [API-Vertrag](docs/api-plan.md).
+
+## Offene Arbeiten und bekannte Grenzen
+
+- Backend: persönliche Ordner, Administrator-Moderation und vollständige Kontolöschung fehlen; Kategorien sind aus Version 1 ausgeschlossen.
+- GET-Liste/-Detail brauchen noch persönlichen Like-Status; Pagination und Missbrauchsbegrenzung fehlen.
+- Ungültiges JSON liefert aktuell HTML mit internen Details; zentrale Fehlerbehandlung ergänzen. Generische Upload-Meldung enthält `JPNG` statt PNG.
+- Cloudinary und PostgreSQL sind nicht atomar gekoppelt: bei Teilausfällen kann Bereinigung nötig sein. Löschtests ausschließlich mit eigenen separaten Upload-Testbildern durchführen, keine gemeinsamen Fixture-Originale löschen.
+- Beispieltestcode in `src/validators/meme.ts` läuft beim Import; noch aufräumen.
+- Frontend-Upload, Kommentar-/Like-Aktionen, eigene Meme-Verwaltung und automatischer Sync sind noch anzubinden. Details und Prüfbelege: [Projektstand](docs/projektstand.md).
