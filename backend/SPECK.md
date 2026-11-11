@@ -18,19 +18,19 @@
 - PostgreSQL für dauerhafte Datenhaltung.
 - Prisma für Datenmodell, Migrationen und Datenbankzugriffe.
 - Clerk für Registrierung, Anmeldung und Passwortverwaltung.
-- Bildspeicher und gegebenenfalls Hosting: noch auszuwählen.
+- Cloudinary als Bildspeicher; Hosting optional und noch offen.
 - Unterrichtsgrundlagen für Validierung und Tests: Zod, Postman, Jest und Supertest; schrittweise nach Bedarf einrichten.
 
-## Umsetzungsstand am 04.11.2026
+## Umsetzungsstand am 10.11.2026
 
-Diese Spezifikation beschreibt den vereinbarten Zielumfang. Die folgenden Abschnitte sind Anforderungen, soweit sie nicht ausdrücklich als umgesetzt bezeichnet werden.
+Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind keine Erledigt-Meldungen.
 
-- Express-/TypeScript-Grundgerüst mit `GET /api/health` und JSON-Antwort für unbekannte Routen vorhanden.
-- Prisma 7 mit PostgreSQL-Adapter eingerichtet; Schema mit sechs Modellen, erste SQL-Migration und Modul zur Client-Initialisierung vorhanden.
-- `src/server.ts` verwendet den Prisma-Client bisher nicht. Eine funktionierende Datenbankverbindung und der angewendete Migrationsstand werden durch die vorhandenen Dateien allein nicht belegt.
-- Meme-Endpunkte, Clerk-Anbindung, Bildspeicher und weitere fachliche Funktionen sind noch nicht umgesetzt.
-- Zod, Jest und Supertest sind noch nicht installiert; ein automatisiertes Testskript fehlt. TypeScript- und Schema-Prüfung ersetzen keine Funktionstests.
-- Geprüfte Ergebnisse und offene technische Punkte stehen in [docs/projektstand.md](docs/projektstand.md).
+- Express, Prisma/PostgreSQL, Statusrouten, öffentliche Meme-Liste, Detail- und Kommentarabfrage sind implementiert. Meme-Antworten enthalten Ersteller und Zähler.
+- Clerk-Middleware, geschützte Identitätsabfrage und `POST /api/me/sync` mit lokaler Nutzeranlage/-aktualisierung sind implementiert. Angemeldete Tests wurden von Josephine bestätigt. Der automatische Frontend-Aufruf fehlt noch.
+- CORS für `http://localhost:5173` ist implementiert und lesend getestet.
+- Cloudinary-SDK und Konfiguration vorhanden; Josephine bestätigt erfolgreichen Ping. Testbilder wurden manuell hochgeladen und in PostgreSQL verknüpft. Automatischer Upload ist noch nicht implementiert.
+- POST/DELETE für Memes sind weiterhin Platzhalter mit 503; Bearbeiten, Rechteprüfung, Likes, Kommentarverwaltung, Ordner, Moderation und Kontolöschung sind offen.
+- Zod ist installiert. Jest, Supertest und automatisiertes Testskript fehlen noch. Detailergebnisse und Prüfgrenzen: [Projektstand](docs/projektstand.md).
 
 ## Funktionen und Zugriffsrechte
 
@@ -100,9 +100,9 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang. Die folgenden Abschn
 
 ## Noch offen
 
-- Bildspeicherdienst und Upload-Grenzen.
+- Erlaubte Upload-Formate und maximale Dateigröße; Cloudinary ist ausgewählt.
 - Ob beim Bearbeiten eines Memes neben dem Titel auch das Bild ersetzt werden kann.
-- Konkreter Ablauf der lokalen Nutzeranlage nach Clerk-Anmeldung.
+- Automatischer Aufruf der vorhandenen Nutzer-Synchronisation aus dem Frontend nach Clerk-Anmeldung.
 - Technische Einzelheiten der Kontolöschung über Datenbank, Clerk und Bildspeicher.
 - Vollständige API-Verträge und Testfälle.
 - Optionales Hosting; keine Voraussetzung für die Abgabe.
@@ -110,9 +110,9 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang. Die folgenden Abschn
 
 ## Nächster Arbeitsschritt
 
-- Das vorhandene Datenmodell bei Bedarf gemeinsam in kleinen Teilbildern nachvollziehen.
-- Datenbankverbindung und angewendeten Migrationsstand prüfen; danach einen ersten Datenbankzugriff schrittweise selbst umsetzen.
-- API-Verträge mit dem Frontend vervollständigen und die erste öffentliche Meme-Abfrage umsetzen. Das Backend-Grundgerüst und die erste Migrationsdatei sind bereits vorhanden.
-- Datenvalidierung, Rechteprüfung, passende Tests und Dokumentation gehören zu jeder Funktion und werden nicht auf die letzte Projektphase verschoben.
-- Die Oberfläche wird während der Entwicklung auf kleinen Bildschirmen und mit Tastatur geprüft; die Abschlussprüfung bestätigt diese Arbeit nochmals.
-- [Projektstand und Arbeitsweise](docs/projektstand.md) beschreiben geprüfte Ergebnisse, Reihenfolge und Trello-Farben.
+- Dateiupload mit Anmeldung, lokalem Ersteller, Titel-/Dateiprüfung und Cloudinary-Verarbeitung ergänzen; Format- und Größenlimits vorher festlegen.
+- Cloudinary-Antwort und lokalen Nutzer sicher mit einem Meme verknüpfen; Teilausfälle zwischen Cloudinary und PostgreSQL behandeln.
+- Parallel Frontend-Detailseite an die vorhandene API anschließen und gelieferten Ersteller übernehmen.
+- Danach Bearbeiten/Löschen und weitere Nutzeraktionen mit Rechteprüfung ergänzen.
+- Validierung, passende Tests, Dokumentation sowie Handy- und Tastaturprüfung bei jeder Funktion mitführen.
+- [Projektstand und Arbeitsweise](docs/projektstand.md) dokumentieren Ergebnisse, Grenzen und weitere Reihenfolge.
