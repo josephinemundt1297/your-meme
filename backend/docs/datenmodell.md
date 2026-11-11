@@ -1,15 +1,15 @@
 # Your Meme – Datenmodell
 
-Stand: 11.11.2026. Schema und erste Migration sind unverändert; die sechs Modelle, Felder, Schlüssel und Löschkaskaden stimmen weiterhin überein. Die lokale Datenbank ist erreichbar und enthält Testdaten. Der angewendete Migrationsstand wurde bei der aktuellen Prüfung nicht erneut mit `migrate status` abgefragt; die Anwendung der ersten Migration ist zuvor dokumentiert.
+Stand: 11.11.2026. Sechs Modelle und Initialmigration unverändert. Aktuelle DB-Abfrage bestätigt die abgeschlossene, nicht zurückgerollte Initialmigration `20261104125318_init`. Meme-, Kommentar- und Like-Schreibaktionen nutzen jetzt diese Modelle. Eine leere oder vorhandene Tabelle allein belegt keine fertige Nutzerfunktion.
 
-Clerk-Identität und lokale Nutzer-Synchronisation sind implementiert. Eigentümer-/Administratorprüfungen für die geplanten Inhaltsänderungen und dienstübergreifende Kontolöschung fehlen noch. Die folgenden Berechtigungs- und Löschregeln bleiben Zielanforderungen.
+Clerk-Identität, lokale Nutzer-Synchronisation und Besitzerprüfungen für Meme-/Kommentaränderungen sind implementiert. Ordnerzugriffe, Administrator-Moderation und dienstübergreifende Kontolöschung bleiben Zielanforderungen.
 
 ## Technische Grundlage
 
 - Node.js, Express und TypeScript
 - PostgreSQL mit Prisma
 - Clerk für Registrierung, Anmeldung und Passwortverwaltung
-- Bildspeicher: Cloudinary; Testbilder manuell hochgeladen, Upload-Prüfung und Hilfsfunktion vorhanden, automatischer Speicherablauf noch offen
+- Bildspeicher: Cloudinary; automatischer PNG-Upload und Meme-Dateilöschung implementiert, gemeinsame Fixture-Originale zusätzlich vorhanden
 - Hosting: optional; Anbieter noch offen
 
 ## Beziehungsdiagramm
@@ -94,7 +94,7 @@ erDiagram
 
 ## Berechtigungen
 
-Geplante Zugriffsregeln für die noch umzusetzenden fachlichen Endpunkte:
+Zielregeln für die gesamte Anwendung. Bereits vorhanden: öffentliche Abfragen, eigene Meme-/Kommentarverwaltung und Likes. Noch offen: Ordner, Admin-Ausnahmen und Kontolöschung. Die Tabelle beschreibt daher nicht überall bereits verfügbares Verhalten:
 
 | Aktion                                       | Besucher | Angemeldete Nutzer | Administratoren |
 | -------------------------------------------- | -------- | ------------------ | --------------- |
@@ -112,7 +112,7 @@ Geplante Zugriffsregeln für die noch umzusetzenden fachlichen Endpunkte:
 
 - Das Backend prüft bei geschützten Anfragen die Clerk-Identität.
 - Die lokale Nutzerzuordnung erfolgt anhand der verifizierten Clerk-ID.
-- Eigentümer- und Administratorrechte werden vor Änderungen serverseitig geprüft.
+- Eigentümerrechte werden bei Meme-/Kommentaränderungen serverseitig geprüft. Administrator-Ausnahmen sind noch nicht umgesetzt.
 - Fremde Memes und Kommentare dürfen von Administratoren gelöscht, aber nicht bearbeitet werden.
 - Das Backend übernimmt die Identität und Rolle nicht ungeprüft aus dem Request-Body.
 
@@ -120,8 +120,7 @@ Geplante Zugriffsregeln für die noch umzusetzenden fachlichen Endpunkte:
 
 Die relationalen Löschkaskaden sind in Schema und Migration definiert (`onDelete: Cascade`).
 Für ihre Wirkung muss die Migration in der Datenbank angewendet sein.
-Bilddateien, Clerk-Konto, Bestätigung und wiederholbare Bereinigung benötigen zusätzliche Anwendungslogik;
-diese ist noch nicht implementiert.
+Meme-Bildlöschung ist implementiert: erst Cloudinary, dann PostgreSQL. Ein separater Upload-Test wurde erfolgreich gelöscht und die Entfernung in beiden Diensten geprüft. Ein befüllter Kaskadentest mit Kommentaren, Likes und Ordnereinträgen fehlt noch. Bei DB-Fehler nach Bildlöschung kann vorübergehend ein Eintrag ohne Bild bestehen; erneuter Versuch akzeptiert ein bereits fehlendes Bild. Vollständige Kontolöschung, Bestätigung und dauerhafte Wiederholungslogik sind noch nicht implementiert.
 
 - Meme löschen: zugehörige Kommentare, Likes und FolderMeme-Einträge entfernen.
 - Die Bilddatei zusätzlich beim Bildspeicherdienst löschen; Datenbankregeln allein entfernen keine externen Dateien.
@@ -182,11 +181,11 @@ diese ist noch nicht implementiert.
 
 ## Nächste Schritte
 
-1. Bestehende Nutzer-Synchronisation nach Anmeldung im Frontend aufrufen; die verifizierte Clerk-ID bleibt die Grundlage der lokalen Zuordnung.
-2. Vorhandene PNG-Upload-Prüfung (ein Bild, 5 MiB) mit Cloudinary-Hilfsfunktion und Meme-Anlage für den lokalen Ersteller verbinden. UUID und `updatedAt` über den Prisma Client erzeugen lassen.
-3. Bearbeiten/Löschen sowie Likes, Kommentare und Ordner mit den vereinbarten Rechten umsetzen.
-4. Cloudinary-Dateilöschung, Clerk-Kontolöschung und wiederholbare Bereinigung bei Teilausfällen implementieren und testen.
-5. Der vorgeschlagene Alternativtext `altText` ist noch kein Schemafeld; eine mögliche Erweiterung separat abstimmen.
+1. Frontend-Nutzer-Synchronisation anbinden; lokale UUID aus Sync und Clerk-ID nicht verwechseln.
+2. Persönlichen Like-Status in Leseantworten ergänzen; private Ordner und Meme-Zuordnungen umsetzen.
+3. Administrator-Löschrechte ausschließlich serverseitig prüfen und Rechtevergabe festlegen.
+4. Kontolöschung über PostgreSQL, Clerk und Cloudinary einschließlich wiederholbarer Bereinigung umsetzen; befüllte Löschkaskaden und Teilausfälle testen.
+5. Bildaustausch und `altText` sind noch keine implementierten Erweiterungen. Kategorien sind aus dem Pflichtumfang von Version 1 ausgeschlossen.
 
 Validierung, Rechteprüfung, Tests und Dokumentation werden bei jeder Funktion mitgeführt.
 Aktueller Stand und Trello-Arbeitsweise: [projektstand.md](projektstand.md).

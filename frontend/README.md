@@ -1,76 +1,56 @@
-# React + TypeScript + Vite
+# Your Meme – Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Stand: 11.11.2026. React, TypeScript, Vite, TanStack Router und Clerk. Geprüfter veröffentlichter Frontend-Stand: `5d966ef`; gemeinsamer API-Stand in main laut Abgleich `9990879`. Unveröffentlichte Änderungen sind nicht bewertet.
 
-Currently, two official plugins are available:
+## Lokal starten
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Node.js 24 und npm verwenden. Im Ordner `frontend/`:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm ci
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Eigene `.env.local` anlegen, eine vorhandene nicht überschreiben:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```env
+VITE_CLERK_PUBLISHABLE_KEY=DEIN_PUBLISHABLE_KEY
+VITE_API_URL=http://localhost:3000
 ```
-# your-meme
+
+Publishable Key derselben Clerk-Anwendung wie im Backend verwenden. Secret Keys gehören ausschließlich ins Backend. Danach:
+
+```bash
+npm run dev
+```
+
+Normalerweise `http://localhost:5173/` öffnen, nicht `/api/memes`. Bei anderem Port Backend-CORS abstimmen. Backend und PostgreSQL laufen separat; [Einrichtung und Testdaten](../backend/README.md). Nach Env-Änderungen neu starten. Git überträgt keine lokalen Datenbankinhalte.
+
+## Was bereits funktioniert
+
+- Layout, Navigation, responsive Styles, Clerk-Anmelden/Registrieren und Benutzer-Button.
+- Übersicht und Detail laden Memes über die API; Kommentar-Liste lädt echte Daten.
+- Lade-, Fehler-, Leer- und Nicht-gefunden-Zustände.
+- Sortierung und lokale Textsuche vorhanden; Kategorienfilter ist nicht fertig. Suche/Kategorien sind kein zusätzlicher Pflichtumfang.
+
+## Nächste API-Anbindung
+
+1. Nach Anmeldung `/api/me/sync` mit aktuellem Clerk-Token aufrufen. Lokale Nutzer-ID aus Antwort merken; sie unterscheidet sich von Clerk-ID.
+2. Uploadformular: FormData `title` und genau eine Datei `image`, ausschließlich PNG bis 5 MiB. Kategorie nicht voraussetzen; Content-Type nicht selbst setzen. Erst bei 201 gespeicherten Erfolg anzeigen.
+3. Meme-Titel bearbeiten/eigene Memes löschen; Kommentarformular und eigene Kommentar-Aktionen ergänzen. Bei 204 keinen JSON-Body lesen.
+4. Likes per POST/DELETE anbinden, `liked` und `likeCount` aus Antwort übernehmen. Persönlicher Like-Status nach Neuladen fehlt noch im Backend-Lesevertrag; gemeinsam ergänzen. Lokale Zusatz-Zählung dann ersetzen.
+5. Gelieferten Meme-`author` übernehmen; der Client setzt bisher Community. Private Ordner, Moderation und Kontolöschung sind noch nicht angebunden und benötigen weitere Backend-Endpunkte.
+
+Alle geschützten Anfragen: `Authorization: Bearer <aktueller Session-Token>`. Die konkreten Pfade, JSON-Formate und Fehler stehen im [API-Vertrag](../backend/docs/api-plan.md).
+
+Das Uploadformular und Listen-Likes sind im geprüften Code noch lokale Demonstrationen. Detail-Like-Button hat noch keine Aktion; Ordnerseite ist ein Platzhalter. Vorschau-Object-URLs werden noch nicht freigegeben. Vor Abnahme Tastatur, Kontraste, Bildbeschreibungen und mobile Darstellung praktisch prüfen; vorhandene ARIA-/alt-Attribute allein belegen keine vollständige Barrierefreiheit.
+
+## Prüfungen und Zusammenarbeit
+
+```bash
+npm run lint
+npm run build
+```
+
+Beide am 11.11. erfolgreich; dies ersetzt keine Browser-/Integrationstests. [Arbeitsprotokoll](docs/arbeitsprotokoll.md) dokumentiert Dileks Arbeiten, [Projektstand](../backend/docs/projektstand.md) den gemeinsamen kritischen Abgleich.
+
+Auf eigenem Frontend-Branch arbeiten. Vor einem Merge lokale Arbeit committen; aktuelle main-Änderungen können dort mit `git pull --no-rebase origin main` übernommen werden. Bei Konflikten betroffene Änderungen gemeinsam prüfen.

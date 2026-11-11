@@ -1,189 +1,94 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-Stand: 11.11.2026, Zwischenstand vor der Mittagspause. Code: Backend 1709a2d, einschließlich gemeinsamer Bild-Testdaten. Der zu Beginn gelesene GitHub-main enthielt denselben Dateistand; lokale main-Referenzen können zurückliegen. Vor dieser Dokumentationsänderung war Backend sauber. Abgabe 23.11.2026, Präsentationstermin offen, Deployment freiwillig.
+Stand: 11.11.2026, nach Umsetzung von Meme-, Kommentar- und Like-Aktionen. Geprüfter lokaler Backend-Commit: `6d476f4`. GitHub-main bei Prüfung: `9990879`; Frontend-Branch: `5d966ef`. Nicht veröffentlichte Änderungen auf Dileks Rechner sind nicht bewertet. Abgabe: 23.11.2026; Deployment freiwillig.
 
-## Bestätigter Stand
+## Tatsächlicher Stand
 
-- Express/TypeScript und PostgreSQL/Prisma mit sechs Modellen, erster Migration und Prisma-Client vorhanden. Öffentliche Meme-, Detail- und Kommentarabfragen implementiert; Ersteller und Zähler werden geliefert.
-- Clerk-Middleware, GET /api/me und POST /api/me/sync mit upsert anhand der eindeutigen Clerk-ID vorhanden. Josephine hat erfolgreiche angemeldete Tests und gleichbleibende lokale UUID bei Wiederholung bestätigt.
-- CORS erlaubt localhost:5173. Frontend-Übersicht lädt API-Daten; Josephine bestätigt sichtbare Bilder/Titel und inzwischen den funktionierenden Stand bei Dilek.
-- 29 Bild-Testdatensätze und Importskript liegen jetzt unter prisma/. Import ordnet neue Einträge einem Demo-Profil zu und überspringt vorhandene IDs. Keine Kopie echter Clerk-Konten oder Interaktionen; gemeinsam verwendete Cloudinary-Bildadressen.
-- Multer und file-type installiert. POST /api/memes prüft Anmeldung vor Dateiannahme, Titel (getrimmt 1–100 Zeichen), genau eine PNG-Datei bis 5 × 1024 × 1024 Bytes und deren Dateisignatur. Die JPG-Idee wurde durch PNG ersetzt. Josephine bestätigt den erfolgreichen PNG-Postman-Test: HTTP 200 und Upload-Prüfung erfolgreich. Noch nichts gespeichert.
-- Cloudinary-Konfiguration und erfolgreicher Ping bereits bestätigt. src/lib/uploadImage.ts implementiert einen PNG-Upload-Stream und liefert imageUrl/imageStorageId. Diese Funktion ist noch nicht in die Route eingebunden und in diesem Schritt nicht als realer Upload getestet.
+- Express/TypeScript, PostgreSQL und Prisma mit sechs Modellen. Initialmigration `20261104125318_init` laut aktueller Datenbankabfrage abgeschlossen, nicht zurückgerollt.
+- Öffentliche Meme-Liste, Meme-Detail und Kommentar-Liste mit Ersteller und Zählern.
+- Clerk-Identitätsprüfung und lokale Nutzer-Synchronisation über `POST /api/me/sync`; Benutzerzuordnung ausschließlich anhand geprüfter Clerk-ID.
+- Vollständiger PNG-Upload nach Cloudinary und Anlage in PostgreSQL: ein Bild bis 5 MiB, Titel 1–100 Zeichen, Erfolg 201. Datenbankfehler lösen einen Bereinigungsversuch für das neue Bild aus.
+- Meme-Titel ändern und eigenes Meme einschließlich Cloudinary-Bild löschen. Besitzerprüfung vorhanden, Administratorausnahme noch nicht vorhanden.
+- Kommentare erstellen (1–1000 Zeichen), eigene bearbeiten und löschen.
+- Eigenen Like setzen und entfernen; Datenbank verhindert Duplikate. Schreibantwort enthält `liked` und `likeCount`; persönliche Like-Markierung fehlt noch in GET-Antworten.
+- Gemeinsame Bild-Testdaten: 29 versionierte Vorlagen und Importskript. Bereits vorhandene IDs werden übersprungen. Keine echten Clerk-Konten oder Interaktionen werden kopiert; Cloudinary-Originale werden gemeinsam genutzt.
+- Frontend lädt Übersicht, Detail und Kommentare aus der API. Clerk-Oberfläche, Lade-/Leer-/Fehlerzustände und responsive Styles vorhanden. Schreibende API-Anbindung, automatischer Sync und persönliche Ordner fehlen im geprüften Frontend-Code.
 
-## Prüfungen und Grenzen am 11.11.2026
+## Belege und Prüfgrenzen
 
-| Prüfung | Ergebnis / Grenze |
+| Prüfung | Ergebnis am 11.11.2026 |
 | --- | --- |
-| Backend-TypeScript | npm run typecheck erfolgreich |
-| Prisma-Schema | prisma validate erfolgreich; keine erneute Migrationsstatusabfrage |
-| Frontend | App-TypeScript und npm run lint erfolgreich; kein neuer vollständiger Build |
-| Live-GETs health, health/db, memes | 200; DB connected; 29 Memes |
-| CORS | Passender Allow-Origin-Header für localhost:5173 |
-| GET /api/me ohne Anmeldung | 401 |
-| Erfolgreiche Anmeldung und Nutzer-Sync | Zuvor durch Josephine bestätigt; beim heutigen Dokumentationsabgleich nicht erneut authentifiziert |
-| PNG-Upload-Prüfung | Josephine bestätigt Erfolg; vorherige Mehrfachauswahl, falsches Format und fehlende Anmeldung abgewiesen |
-| Vollständiger Upload / DB-Anlage / Bereinigung | Noch nicht implementiert oder getestet |
+| Backend `npm run typecheck`, `npm run build` | Erfolgreich |
+| `npx prisma validate` | Erfolgreich; allein kein Verbindungsnachweis |
+| Frontend `npm run lint`, `npm run build` | Erfolgreich |
+| Live health und health/db | 200; Datenbank connected |
+| CORS GET und OPTIONS von localhost:5173 | Allow-Origin korrekt; Preflight 204 |
+| GET /api/me | Ohne Token 401, mit bestehender Clerk-Sitzung 200 |
+| Geschützte Meme-/Kommentar-/Like-Schreibwege ohne Token | Alle acht geprüften Wege 401 |
+| Authentifizierter leerer Kommentartext / unbekannte Kommentar-ID | 400 / 404 |
+| Fremdes Meme bearbeiten und löschen | Beide 403; keine Inhaltsänderung |
+| Ungültiges JSON | 400 als HTML mit internen Details: offener Fehler |
+| Datenbestand beim Abgleich | 30 Memes, 1 Kommentar, 0 Likes, 0 Ordner; Momentaufnahme |
+| Vollständige Meme-Löschung im vorangegangenen Test | Selbst ausgeführt: separates Upload-Test-Meme gelöscht, DELETE 204, GET danach 404, DB-Eintrag und Cloudinary-Ressource entfernt |
+| Upload, Titeländerung, Kommentar-Schreibaktionen und Likes | Erfolgreiche manuelle Tests durch Josephine bestätigt; in diesem Dokumentationsabgleich keine erneuten erfolgreichen Schreibversuche |
 
-5-MiB-Limit und Titelgrenzen sind im Code enthalten; vollständige Grenzfalltests fehlen. Signaturerkennung ist keine vollständige Bilddekodierung. Kein neuer Live-Upload, keine Löschung und keine DB-Schreibprüfung im Dokumentationsabgleich. Die früher geprüften Bildadressen wurden dabei nicht alle erneut einzeln abgerufen.
+Die Löschung wurde mit einem Meme ohne zugehörige Interaktionen geprüft. Das Mitlöschen befüllter Kommentar-/Like-/Ordnerzuordnungen folgt der angewendeten Kaskadenmigration, ist aber noch nicht durch einen vollständigen befüllten Löschtest bestätigt. Zwei echte angemeldete Nutzer für Kommentar-Rechtetests, Dienst-Ausfälle und Parallelzugriffe wurden nicht vollständig geprüft. Es gibt keine versionierte automatisierte Testsuite.
 
-## Noch offen
+## Kritische Restpunkte
 
-- Lokalen Ersteller vor Cloudinary-Upload ermitteln; uploadImage aus der Route aufrufen; Meme speichern; bei DB-Fehler das neu hochgeladene Bild bereinigen. Aktuelle 200-Antwort ist keine Anlagebestätigung.
-- Eine generische 400-Upload-Meldung sagt noch JPG/JPEG statt PNG. Anwendungscode im Rahmen dieser Dokumentationspflege unverändert.
-- DELETE /api/memes/:id bleibt 503-Platzhalter; PATCH und Inhalts-Eigentümer-/Adminrechte fehlen.
-- Likes, Kommentaränderungen, persönliche Ordner, Moderation und Kontolöschung über PostgreSQL/Clerk/Cloudinary.
-- Frontend-Detailseite nutzt sampleMemes; Kommentare sind Platzhalter. API-Client ersetzt author noch durch Community. Nutzer-Sync/Token und echter Formular-Upload noch nicht automatisch verbunden; Dateiauswahl erlaubt im Code noch weitere Formate und muss zur PNG-Regel passen.
-- Pagination, zentrale Fehlerbehandlung, Missbrauchsbegrenzung und vollständige Tests. Jest/Supertest und automatisiertes Testskript fehlen.
-- Beispieltestcode in validators/meme.ts, ungenaue Node-Mindestversion, fehlende Cloudinary-Platzhalter in .env.example und verbleibende API-Verträge/Dokumentation.
-- Bildaustausch beim Bearbeiten, Alt-Text-Erweiterung und dienstübergreifende Löschabläufe noch nicht abschließend umgesetzt.
+1. **Frontend-Anbindung:** automatischer Nutzer-Sync und Bearer-Token, echter Upload, Meme-Aktionen, Kommentarformular/-aktionen und Likes. Client übernimmt den gelieferten Meme-Ersteller noch nicht und zeigt Community. Uploadformular fordert Kategorie und erlaubt zusätzliche Dateiformate; Backend akzeptiert ausschließlich PNG.
+2. **Persönlicher Like-Status:** GET-Liste/-Detail liefern kein `likedByMe`. Ohne diese Ergänzung bleibt der Button-Zustand nach Neuladen unzuverlässig; lokale Zusatz-Zähler im Frontend müssen bei Integration ersetzt werden.
+3. **Fehlerbehandlung:** zentrale JSON-Fehlerantworten für Parser und Middleware fehlen. Ungültiges JSON legt im Entwicklungsbetrieb interne Details offen. Generische Upload-Meldung enthält den Tippfehler `JPNG`.
+4. **Löschen über zwei Dienste:** Bild wird vor DB-Eintrag gelöscht. Bei anschließendem DB-Fehler bleibt ein Eintrag ohne Bild; erneuter Löschversuch akzeptiert Cloudinary `not found`. Kein dauerhafter Wiederholungs-/Bereinigungsablauf. Upload-Bereinigung wird versucht, bei deren Fehlschlag nur protokolliert.
+5. **Fehlende Fachfunktionen:** private Ordner, Moderation durch Administratoren und vollständige Kontolöschung über PostgreSQL, Clerk und Cloudinary. Modelle/Role-Enum allein sind keine fertigen Funktionen.
+6. **Qualität:** Pagination und Missbrauchsbegrenzung fehlen. Änderungen zwischen Existenzprüfung und Schreibzugriff können generische 500 statt passender 404 auslösen; relevante Parallelfälle testen. PNG-Signaturprüfung ist keine vollständige Bilddekodierung.
+7. **Aufräumen:** ausführbarer Beispieltest in `validators/meme.ts`; Node-Mindestversion im Paket (`>=22.9.0`) passt nicht zur installierten Prisma-Anforderung im 22er-Zweig. Node 24 für beide verwenden. Anwendungscode wurde bei dieser Dokumentationspflege nicht verändert.
+8. **Kontolebenszyklus:** Eine eventuelle Kontolöschung direkt in Clerk muss ebenfalls lokale Daten/Bilder bereinigen; derzeit kein entsprechender Handler. Clerk-Oberfläche und Löschablauf vor gemeinsamer Abnahme abstimmen.
 
-## Restplan für heute und Zeitlage
+## Fortschritt als gewichtete Aufwandsschätzung
 
-Zuerst lokalen Ersteller, Cloudinary und PostgreSQL zu einem vollständigen Upload verbinden. Danach Erfolgs-/Fehlerfälle prüfen; Frontend-Formular nur bei rechtzeitig fertiger API gemeinsam anbinden. Parallel Detailseite und author im Frontend fertigstellen. Vor 12 Uhr kurze Abstimmung, Mittagspause 12–13 Uhr; Nachmittag Umsetzung, Tests und Tagesabschluss. Die Abwesenheit am 10.11. war ein gestriger Termin, keine heutige Sperrzeit.
+Bewertet wird der vollständige vereinbarte Umfang, nicht nur die sichtbare Oberfläche oder die Zahl vorhandener Routen. Kategorien, Suche, Editor und freiwilliges Deployment erhöhen den Pflichtumfang nicht. Unsicherheit ungefähr ±5 Prozentpunkte; keine Fertigstellungszusage.
 
-Bis 19.11. einschließlich heute sieben Werktage. Ziel Kernfunktionen bis 18.11. und Tests/Vorbereitung 19.–20.11. bleibt zeitlich gefährdet; Abgabe 23.11. Am 13.11. anhand tatsächlich fertiger Abläufe gemeinsam neu priorisieren. Keine neue Termin- oder Umfangszusage. Frühere Prozentwerte sind Aufwandsschätzungen vom 10.11., keine aktuelle Messung.
+| Backend-Bereich | Gewicht | Erreicht |
+| --- | ---: | ---: |
+| Grundlage, Datenmodell, Datenbank, Lese-API | 20 | 20 |
+| Identität und lokale Nutzer | 10 | 9 |
+| Meme-Upload/-Bearbeitung/-Löschung | 15 | 14 |
+| Kommentare | 10 | 9 |
+| Likes einschließlich persönlichem Status | 10 | 6 |
+| Persönliche Ordner | 10 | 0 |
+| Moderation | 5 | 0 |
+| Kontolöschung | 10 | 0 |
+| Absicherung, Tests und Dokumentation | 10 | 7 |
+| **Backend gesamt** | **100** | **65** |
 
-[Zwischenbericht für Dilek](zwischenbericht-2026-11-11.md) · [API](api-plan.md) · [Backend-Start](../README.md)
+| Frontend-Bereich | Gewicht | Erreicht |
+| --- | ---: | ---: |
+| Layout und Navigation | 15 | 15 |
+| Clerk und Nutzeranbindung | 10 | 7 |
+| API-Übersicht und Detail | 15 | 14 |
+| Upload und Meme-Verwaltung | 15 | 1 |
+| Kommentare anzeigen und verwalten | 10 | 4 |
+| Dauerhafte Likes | 10 | 1 |
+| Persönliche Ordner | 10 | 1 |
+| Moderation | 5 | 0 |
+| Kontolöschung | 5 | 0 |
+| Integration, Zugänglichkeit und Abnahme | 5 | 2 |
+| **Frontend gesamt** | **100** | **45** |
 
-## Trello und Zusammenarbeit
+**Backend etwa 65 %, Frontend etwa 45 %, Gesamt etwa 55 %.** Gesamt ist hier der transparente Mittelwert bei gleicher Gewichtung beider Teile. Eigenständige API-Funktionstests zählen nicht als abgeschlossene Frontend-Integration. Die frühere Angabe Backend 65–70 % war eine grobe Schätzung; die aktuelle Bewertung berücksichtigt nun ausdrücklich Like-Status, Fehlerbehandlung und Abnahme.
 
-[Trello-Board](https://trello.com/b/EpjAfv15/your-meme). Am 11.11. wurden elf bestehende Beschreibungen aktualisiert, zwei belegte Einzelschritte abgehakt und eine Übersichtskarte zum Zwischenbericht/Restplan erstellt. Beschreibungen und Checklisten wurden anschließend erneut gelesen. Sammelkarten bleiben offen, wenn Integration oder Abnahme fehlt. Historische Tagespläne bleiben als solche erhalten; Checklistenpunkte nur im belegten Umfang abhaken.
+## Reihenfolge und Zeitlage
 
-Josephine arbeitet auf Backend, Dilek auf Frontend; ein Branch umfasst das gesamte Repository. Keine Push-Sperren umgehen. Gemeinsamen Stand über geprüfte Pull Requests zusammenführen. Lokale Datenbankinhalte werden nicht automatisch geteilt, Testdaten werden gezielt mit dem Importskript eingerichtet. Keine Schlüssel in Dokumentation/Git. Anwendungscode schreibt Josephine selbst.
+1. Backend: persönlichen Like-Status und sichere JSON-Fehlerantworten ergänzen; danach private Ordner mit Besitzerprüfung.
+2. Frontend parallel: automatischer Sync, echter PNG-Upload, Autor aus API, Kommentar- und Like-Aktionen; anschließend eigene Inhalte bearbeiten/löschen.
+3. Danach Moderation und abgestimmte, wiederholbare Kontolöschung. Teilausfälle und Rechte mit zwei Konten prüfen.
+4. Gemeinsame Durchläufe einschließlich Neuladen, Handy/Tastatur, Start nach README und Abschlussdokumentation.
 
-## Historischer Stand vom 04.11.2026
+Mittagspause 12–13 Uhr. Zwischenbesprechung für den nächsten gemeinsamen Arbeitsblock vorschlagen, sobald Dileks Upload-Anbindung testbar ist; kein verbindlicher Termin ohne Abstimmung. Bis 19.11. sind es einschließlich 11.11. sieben Werktage. Kernfunktionen bis 18./19.11. bleiben anspruchsvoll; der vollständige Umfang ist noch nicht gesichert. Ziel 19.–20.11. für Integration, Fehlerbehebung und Demo, Abgabe 23.11. Am 13.11. anhand fertiger Abläufe neu bewerten. Anforderungen werden nicht stillschweigend gestrichen.
 
-Die folgenden ursprünglichen Aussagen dokumentieren den damaligen Stand und dürfen nicht als heutige offene Aufgaben oder aktuelle Branch-/Installationsangaben gelesen werden.
+## Dokumentation und Zusammenarbeit
 
-Stand: 04.11.2026. Backend-Dateien und Dokumentation abgeglichen; frühere Planungs- und Board-Angaben sind unten als historisch gekennzeichnet.
-Abgabe: 23.11.2026. Präsentationstermin noch offen.
+[API-Vertrag](api-plan.md) · [Startanleitung](../README.md) · [Datenmodell](datenmodell.md) · [Zwischenbericht](zwischenbericht-2026-11-11.md) · [Trello](https://trello.com/b/EpjAfv15/your-meme)
 
-## Tatsächlich erledigt
-
-- **Planungsentwurf gespeichert:** Datenmodell mit sechs Modellen, Beziehungen, Berechtigungen und Kontolöschung; Backend-Anforderungen und Backend-Regeln liegen als Dateien vor.
-- **Ordnerstruktur angelegt:** Das bestehende Vite-Projekt liegt unter `frontend/`; Backend-Planung unter `backend/`; die gemeinsame README verweist auf diese Bereiche.
-- **Backend-Grundgerüst vorhanden:** Express und TypeScript eingerichtet. Statusroute `GET /api/health`, JSON-Antwort für unbekannte Routen und optionale Port-Einstellung vorhanden. Details: [Backend-Startanleitung](../README.md).
-- **Prisma vorbereitet:** Prisma 7.10.1, PostgreSQL-Adapter und `pg` installiert. `prisma7.config.ts` wird von der installierten CLI erkannt. Schema mit sechs Modellen, erste Migration `20261104125318_init` und Client-Modul `src/lib/prisma.ts` vorhanden. Der generierte Client liegt lokal unter `src/generated/prisma/` und ist aus Git ausgeschlossen.
-- **Datenmodell abgeglichen:** Modelle, Felder, Schlüssel, Beziehungen und Löschkaskaden stimmen zwischen Dokumentation, Schema und erster Migrationsdatei überein. Passwörter sind nicht im Schema enthalten; neue Nutzer haben standardmäßig die Rolle `USER`.
-- **Dokumentation aktualisiert:** Startanleitung um Datenbankkonfiguration und Client-Generierung ergänzt, `.env.example` um einen PostgreSQL-Platzhalter erweitert, geplante API und implementierte Statusroute getrennt. Das Hand-out vom 30.10. ist als historischer Tagesplan gekennzeichnet.
-- Diese Ergebnisse belegen noch keine vollständige Anwendung. `src/server.ts` importiert das Client-Modul nicht und führt keine Datenbankabfragen aus.
-- Das gemeinsame Durchsprechen und die fachliche Prüfung des Entwurfs bleiben eine eigene offene Aufgabe.
-- Die Abstimmung der Ordnerstruktur und der Frontend-Anbindung mit Dilek ist durch diese Backend-Prüfung nicht nachgewiesen.
-
-## Prüfungen und Grenzen am 04.11.2026
-
-- Node.js 24.14.0 und npm 11.9.0 lokal vorhanden.
-- TypeScript-Typprüfung, TypeScript-Build und Prisma-Schema-Validierung erfolgreich. Der Build wurde für diese Prüfung außerhalb des Backend-Ordners erzeugt.
-- `.env`, `node_modules/`, `dist/` und der generierte Prisma-Client sind durch die vorhandenen Git-Regeln ausgeschlossen. `.env.example` enthält nur Beispielwerte.
-- Skill-Verzeichnis, Lockdatei und vorhandene Werkzeug-Verknüpfungen sind konsistent; sie gehören nicht zur laufenden API.
-- Keine Live-Datenbankabfrage, kein Abgleich angewendeter Migrationen und kein aktueller HTTP-Funktionstest im Rahmen dieser Dokumentationsprüfung. Das Trello-Board und das Frontend wurden nicht geprüft oder geändert.
-- Historisch dokumentierte Starttests vom 02.11. sind keine erneuten Funktionstests am 04.11.
-
-## Noch offen
-
-- Datenbeziehungen sicher erklären, insbesondere Ersteller, Ordnerbesitzer und FolderMeme.
-- Seitenstruktur und vorläufige Router-Wahl mit Dilek abstimmen.
-- API-Datenformate vollständig festlegen. `api-plan.md` dokumentiert die vorhandene Statusroute und fünf noch geplante Meme-Endpunkte.
-- Datenbankverbindung und angewendeten Migrationsstand prüfen; danach erste Abfragen und Endpunkte mit dem vorhandenen Prisma-Client verbinden.
-- Clerk-Anbindung, lokale Nutzeranlage und Bildspeicher umsetzen.
-- Kernfunktionen umsetzen und Frontend und Backend verbinden.
-- Laufzeitvalidierung, JSON-Body-Verarbeitung, Berechtigungsprüfungen, passende CORS-Einstellungen und zentrale Fehlerbehandlung mit den fachlichen Endpunkten ergänzen. Diese fehlen derzeit; der vorhandene öffentliche Statusendpunkt benötigt noch keine Anmeldung.
-- Automatisierte Tests und ein Testskript nach Bedarf einrichten; Zod, Jest und Supertest sind nicht installiert. Postman ist kein npm-Paket und wurde nicht auf Verfügbarkeit geprüft.
-- **Node-Versionsangabe korrigieren:** `package.json` und der Wurzeintrag von `package-lock.json` erlauben noch `>=22.9.0`. Die installierten Prisma-Pakete verlangen laut ihren lokalen Paketmetadaten `^20.19 || ^22.12 || >=24.0`. Damit ist beispielsweise Node.js 22.9 erlaubt, obwohl Prisma es nicht unterstützt. Die Anleitung verwendet Node.js 24; die Paketkonfiguration wurde bei dieser Dokumentationsprüfung nicht geändert.
-- Dienstübergreifende Kontolöschung konkretisieren. Die Löschkaskaden decken nur Datenbankbeziehungen ab; für Bildspeicher, Clerk und Wiederholungen bei Teilausfällen fehlt die Anwendungslogik.
-- Startanleitung bei neuen Funktionen fortführen und Präsentation erstellen.
-
-## Welche Schwierigkeiten entstehen könnten
-
-### Weniger verfügbare Zeit durch Termine
-
-Die folgende Terminplanung stammt vom 30.10.2026. Der 03.11. liegt inzwischen in der Vergangenheit;
-aus den eingetragenen Terminen verbleiben ab 04.11. bis zur Abgabe 4 Std. 30 Min. Abwesenheit (05.11. und 10.11.).
-Ob die damalige Tagesplanung eingehalten wurde, ist hier nicht geprüft.
-
-- Josephines regulärer Zeitrahmen: Montag bis Freitag, 09:00–16:00 Uhr einschließlich Pausen. Am Wochenende wird in der Regel nicht gearbeitet.
-- Die folgenden Zeiten sind bestätigte Abwesenheiten und stehen nicht für Projektarbeit zur Verfügung. Sie betreffen Josephine; Dileks Verfügbarkeit ist damit nicht festgelegt.
-
-| Datum | Nicht verfügbar | Ausfall innerhalb von 09:00–16:00 Uhr |
-| --- | --- | --- |
-| 03.11.2026 | 09:00–11:45 Uhr und 13:30–16:00 Uhr | 5 Std. 15 Min. |
-| 05.11.2026 | 13:00–16:00 Uhr | 3 Std. |
-| 10.11.2026 | 13:00–14:30 Uhr | 1 Std. 30 Min. |
-| **Bis zur Abgabe insgesamt** | | **9 Std. 45 Min.** |
-| 24.11.2026 | 09:30–10:30 Uhr | 1 Std.; liegt nach der Abgabe am 23.11. und zählt nicht zur obigen Summe. |
-
-- **Mögliche Schwierigkeit:** Für Backend-Arbeit und gemeinsame Abstimmungen bleibt an diesen Tagen weniger Zeit. Offene Fragen können dadurch die jeweils andere Person aufhalten.
-- **Umgang damit:** Gemeinsame Absprachen außerhalb der Abwesenheiten legen und den verkürzten Tagen entsprechend kleine Aufgaben zuordnen. Pausen und Zeit für mögliche Probleme zusätzlich berücksichtigen; die übrigen Stunden sind nicht vollständig als konzentrierte Arbeitszeit verfügbar.
-- **Planungsempfehlung für Puffer:** Nur etwa 70–75 Prozent der tatsächlich verfügbaren Arbeitszeit mit Aufgaben belegen. Der Rest bleibt für Rückfragen, technische Probleme und Nacharbeiten frei. Wochenenden nicht als feste Ausweichzeit einplanen.
-- **Vorgeschlagener Zieltermin:** Kernfunktionen möglichst bis 18.11. fertigstellen; 19.–20.11. für Fehlerbehebung und Abgabevorbereitung freihalten. Am 23.11. letzter Check und Abgabe. Das ist ein Planungsziel, keine Zusage, dass die Umsetzung bis dahin fertig ist.
-
-## Vorhandene Branches
-
-- `Backend`: Josephines Arbeitsbranch; bei der Prüfung aktiv.
-- `Frontend`: Dileks Arbeitsbranch.
-- `main`: gemeinsamer Hauptbranch.
-- Alle drei Branches sind lokal vorhanden. Ein Branch umfasst den Entwicklungsstand des gesamten Repositorys und ist nicht mit dem gleichnamigen Arbeitsbereich zu verwechseln.
-- Die Ordnerumstellung wurde im aktiven Backend-Arbeitsstand vorgenommen. Sie ist damit nicht automatisch in Dileks Branch oder in `main` übernommen. Das wird gemeinsam abgestimmt.
-
-## Sinnvolle Reihenfolge
-
-1. Datenmodell verstehen, Seiten skizzieren und benötigte Daten gemeinsam festlegen.
-2. Mit dem vorhandenen Backend-Grundgerüst Datenbankverbindung und Migrationsstand prüfen; erste Prisma-Abfrage anbinden.
-3. Öffentliche Meme-Liste und Detailseite mit Testdaten verbinden. Die Anmeldung kann parallel vorbereitet werden.
-4. Clerk-Anmeldung und lokale Nutzerprofile verbinden, bevor geschützte Schreibfunktionen genutzt werden.
-5. Bildspeicher auswählen; Upload, Bearbeiten und Löschen eigener Memes umsetzen.
-6. Likes, Kommentare und persönliche Ordner ergänzen.
-7. Administratorfunktionen und Kontolöschung vollständig verbinden.
-8. Gemeinsame Abschlussprüfung, Demo und Abgabe vorbereiten.
-
-**Während aller Schritte:** Eingaben prüfen, Rechte kontrollieren, passende Tests ergänzen, auf kleine Bildschirme und Tastaturbedienung achten und Dokumentation aktualisieren.
-Begleitende Karten stehen deshalb im Board früh in der Liste; sie müssen nicht vollständig abgeschlossen sein, bevor die erste Funktion beginnt.
-
-## Trello lesen
-
-Die folgenden Board-Regeln und Farbangaben stammen aus der dokumentierten Planung vom 30.10.2026.
-Sie wurden am 04.11. nicht mit dem Live-Board abgeglichen.
-
-[Board öffnen](https://trello.com/b/EpjAfv15/your-meme).
-
-- Die Liste zeigt den Arbeitsstand. Leere Prüfspalten sind für spätere Phasen vorgesehen.
-- Die Position einer Karte zeigt die grobe Bearbeitungsreihenfolge. Dilek und Josephine können parallel arbeiten.
-- Ein Etikett mit Farbe und Text zeigt die Zuständigkeit; die Beschreibung teilt bei gemeinsamen Karten Frontend- und Backend-Aufgaben auf.
-- Die Checkboxen zeigen einzelne Arbeitsschritte. Abhaken erst nach tatsächlicher Erledigung.
-- Übersichts- und Zeitplankarten sind Informationen; ihre Aufgaben werden auf den eigentlichen Aufgabenkarten erledigt, nicht doppelt gezählt.
-
-| Farbe | Beschriftung | Bedeutung |
-| --- | --- | --- |
-| Blau | Backend · Josephine | Josephine übernimmt die Backend-Arbeit. |
-| Lila | Frontend · Dilek | Dilek übernimmt die Frontend-Arbeit. |
-| Rosa | Gemeinsam | Beide arbeiten an dieser Karte; Zuständigkeiten stehen im Text. |
-| Gelb | P1 · Zuerst | Einer der nächsten Planungsschritte; keine zusätzliche Frist. |
-| Himmelblau | Information | Übersicht oder Plan zum Nachschlagen. |
-| Grün | Erledigt | Das ausdrücklich beschriebene Ergebnis liegt vor. |
-| Rot | Blockiert | Ein konkretes Hindernis verhindert die Weiterarbeit; im Text erklären. |
-
-Nicht allein auf Farben verlassen: Etikettennamen und Zuständigkeit stehen zusätzlich im Text.
-Karten ohne P1 bleiben vereinbart; begleitende Qualitätssicherung beginnt mit der ersten passenden Funktion.
-Die breiten farbigen Kartenköpfe aus der Vorlage kennzeichnen keine Person oder Priorität.
-
-## Prüfung vom 30.10.2026
-
-- 29 Karten gelesen; keine Karte ohne Titel oder Beschreibung gefunden.
-- 24 leere, nicht benötigte Checklisten aus der Vorlage nach ausdrücklicher Bestätigung entfernt. Alle 29 Karten und alle bisherigen Arbeitsschritte wurden erhalten.
-- Damals wurden 145 Arbeitsschritte dokumentiert: die bisherigen 144 sowie ein zusätzlicher Schritt zum Prüfen des Frontend-Starts und Abstimmen des Ordnerumzugs mit Dilek.
-- Die befüllten Arbeitsschritte gehören zu den jeweiligen Funktionen beziehungsweise Prüfaufgaben.
-- Doppelte Planungsarbeit wurde abgegrenzt: API-Inhalte werden auf der API-Planungskarte ergänzt; die Dokumentenprüfung liest und prüft diese Unterlagen.
-- Die beiden erledigten Karten anhand der vorhandenen Projektdateien geprüft und als reine Dokumentations- beziehungsweise Strukturarbeit bezeichnet.
-- Sicherheit, Tests und Dokumentation als begleitende Arbeit eingeordnet.
-- Hand-out, Spezifikation, Datenmodell und README mit der Board-Arbeitsweise abgeglichen.
-- Der API-Plan wurde als Entwurf gekennzeichnet und lesbar gegliedert; die fehlenden Datenformate wurden nicht als bereits vereinbart ausgegeben.
-
-Dieser Stand beschreibt eine Prüfung der Planung und Dateien. Er ersetzt keinen erfolgreichen Start oder Funktionstest der späteren Anwendung.
-
-## Historische Ergänzung zur Prüfung vom 30.10.2026
-
-- Die fünf Prüfspalten enthalten jetzt je eine zusätzliche Erklärungskarte mit dem Etikett „Information“.
-- Diese Karten erklären Zweck, Beispiel, Einstieg und Abschlusskriterien. Sie sind keine zusätzlichen Funktionsaufgaben und werden nicht als abgeschlossene Entwicklung gezählt.
-- Der damals dokumentierte Stand betrug dadurch 34 Karten: die bisherigen 29 und fünf Erklärungskarten. Die 145 Arbeitsschritte blieben erhalten. Das ist kein aktueller Live-Abgleich.
-- Die aktualisierte Rücksprache-Regel steht in `backend/AGENTS.md` und gilt für die Zusammenarbeit mit Josephine. Sie ersetzt keine separat vereinbarten Regeln für Dileks Frontend.
+Backend und Frontend sind Arbeitsbranches für das gesamte Repository. Laut Josephines Meldung sind die aktuellen API-Änderungen in main gemergt; der GitHub-Abgleich zeigt einen neueren main-Commit. Diese Dokumentationsänderungen sind noch lokal, ohne Commit/Push/Merge. Historische Arbeitsprotokolle bleiben erhalten; neue Abgleich-Ergebnisse werden ausdrücklich ergänzt. Sammelkarten werden nicht abgeschlossen, solange Integration oder Abnahme fehlt. Im aktuellen Trello-Abgleich wurden 18 Beschreibungen aktualisiert, acht belegte Checklistenschritte abgehakt und die Kommentar-/Like-Karten nach „In Bearbeitung“ verschoben. Die 18 Beschreibungen und die Verschiebungen wurden anschließend erneut gelesen; betroffene Checklisten ebenfalls nachkontrolliert.
