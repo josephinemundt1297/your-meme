@@ -14,6 +14,21 @@ type MemeApiResponse = {
   likedByMe?: boolean
 }
 
+function normalizeMeme(item: MemeApiResponse): Meme {
+  return {
+    id: item.id,
+    title: item.title,
+    imageUrl: item.imageUrl,
+    createdAt: item.createdAt,
+    author: { id: item.userId, username: 'Community' },
+    category: item.category ?? 'Community',
+    likeCount: item.likeCount,
+    commentCount: item.commentCount ?? 0,
+    likedByMe: item.likedByMe ?? false,
+    emoji: '😂',
+  }
+}
+
 export async function fetchMemes(signal?: AbortSignal): Promise<Meme[]> {
   const response = await fetch(`${apiBaseUrl}/api/memes`, { signal })
 
@@ -26,16 +41,17 @@ export async function fetchMemes(signal?: AbortSignal): Promise<Meme[]> {
     throw new Error('Die Meme-Antwort hat ein unerwartetes Format.')
   }
 
-  return data.map((item: MemeApiResponse): Meme => ({
-    id: item.id,
-    title: item.title,
-    imageUrl: item.imageUrl,
-    createdAt: item.createdAt,
-    author: { id: item.userId, username: 'Community' },
-    category: item.category ?? 'Community',
-    likeCount: item.likeCount,
-    commentCount: item.commentCount ?? 0,
-    likedByMe: item.likedByMe ?? false,
-    emoji: '😂',
-  }))
+  return data.map((item: MemeApiResponse) => normalizeMeme(item))
+}
+
+export async function fetchMemeById(id: string, signal?: AbortSignal): Promise<Meme | null> {
+  const response = await fetch(`${apiBaseUrl}/api/memes/${encodeURIComponent(id)}`, { signal })
+
+  if (response.status === 404) return null
+  if (!response.ok) {
+    throw new Error(`Meme konnte nicht geladen werden (${response.status}).`)
+  }
+
+  const data: MemeApiResponse = await response.json()
+  return normalizeMeme(data)
 }
