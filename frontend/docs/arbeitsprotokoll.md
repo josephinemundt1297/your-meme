@@ -69,12 +69,45 @@ Dieses Protokoll dokumentiert Dileks Frontend-Arbeiten für das Projekt **Your M
 - Commit und Push auf den Branch `Frontend`:
   - `ab6fe0c feat(frontend): prepare typed meme api client`
 
-## Offene Punkte
+## 09.11.2026 – Echte Meme-Daten und Detailseite
 
-- Josis Backend-Endpoint `/api/memes` ist noch nicht erreichbar.
-- Echte Meme-Daten aus PostgreSQL müssen noch angebunden werden.
-- Danach müssen die API-Daten in der Meme-Liste angezeigt und getestet werden.
-- Weitere gemeinsame Themen sind Clerk-Absicherung im Backend, Bild-Uploads, Likes, Kommentare und persönliche Ordner.
+- Den vorhandenen typisierten API-Client mit `/api/memes` verbunden.
+- Echte Meme-Daten aus PostgreSQL in der Übersicht angezeigt.
+- Echte Meme-Bilder über `imageUrl` angezeigt.
+- Beim Anklicken eines Memes wird die Detailseite über `/api/memes/:id` geladen.
+- Für unbekannte Meme-IDs wird eine verständliche Meldung angezeigt.
+- Backend-Testdaten und erreichbare Bildadressen gemeinsam mit Josi geprüft.
+- Commit und Push auf den Branch `Frontend`:
+  - `5002df3 feat: load meme details from api`
+
+## 10.11.2026 – Kommentare vorbereiten und anzeigen
+
+- Vorhandenen Endpoint `/api/memes/:id/comments` im Frontend angebunden.
+- Kommentare auf der Meme-Detailseite typisiert dargestellt.
+- Lade-, Fehler- und Leerzustand für Kommentare ergänzt.
+- Bei leerer Antwort wird „Noch keine Kommentare.“ angezeigt.
+- `npm run lint`, `npm run build` und die Detailseite geprüft.
+- Commit und Push auf den Branch `Frontend`:
+  - `b3b3743 feat: show comments on meme detail pages`
+
+## 11.11.2026 – Kategorien und Abschlussprüfung
+
+- Geprüft, wie Kategorien aus den Backend-Daten im Frontend behandelt werden.
+- Festgestellt: Das Backend liefert aktuell noch kein Kategorie-Feld; deshalb wird teilweise `Community` angezeigt.
+- Keine irreführende Änderung im Frontend vorgenommen, da die Kategorie-Struktur zuerst mit Josi abgestimmt werden muss.
+- Startseite und Detailseite im Browser geprüft.
+- `npm run lint` erfolgreich ausgeführt.
+- `npm run build` erfolgreich ausgeführt.
+- Git-Status geprüft: Branch `Frontend` ist sauber.
+
+## Offene Punkte und Warten auf Josi
+
+- Josi muss das Kategorie-Feld im Backend-Datenmodell und in den API-Antworten ergänzen oder bestätigen, wie Kategorien umgesetzt werden sollen.
+- Danach muss das Frontend die echten Kategorien statt des Fallbacks `Community` anzeigen und filtern.
+- Kommentare sind technisch vorbereitet; echte Kommentare müssen noch im Backend/Testdatenbestand vorhanden sein.
+- Clerk muss im Backend abgesichert und mit dem Frontend abgestimmt werden.
+- Bild-Uploads, Likes und persönliche Ordner sind noch gemeinsame nächste Ausbauschritte.
+- Für die weitere API-Prüfung müssen Backend, PostgreSQL und Josis Testdaten lokal laufen.
 
 ## Zuständigkeiten
 
