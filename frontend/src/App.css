@@ -64,7 +64,9 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .upload-preview { background: var(--orange); max-height: 280px; object-fit: contain; padding: 10px; width: 100%; }
 .upload-hint { color: var(--muted); font-size: .85rem; margin: 24px 0 18px; }
 .upload-submit { border: 0; cursor: pointer; }
+.upload-submit:disabled { cursor: wait; opacity: .65; }
 .upload-success { color: #8ee39e; font-weight: 700; margin-bottom: 0; }
+.upload-error { color: #a52f2f; font-size: .85rem; }
 .meme-state { align-items: center; background: var(--surface); border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); display: flex; flex-direction: column; margin: 10px auto; max-width: 560px; padding: 42px 24px; text-align: center; } .meme-state h3 { color: var(--ink); margin: 12px 0 6px; } .meme-state p { margin: 0; } .state-icon { align-items: center; background: #f1e3dc; border-radius: 50%; color: var(--accent, #d26a4b); display: flex; font-size: 1.8rem; font-weight: 800; height: 52px; justify-content: center; width: 52px; } .state-retry { border: 0; cursor: pointer; margin-top: 20px; } .loading-skeletons { display: flex; gap: 8px; } .loading-skeletons span { animation: pulse 1.2s ease-in-out infinite; background: #c9c2b8; border-radius: 6px; height: 8px; width: 34px; } .loading-skeletons span:nth-child(2) { animation-delay: .15s; } .loading-skeletons span:nth-child(3) { animation-delay: .3s; } @keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
 .sr-only { height: 1px; margin: -1px; overflow: hidden; position: absolute; width: 1px; clip: rect(0, 0, 0, 0); }
 @media (max-width: 1100px) { .meme-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

@@ -1,9 +1,9 @@
-import { Link, Outlet, useParams } from '@tanstack/react-router'
+import { Link, Outlet, useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Show, SignIn, SignUp, UserButton } from '@clerk/react'
+import { Show, SignIn, SignUp, UserButton, useAuth } from '@clerk/react'
 import type { Meme, MemeComment } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
-import { fetchMemeById, fetchMemeComments, fetchMemes } from './api/memes'
+import { createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
 import './App.css'
 
 type MemeListProps = {
@@ -25,7 +25,21 @@ function MemeCard({ meme, liked, onToggleLike }: MemeCardProps) {
 
 export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { getToken, isSignedIn } = useAuth()
   const categories = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
+
+  useEffect(() => {
+    if (!isSignedIn) return
+
+    let active = true
+    void getToken().then((token) => {
+      if (active && token) return syncCurrentUser(token)
+      return undefined
+    }).catch(() => undefined)
+
+    return () => { active = false }
+  }, [getToken, isSignedIn])
+
   return <div className="app-shell">
     <header className="site-header">
       <button className="menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="main-navigation"><span aria-hidden="true">☰</span><span className="sr-only">{menuOpen ? 'Menü schließen' : 'Menü öffnen'}</span></button>
@@ -70,27 +84,44 @@ export function AccountPage() {
   return <section className="account-page"><Show when="signed-in"><div className="account-signed-in"><p className="eyebrow">Dein Konto</p><h1>Willkommen zurück!</h1><p>Du bist bereits angemeldet.</p><UserButton showName /></div></Show><Show when="signed-out"><div className="auth-switcher" role="group" aria-label="Anmeldung auswählen"><button className={mode === 'sign-in' ? 'active' : ''} type="button" onClick={() => setMode('sign-in')}>Anmelden</button><button className={mode === 'sign-up' ? 'active' : ''} type="button" onClick={() => setMode('sign-up')}>Registrieren</button></div>{mode === 'sign-in' ? <SignIn routing="hash" /> : <SignUp routing="hash" />}</Show></section>
 }
 export function UploadPage() {
+  const navigate = useNavigate()
+  const { getToken } = useAuth()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
-  const [category, setCategory] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const [fileError, setFileError] = useState('')
+  const [uploadError, setUploadError] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
   const previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : null
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (selectedFile && title.trim() && category) setSubmitted(true)
+    setUploadError('')
+    const validationError = selectedFile ? validateMemeImage(selectedFile) : 'Bitte wähle eine PNG-Datei aus.'
+    setFileError(validationError ?? '')
+    if (validationError || !selectedFile || !title.trim()) return
+
+    setIsUploading(true)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Bitte melde dich an, um ein Meme hochzuladen.')
+      const { id } = await uploadMeme(createMemeFormData(title, selectedFile), token)
+      await navigate({ to: '/memes/$memeId', params: { memeId: id } })
+    } catch (error: unknown) {
+      setUploadError(error instanceof Error ? error.message : 'Das Meme konnte nicht hochgeladen werden.')
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   return <section className="upload-page">
     <Link className="back-link" to="/">← Zurück zu den Memes</Link>
     <div className="upload-intro"><p className="eyebrow">Dein Beitrag</p><h1>Eigenes Meme hochladen</h1><p>Teile dein Meme mit der Your-Meme-Community.</p></div>
     <form className="upload-form" onSubmit={handleSubmit}>
-      <label className="upload-field"><span>Meme-Bild</span><input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} required />{previewUrl && <img className="upload-preview" src={previewUrl} alt="Vorschau des ausgewählten Memes" />}</label>
+      <label className="upload-field"><span>Meme-Bild</span><input type="file" accept="image/png" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSelectedFile(file); setFileError(file ? validateMemeImage(file) ?? '' : '') }} required />{previewUrl && <img className="upload-preview" src={previewUrl} alt="Vorschau des ausgewählten Memes" />}{fileError && <span className="upload-error" role="alert">{fileError}</span>}</label>
       <label className="upload-field"><span>Titel</span><input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Gib deinem Meme einen Titel" maxLength={100} required /></label>
-      <label className="upload-field"><span>Kategorie</span><select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Kategorie auswählen</option><option value="Programmieren">Programmieren</option><option value="Alltag">Alltag</option><option value="Arbeit">Arbeit</option></select></label>
-      <p className="upload-hint">Der Upload wird später mit Anmeldung und Backend verbunden.</p>
-      <button className="primary-link upload-submit" type="submit">Meme hochladen</button>
-      {submitted && <p className="upload-success" role="status">Dein Meme ist für die Veröffentlichung vorbereitet.</p>}
+      <p className="upload-hint">Erlaubt ist eine PNG-Datei mit maximal 5 MiB.</p>
+      {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
+      <button className="primary-link upload-submit" type="submit" disabled={isUploading}>{isUploading ? 'Wird hochgeladen …' : 'Meme hochladen'}</button>
     </form>
   </section>
 }

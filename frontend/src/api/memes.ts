@@ -2,6 +2,50 @@ import type { Meme, MemeComment } from '../types/meme'
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
+export function createMemeFormData(title: string, image: File): FormData {
+  const formData = new FormData()
+  formData.append('title', title.trim())
+  formData.append('image', image)
+  return formData
+}
+
+export function validateMemeImage(file: File): string | null {
+  const maxFileSize = 5 * 1024 * 1024
+  if (file.type !== 'image/png') return 'Bitte wähle genau eine PNG-Datei aus.'
+  if (file.size > maxFileSize) return 'Die PNG-Datei darf höchstens 5 MiB groß sein.'
+  return null
+}
+
+export async function uploadMeme(formData: FormData, token: string): Promise<{ id: string }> {
+  const response = await fetch(`${apiBaseUrl}/api/memes`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um ein Meme hochzuladen.' : `Das Meme konnte nicht hochgeladen werden (${response.status}).`)
+  }
+
+  const data: unknown = await response.json()
+  if (!data || typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') {
+    throw new Error('Die Antwort des Servers enthält keine Meme-ID.')
+  }
+
+  return { id: data.id }
+}
+
+export async function syncCurrentUser(token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/me/sync`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Benutzer konnte nicht synchronisiert werden (${response.status}).`)
+  }
+}
+
 type MemeApiResponse = {
   id: string
   title: string
