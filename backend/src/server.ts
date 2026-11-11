@@ -9,6 +9,8 @@ import { clerkMiddleware, getAuth, clerkClient } from "@clerk/express";
 import multer from "multer";
 import { upload } from "./middleware/upload.js";
 import { isPng } from "./utils/isPng.js";
+import { uploadImage } from "./lib/uploadImage.js";
+import { cloudinary } from "./lib/cloudinary.js";
 
 const app = express();
 
@@ -235,7 +237,7 @@ app.post(
 
       if (error) {
         return res.status(400).json({
-          error: "Bitte genau ein JPG/JPEG-Bild im Feld image senden.",
+          error: "Bitte genau ein JPNG-Bild im Feld image senden.",
         });
       }
 
@@ -265,10 +267,66 @@ app.post(
       });
     }
 
-    return res.json({
-      message: "Upload-Prüfung erfolgreich. Noch nichts gespeichert.",
-      title: result.data.title,
-    });
+    const { userId } = getAuth(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Bitte zuerst anmelden.",
+      });
+    }
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: { clerkId: userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        return res.status(409).json({
+          error: "Bitte zuerst dein Nutzerprofil synchronisieren.",
+        });
+      }
+
+      const image = await uploadImage(req.file.buffer);
+
+      const meme = await prisma.meme
+        .create({
+          data: {
+            title: result.data.title,
+            imageUrl: image.imageUrl,
+            imageStorageId: image.imageStorageId,
+            userId: user.id,
+          },
+          select: memeSelect,
+        })
+        .catch(async (databaseError) => {
+          // Bei fehlgeschlagener Speicherung das neue Bild bereinigen.
+          try {
+            const cleanup = await cloudinary.uploader.destroy(
+              image.imageStorageId,
+            );
+
+            if (cleanup.result !== "ok" && cleanup.result !== "not found") {
+              throw new Error("Bild konnte nicht entfernt werden.");
+            }
+          } catch {
+            console.error(
+              "Cloudinary-Bereinigung fehlgeschlagen. Public ID:",
+              image.imageStorageId,
+            );
+          }
+
+          throw databaseError;
+        });
+
+      return res.status(201).json(formatMeme(meme));
+    } catch (error) {
+      console.error("Fehler beim Erstellen des Memes:", error);
+
+      return res.status(500).json({
+        error: "Meme konnte nicht gespeichert werden.",
+      });
+    }
   },
 );
 app.delete("/api/memes/:id", (req, res) => {
