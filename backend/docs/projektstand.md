@@ -1,68 +1,56 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-Stand: 10.11.2026. Abgleich mit Backend-Commit `6ba8c14`, Frontend-Dateien und lokaler API. Die Angaben vom 04.11. stehen unten ausdrücklich als historisch; aktuelle Aussagen in diesem Abschnitt haben Vorrang.
-Abgabe: 23.11.2026. Präsentationstermin offen. Deployment freiwillig.
+Stand: 11.11.2026, Zwischenstand vor der Mittagspause. Code: Backend 1709a2d, einschließlich gemeinsamer Bild-Testdaten. Der zu Beginn gelesene GitHub-main enthielt denselben Dateistand; lokale main-Referenzen können zurückliegen. Vor dieser Dokumentationsänderung war Backend sauber. Abgabe 23.11.2026, Präsentationstermin offen, Deployment freiwillig.
 
 ## Bestätigter Stand
 
-- Express/TypeScript, PostgreSQL/Prisma, sechs Modelle, erste Migration und Client-Initialisierung vorhanden. Schema und SQL-Migration passen zusammen.
-- Öffentliche Meme-Liste, Detail- und Kommentarabfrage implementiert. Ersteller, Like- und Kommentaranzahl werden ausgegeben.
-- CORS erlaubt `http://localhost:5173`; der passende Antwortheader wurde lesend geprüft.
-- Clerk-Middleware und `GET /api/me` vorhanden. `POST /api/me/sync` lädt das geprüfte Clerk-Profil und verwendet `upsert` anhand der eindeutigen Clerk-ID. Lokale UUID bleibt bei Wiederholung gleich; neue Rolle ist USER.
-- Cloudinary-SDK und `src/lib/cloudinary.ts` vorhanden. Josephine hat den erfolgreichen Cloudinary-Ping sowie die angemeldeten GET-/Sync-Tests einschließlich Wiederholung bestätigt. Diese authentifizierten Tests wurden bei der anschließenden read-only Bestandsprüfung nicht erneut ausgeführt.
-- Manuell angelegte Testdaten: Die lokale API liefert 29 Meme-Datensätze, alle mit Cloudinary-Adressen. Zwei Bilder wurden erneut mit HTTP 200 und `image/png` geprüft; keine vollständige Einzelprüfung aller 29 Bilddateien.
-- Frontend-Übersicht ruft den API-Client auf und zeigt echte Bilder. Josephine hat die sichtbare Ausgabe bestätigt. Clerk-Oberfläche, Router und responsive Layoutregeln vorhanden.
-- Backend und Frontend-Integration sind auf GitHub geteilt. Lokaler Branch bei der Prüfung: Backend, vor dieser Dokumentationsänderung sauber. Der aktuelle GitHub-main enthielt denselben Dateistand; lokale Referenzen können hinter GitHub zurückliegen.
+- Express/TypeScript und PostgreSQL/Prisma mit sechs Modellen, erster Migration und Prisma-Client vorhanden. Öffentliche Meme-, Detail- und Kommentarabfragen implementiert; Ersteller und Zähler werden geliefert.
+- Clerk-Middleware, GET /api/me und POST /api/me/sync mit upsert anhand der eindeutigen Clerk-ID vorhanden. Josephine hat erfolgreiche angemeldete Tests und gleichbleibende lokale UUID bei Wiederholung bestätigt.
+- CORS erlaubt localhost:5173. Frontend-Übersicht lädt API-Daten; Josephine bestätigt sichtbare Bilder/Titel und inzwischen den funktionierenden Stand bei Dilek.
+- 29 Bild-Testdatensätze und Importskript liegen jetzt unter prisma/. Import ordnet neue Einträge einem Demo-Profil zu und überspringt vorhandene IDs. Keine Kopie echter Clerk-Konten oder Interaktionen; gemeinsam verwendete Cloudinary-Bildadressen.
+- Multer und file-type installiert. POST /api/memes prüft Anmeldung vor Dateiannahme, Titel (getrimmt 1–100 Zeichen), genau eine PNG-Datei bis 5 × 1024 × 1024 Bytes und deren Dateisignatur. Die JPG-Idee wurde durch PNG ersetzt. Josephine bestätigt den erfolgreichen PNG-Postman-Test: HTTP 200 und Upload-Prüfung erfolgreich. Noch nichts gespeichert.
+- Cloudinary-Konfiguration und erfolgreicher Ping bereits bestätigt. src/lib/uploadImage.ts implementiert einen PNG-Upload-Stream und liefert imageUrl/imageStorageId. Diese Funktion ist noch nicht in die Route eingebunden und in diesem Schritt nicht als realer Upload getestet.
 
-## Prüfungen am 10.11.2026
+## Prüfungen und Grenzen am 11.11.2026
 
 | Prüfung | Ergebnis / Grenze |
 | --- | --- |
-| Backend-TypeScript | `npm run typecheck` erfolgreich |
-| Prisma-Schema | `npx prisma validate` erfolgreich; keine erneute Migrationsstatusabfrage |
-| Frontend-Lint | `npm run lint` erfolgreich |
-| Frontend-TypeScript | App und Vite-Konfiguration mit `--noEmit --incremental false` erfolgreich geprüft |
-| Server und Datenbank | GET health und health/db: 200; Datenbank connected |
-| Meme-Liste, ein Detail, dessen Kommentare | Jeweils 200 |
-| GET /api/me ohne Anmeldung | 401, wie vorgesehen |
-| Ungültige/unbekannte Pfade und IDs | Zuvor am selben Tag mit 400/404 geprüft |
-| CORS | Access-Control-Allow-Origin für localhost:5173 vorhanden |
-| Paketdateien | Manifest/Lockdatei konsistent |
+| Backend-TypeScript | npm run typecheck erfolgreich |
+| Prisma-Schema | prisma validate erfolgreich; keine erneute Migrationsstatusabfrage |
+| Frontend | App-TypeScript und npm run lint erfolgreich; kein neuer vollständiger Build |
+| Live-GETs health, health/db, memes | 200; DB connected; 29 Memes |
+| CORS | Passender Allow-Origin-Header für localhost:5173 |
+| GET /api/me ohne Anmeldung | 401 |
+| Erfolgreiche Anmeldung und Nutzer-Sync | Zuvor durch Josephine bestätigt; beim heutigen Dokumentationsabgleich nicht erneut authentifiziert |
+| PNG-Upload-Prüfung | Josephine bestätigt Erfolg; vorherige Mehrfachauswahl, falsches Format und fehlende Anmeldung abgewiesen |
+| Vollständiger Upload / DB-Anlage / Bereinigung | Noch nicht implementiert oder getestet |
 
-Dies sind keine vollständigen automatisierten Funktionstests. Kein neuer kompletter Build, kein neuer angemeldeter Test und keine vollständige A11y-Abnahme in der letzten Bestandsprüfung. Prozentangaben aus der Besprechung sind grobe Aufwandsschätzungen (Frontend ca. 40 %, Backend ca. 35 %, gesamt ca. 35–40 %), keine gemessenen Fertigstellungsgrade und keine Terminprognose.
+5-MiB-Limit und Titelgrenzen sind im Code enthalten; vollständige Grenzfalltests fehlen. Signaturerkennung ist keine vollständige Bilddekodierung. Kein neuer Live-Upload, keine Löschung und keine DB-Schreibprüfung im Dokumentationsabgleich. Die früher geprüften Bildadressen wurden dabei nicht alle erneut einzeln abgerufen.
 
 ## Noch offen
 
-- Automatischer Upload: Bildannahme, vereinbarte Formate/Dateigröße, Titelprüfung, geprüfter lokaler Ersteller, Cloudinary-Upload und Meme-Anlage. Multer ist im geprüften Paketstand noch nicht installiert. Cloudinary-Konfiguration allein ist keine fertige Upload-Funktion.
-- POST /api/memes und DELETE /api/memes/:id liefern weiterhin 503; PATCH fehlt.
-- Eigentümer-/Adminrechte, Likes, Kommentaränderungen, Ordner, Moderation und vollständige Kontolöschung.
-- Pagination/Mengenlimit und zentrale Fehlerbehandlung; Middlewarefehler liefern noch nicht durchgehend das fachliche JSON-Format.
-- Frontend-Detailseite verwendet `sampleMemes`; Kommentarbereich ist ein Platzhalter. Der API-Client ersetzt den Ersteller noch durch Community. Nutzer-Synchronisation und Session-Token sind noch nicht automatisch in diese Frontend-Abläufe eingebunden.
-- Upload-Formular und lokale Likes sind Demonstrationen, keine dauerhafte Speicherung.
-- Automatisiertes Testskript, Jest/Supertest und Tests für Erfolgs-, Fehler- und Rechtefälle.
-- Ausführbarer Beispieltestcode in `src/validators/meme.ts` protokolliert beim Import erwartete Validierungsfehler; aus dem Anwendungsmodul entfernen, wenn dieser Schritt umgesetzt wird.
-- Node-Mindestversion in package.json/Lockdatei ist weiterhin ungenau; Node 24 verwenden.
-- Cloudinary-Variablen fehlen noch in `.env.example`; sie sind jetzt in der Backend-README beschrieben. Keine echten Schlüssel in Git.
-- Gemeinsame Abnahme von Datenmodell, vollständiger API und verbleibenden Produktentscheidungen; Bildaustausch beim Bearbeiten und Alt-Text-Feld sind noch nicht umgesetzt beziehungsweise abschließend festgelegt.
-- Dokumentation und Präsentation fortführen; lokaler Start auf Dileks Rechner ist unabhängig von Josephines Datenbank zu prüfen. Testdaten werden nicht durch Git übertragen.
+- Lokalen Ersteller vor Cloudinary-Upload ermitteln; uploadImage aus der Route aufrufen; Meme speichern; bei DB-Fehler das neu hochgeladene Bild bereinigen. Aktuelle 200-Antwort ist keine Anlagebestätigung.
+- Eine generische 400-Upload-Meldung sagt noch JPG/JPEG statt PNG. Anwendungscode im Rahmen dieser Dokumentationspflege unverändert.
+- DELETE /api/memes/:id bleibt 503-Platzhalter; PATCH und Inhalts-Eigentümer-/Adminrechte fehlen.
+- Likes, Kommentaränderungen, persönliche Ordner, Moderation und Kontolöschung über PostgreSQL/Clerk/Cloudinary.
+- Frontend-Detailseite nutzt sampleMemes; Kommentare sind Platzhalter. API-Client ersetzt author noch durch Community. Nutzer-Sync/Token und echter Formular-Upload noch nicht automatisch verbunden; Dateiauswahl erlaubt im Code noch weitere Formate und muss zur PNG-Regel passen.
+- Pagination, zentrale Fehlerbehandlung, Missbrauchsbegrenzung und vollständige Tests. Jest/Supertest und automatisiertes Testskript fehlen.
+- Beispieltestcode in validators/meme.ts, ungenaue Node-Mindestversion, fehlende Cloudinary-Platzhalter in .env.example und verbleibende API-Verträge/Dokumentation.
+- Bildaustausch beim Bearbeiten, Alt-Text-Erweiterung und dienstübergreifende Löschabläufe noch nicht abschließend umgesetzt.
 
-## Nächste Schritte und Zeitplan
+## Restplan für heute und Zeitlage
 
-1. Upload-Limits festlegen und automatische Upload-Verarbeitung mit Authentifizierung implementieren.
-2. Parallel Detailseite, author und gegebenenfalls vorhandene Kommentarabfrage im Frontend verbinden.
-3. Eigene Memes bearbeiten/löschen und Rechte testen; danach weitere Nutzeraktionen.
-4. Datenbank, Clerk und Cloudinary beim Löschen abgestimmt behandeln und Teilausfälle prüfen.
-5. Gemeinsame Funktionstests, Startanleitung und Demo vervollständigen.
+Zuerst lokalen Ersteller, Cloudinary und PostgreSQL zu einem vollständigen Upload verbinden. Danach Erfolgs-/Fehlerfälle prüfen; Frontend-Formular nur bei rechtzeitig fertiger API gemeinsam anbinden. Parallel Detailseite und author im Frontend fertigstellen. Vor 12 Uhr kurze Abstimmung, Mittagspause 12–13 Uhr; Nachmittag Umsetzung, Tests und Tagesabschluss. Die Abwesenheit am 10.11. war ein gestriger Termin, keine heutige Sperrzeit.
 
-Planungsziele bleiben: 13.11. Anmeldung, Rechteprüfung, Upload und erste Nutzeraktionen; 18.11. Kernfunktionen; 19.–20.11. Tests und Vorbereitung; 23.11. Abgabe. Der volle Umfang ist zeitlich gefährdet; die Ziele sind keine Fertigmeldungen. Am 13.11. anhand tatsächlicher Ergebnisse gemeinsam neu priorisieren, ohne Anforderungen stillschweigend zu streichen.
+Bis 19.11. einschließlich heute sieben Werktage. Ziel Kernfunktionen bis 18.11. und Tests/Vorbereitung 19.–20.11. bleibt zeitlich gefährdet; Abgabe 23.11. Am 13.11. anhand tatsächlich fertiger Abläufe gemeinsam neu priorisieren. Keine neue Termin- oder Umfangszusage. Frühere Prozentwerte sind Aufwandsschätzungen vom 10.11., keine aktuelle Messung.
 
-Josephines regulärer Rahmen: werktags 09–16 Uhr, Mittagspause 12–13 Uhr, keine fest eingeplante Wochenendarbeit. Bestätigte Abwesenheit heute 10.11.: 13–14:30 Uhr. Ältere Termine unten sind historisch; 24.11. liegt nach der Abgabe. Dileks Verfügbarkeit ist damit nicht festgelegt.
+[Zwischenbericht für Dilek](zwischenbericht-2026-11-11.md) · [API](api-plan.md) · [Backend-Start](../README.md)
 
 ## Trello und Zusammenarbeit
 
-[Trello-Board](https://trello.com/b/EpjAfv15/your-meme). Beim heutigen Abgleich wurden 16 Kartenbeschreibungen aktualisiert, 14 belegte Einzelschritte abgehakt und sieben begonnene Aufgaben in passende aktive Listen verschoben. Beschreibungen, Checklisten und Listenpositionen wurden anschließend erneut gelesen und verifiziert. Unvollständige Sammelkarten bleiben offen. Checklisten gelten nur für den ausdrücklich beschriebenen Umfang.
+[Trello-Board](https://trello.com/b/EpjAfv15/your-meme). Am 11.11. wurden elf bestehende Beschreibungen aktualisiert, zwei belegte Einzelschritte abgehakt und eine Übersichtskarte zum Zwischenbericht/Restplan erstellt. Beschreibungen und Checklisten wurden anschließend erneut gelesen. Sammelkarten bleiben offen, wenn Integration oder Abnahme fehlt. Historische Tagespläne bleiben als solche erhalten; Checklistenpunkte nur im belegten Umfang abhaken.
 
-Farben: Blau Backend/Josephine, Lila Frontend/Dilek, Rosa Gemeinsam, Gelb P1, Himmelblau Information, Grün Erledigt, Rot Blockiert. Die Liste zeigt den Arbeitsstand; Informationskarten sind keine erledigbaren Funktionen. Pro Person möglichst eine überschaubare Aufgabe aktiv bearbeiten; gemeinsame Schnittstellen abstimmen. Backend-Regeln bleiben in AGENTS.md; Anwendungscode schreibt Josephine selbst.
+Josephine arbeitet auf Backend, Dilek auf Frontend; ein Branch umfasst das gesamte Repository. Keine Push-Sperren umgehen. Gemeinsamen Stand über geprüfte Pull Requests zusammenführen. Lokale Datenbankinhalte werden nicht automatisch geteilt, Testdaten werden gezielt mit dem Importskript eingerichtet. Keine Schlüssel in Dokumentation/Git. Anwendungscode schreibt Josephine selbst.
 
 ## Historischer Stand vom 04.11.2026
 
