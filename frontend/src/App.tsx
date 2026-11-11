@@ -1,9 +1,9 @@
 import { Link, Outlet, useParams } from '@tanstack/react-router'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Show, SignIn, SignUp, UserButton } from '@clerk/react'
+import { Show, SignIn, SignUp, UserButton, useAuth } from '@clerk/react'
 import type { Meme, MemeComment } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
-import { fetchMemeById, fetchMemeComments, fetchMemes } from './api/memes'
+import { fetchMemeById, fetchMemeComments, fetchMemes, syncCurrentUser } from './api/memes'
 import './App.css'
 
 type MemeListProps = {
@@ -25,7 +25,21 @@ function MemeCard({ meme, liked, onToggleLike }: MemeCardProps) {
 
 export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { getToken, isSignedIn } = useAuth()
   const categories = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
+
+  useEffect(() => {
+    if (!isSignedIn) return
+
+    let active = true
+    void getToken().then((token) => {
+      if (active && token) return syncCurrentUser(token)
+      return undefined
+    }).catch(() => undefined)
+
+    return () => { active = false }
+  }, [getToken, isSignedIn])
+
   return <div className="app-shell">
     <header className="site-header">
       <button className="menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="main-navigation"><span aria-hidden="true">☰</span><span className="sr-only">{menuOpen ? 'Menü schließen' : 'Menü öffnen'}</span></button>

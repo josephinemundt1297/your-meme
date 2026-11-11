@@ -2,6 +2,17 @@ import type { Meme, MemeComment } from '../types/meme'
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
+export async function syncCurrentUser(token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/me/sync`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Benutzer konnte nicht synchronisiert werden (${response.status}).`)
+  }
+}
+
 type MemeApiResponse = {
   id: string
   title: string
