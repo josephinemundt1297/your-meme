@@ -6,6 +6,9 @@ import { memeSelect } from "./lib/memeSelect.js";
 import { formatMeme } from "./utils/formatMeme.js";
 import cors from "cors";
 import { clerkMiddleware, getAuth, clerkClient } from "@clerk/express";
+import multer from "multer";
+import { upload } from "./middleware/upload.js";
+import { isPng } from "./utils/isPng.js";
 
 const app = express();
 
@@ -202,19 +205,72 @@ app.get("/api/memes/:id/comments", async (req, res) => {
     });
   }
 });
-app.post("/api/memes", (req, res) => {
-  const result = createMemeSchema.safeParse(req.body);
+app.post(
+  "/api/memes",
 
-  if (!result.success) {
-    return res.status(400).json({
-      error: "Ungültige Meme-Daten.",
+  // Anmeldung prüfen, bevor eine Datei angenommen wird.
+  (req, res, next) => {
+    const { userId } = getAuth(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Bitte zuerst anmelden.",
+      });
+    }
+
+    next();
+  },
+
+  // Genau eine Datei im Formularfeld "image" annehmen.
+  (req, res, next) => {
+    upload.single("image")(req, res, (error: unknown) => {
+      if (
+        error instanceof multer.MulterError &&
+        error.code === "LIMIT_FILE_SIZE"
+      ) {
+        return res.status(413).json({
+          error: "Das Bild darf höchstens 5 MB groß sein.",
+        });
+      }
+
+      if (error) {
+        return res.status(400).json({
+          error: "Bitte genau ein JPG/JPEG-Bild im Feld image senden.",
+        });
+      }
+
+      next();
     });
-  }
+  },
 
-  return res.status(503).json({
-    error: "Meme-Erstellung ist noch nicht verfügbar.",
-  });
-});
+  // Titel und Dateisignatur prüfen.
+  async (req, res) => {
+    const result = createMemeSchema.pick({ title: true }).safeParse(req.body);
+
+    if (!result.success) {
+      return res.status(400).json({
+        error: "Bitte einen Titel mit 1 bis 100 Zeichen angeben.",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: "Bitte ein Bild auswählen.",
+      });
+    }
+
+    if (!(await isPng(req.file.buffer))) {
+      return res.status(400).json({
+        error: "Die Datei wurde nicht als PNG erkannt.",
+      });
+    }
+
+    return res.json({
+      message: "Upload-Prüfung erfolgreich. Noch nichts gespeichert.",
+      title: result.data.title,
+    });
+  },
+);
 app.delete("/api/memes/:id", (req, res) => {
   const { id } = req.params;
 
