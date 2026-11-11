@@ -28,9 +28,9 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 - Express, PostgreSQL/Prisma, öffentliche Meme-/Detail-/Kommentarabfragen sowie Clerk-Prüfung und lokale Nutzer-Synchronisation sind implementiert.
 - Vollständiger PNG-Upload nach Cloudinary und PostgreSQL (201), eigener Meme-Titel bearbeiten und eigene Memes einschließlich Bild löschen sind implementiert; Erstellerprüfung vorhanden.
 - Kommentare erstellen, eigene bearbeiten/löschen und eigene Likes setzen/entfernen sind implementiert. Kommentartext getrimmt 1–1000 Zeichen, Meme-Titel 1–100 Zeichen.
-- Frontend lädt Liste, Detail und Kommentare; schreibende Anbindung und automatischer Sync fehlen im geprüften Stand. API-Leseantworten enthalten noch keinen persönlichen Like-Status.
+- Frontend lädt Liste, Detail und Kommentare. Im Branch `4b9947e` sind automatischer Sync und echter Upload implementiert; Kommentar-/Like-Schreibanbindung fehlt noch. API-Leseantworten enthalten noch keinen persönlichen Like-Status.
 - Offen: Ordner, Administrator-Moderation, Kontolöschung, Pagination, Missbrauchsbegrenzung, zentrale JSON-Fehlerbehandlung und vollständige Tests. Cloudinary-/DB-Teilausfälle sind noch nicht dauerhaft wiederholbar abgesichert.
-- Backend-Typprüfung/Build, Prisma-Validierung und Frontend-Lint/Build erfolgreich. Live-Prüfungen und gewichtete Bewertung (Backend ca. 65 %, Frontend ca. 45 %, gesamt ca. 55 %): [Projektstand](docs/projektstand.md). Keine automatisierte Backend-Testsuite eingerichtet.
+- Backend-Typprüfung/Build, Prisma-Validierung und Frontend-Lint/Build erfolgreich. Live-Prüfungen und gewichtete Bewertung (Backend ca. 65 %, Frontend ca. 55 %, gesamt ca. 60 %): [Projektstand](docs/projektstand.md). Keine automatisierte Backend-Testsuite eingerichtet.
 
 ## Funktionen und Zugriffsrechte
 
@@ -104,7 +104,7 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 - Persönliche Ordner, Administrator-Moderation und vollständige Kontolöschung.
 - Dauerhafte Behandlung von Cloudinary-/Datenbank-Teilausfällen.
 - Ob beim Bearbeiten eines Memes neben dem Titel auch das Bild ersetzt werden kann.
-- Automatischer Aufruf der vorhandenen Nutzer-Synchronisation aus dem Frontend nach Clerk-Anmeldung.
+- Frontend-Sync und Upload gemeinsam testen: Sync muss vor dem ersten Upload abgeschlossen sein, Fehler dürfen nicht stillschweigend verloren gehen.
 - Technische Einzelheiten der Kontolöschung über Datenbank, Clerk und Bildspeicher.
 - Vollständige API-Verträge und Testfälle.
 - Optionales Hosting; keine Voraussetzung für die Abgabe.
@@ -114,6 +114,6 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 - Persönlichen Like-Status für das Frontend ergänzen und Parser-/Middlewarefehler als sichere JSON-Antworten behandeln.
 - Persönliche Ordner und Meme-Zuordnungen ausschließlich für den Besitzer umsetzen.
-- Parallel Frontend: automatischer Sync, echter Upload, Autor übernehmen sowie Kommentar-/Like-Aktionen und eigene Meme-Verwaltung anbinden.
+- Parallel Frontend: bestehenden Upload gemeinsam testen und Sync-Abschluss absichern; Autor übernehmen sowie Kommentar-/Like-Aktionen und eigene Meme-Verwaltung anbinden.
 - Danach Moderation und Kontolöschung einschließlich Teilausfällen; abschließende Rechte-, Integrations- und Abnahmetests.
 - Validierung, Tests und Dokumentation mitführen. [Projektstand](docs/projektstand.md) enthält Belege und Grenzen.

@@ -95,7 +95,7 @@ Unbekannte Routen liefern 404 als JSON. Vollständige Formate und Grenzen stehen
 
 Bei Anfragen vom Frontend an Port 3000 den Clerk-Session-Token als `Authorization: Bearer <SESSION_TOKEN>` senden. Postman übernimmt die Browser-Anmeldung nicht. Session-Token sind kurzlebig; bei Ablauf einen frischen Token verwenden. Niemals den Clerk Secret Key als Nutzer-Token einsetzen.
 
-`POST /api/me/sync` benötigt keinen Body. Die Route lädt das Clerk-Profil und verwendet `upsert` anhand der eindeutigen `clerkId`. Wiederholte Aufrufe verwenden dieselbe lokale UUID; neue Nutzer erhalten `USER`. Der Anzeigename kommt aus Clerk-Username, alternativ Vorname oder `MemeFan`. Es werden keine Passwörter gespeichert. Der automatische Aufruf aus dem Frontend fehlt noch.
+`POST /api/me/sync` benötigt keinen Body. Die Route lädt das Clerk-Profil und verwendet `upsert` anhand der eindeutigen `clerkId`. Wiederholte Aufrufe verwenden dieselbe lokale UUID; neue Nutzer erhalten `USER`. Der Anzeigename kommt aus Clerk-Username, alternativ Vorname oder `MemeFan`. Es werden keine Passwörter gespeichert. Auf dem Frontend-Branch `4b9947e` ist der automatische Aufruf implementiert. Upload wartet jedoch noch nicht auf dessen Abschluss; Fehler werden im Layout verschluckt. Gemeinsamen Erstlogin-Test durchführen.
 
 ## Cloudinary-Verbindung testen
 
@@ -146,4 +146,4 @@ Vor Upload, Kommentar-Erstellung und Likes muss das lokale Profil über `/api/me
 - Ungültiges JSON liefert aktuell HTML mit internen Details; zentrale Fehlerbehandlung ergänzen. Generische Upload-Meldung enthält `JPNG` statt PNG.
 - Cloudinary und PostgreSQL sind nicht atomar gekoppelt: bei Teilausfällen kann Bereinigung nötig sein. Löschtests ausschließlich mit eigenen separaten Upload-Testbildern durchführen, keine gemeinsamen Fixture-Originale löschen.
 - Beispieltestcode in `src/validators/meme.ts` läuft beim Import; noch aufräumen.
-- Frontend-Upload, Kommentar-/Like-Aktionen, eigene Meme-Verwaltung und automatischer Sync sind noch anzubinden. Details und Prüfbelege: [Projektstand](docs/projektstand.md).
+- Frontend-Sync und Upload sind im Branch `4b9947e` implementiert; gemeinsame Browser-Abnahme und Absicherung des Sync-Abschlusses fehlen. Kommentar-/Like-Aktionen und eigene Meme-Verwaltung sind noch anzubinden. Details und Prüfbelege: [Projektstand](docs/projektstand.md).

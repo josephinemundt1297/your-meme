@@ -5,10 +5,10 @@ Stand: 11.11.2026. Abgabe: 23.11.2026; Präsentationstermin offen. Deployment is
 
 ## Aktueller Stand
 
-- Frontend: React/TypeScript/Vite, TanStack Router, Clerk-Oberfläche; Übersicht, Detail und Kommentar-Liste laden echte API-Daten. Upload und Likes sind noch lokale Demonstrationen; schreibende Anbindung und automatischer Nutzer-Sync fehlen.
+- Frontend: React/TypeScript/Vite, TanStack Router, Clerk-Oberfläche; Übersicht, Detail und Kommentar-Liste laden echte API-Daten. Auf dem Frontend-Branch `4b9947e` sind automatischer Sync und echter Upload implementiert; Like- und Kommentar-Schreibanbindung fehlen noch. Gemeinsamer Upload-Browsertest ausstehend.
 - Backend: Express/TypeScript, PostgreSQL/Prisma, Clerk-Prüfung und Nutzer-Sync. Vollständiger PNG-Upload nach Cloudinary/PostgreSQL, eigene Meme-Titel bearbeiten und Memes löschen, Kommentare erstellen/bearbeiten/löschen sowie Likes setzen/entfernen sind implementiert.
 - Offen: persönliche Ordner, Moderation, vollständige Kontolöschung, Pagination, persönlicher Like-Status beim Laden, sichere zentrale Fehlerantworten und abschließende Integration/Tests.
-- Aktuelle gewichtete Schätzung: Backend 65 %, Frontend 45 %, gesamt 55 % (jeweils ungefähr, Unsicherheit ±5 Prozentpunkte). Bewertungsgrundlage und Prüfgrenzen: [Projektstand](backend/docs/projektstand.md).
+- Aktuelle gewichtete Schätzung: Backend 65 %, Frontend 55 %, gesamt 60 % (jeweils ungefähr, Unsicherheit ±5 Prozentpunkte). Bewertungsgrundlage und Prüfgrenzen: [Projektstand](backend/docs/projektstand.md).
 
 ## Gemeinsam lokal starten
 
