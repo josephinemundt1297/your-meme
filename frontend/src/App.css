@@ -49,6 +49,10 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .comments-section { border-top: 1px solid var(--line); padding-top: 24px; }
 .comments-section h2 { font-size: 1.2rem; }
 .comment-placeholder { border: 1px dashed var(--line); color: var(--muted); font-size: .88rem; padding: 18px; }
+.comment-list { display: grid; gap: 12px; }
+.comment-item { border-bottom: 1px solid var(--line); padding: 4px 0 12px; }
+.comment-item p { margin: 0 0 6px; }
+.comment-item small { color: var(--muted); font-size: .78rem; }
 .upload-page { margin: 0 auto; max-width: 720px; padding: 28px 0 72px; }
 .upload-intro { margin-bottom: 26px; }
 .upload-intro h1 { margin-bottom: 10px; }

@@ -1,10 +1,9 @@
 import { Link, Outlet, useParams } from '@tanstack/react-router'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Show, SignIn, SignUp, UserButton } from '@clerk/react'
-import { sampleMemes } from './data/sampleMemes'
-import type { Meme } from './types/meme'
+import type { Meme, MemeComment } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
-import { fetchMemes } from './api/memes'
+import { fetchMemeById, fetchMemeComments, fetchMemes } from './api/memes'
 import './App.css'
 
 type MemeListProps = {
@@ -97,19 +96,55 @@ export function UploadPage() {
 }
 export function MemeDetailPage() {
   const { memeId } = useParams({ from: '/memes/$memeId' })
-  const meme = sampleMemes.find((item) => item.id === memeId)
-  if (!meme) return <section className="placeholder-page"><MemeState type="not-found" /><Link className="primary-link" to="/">Zur Übersicht</Link></section>
+  const [detailState, setDetailState] = useState<{ id: string; status: 'loading' | 'loaded' | 'not-found' | 'error'; meme?: Meme }>({ id: '', status: 'loading' })
+  const [commentState, setCommentState] = useState<{ id: string; status: 'loading' | 'loaded' | 'error'; comments?: MemeComment[] }>({ id: '', status: 'loading' })
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    void fetchMemeById(memeId, controller.signal)
+      .then((data) => {
+        setDetailState(data ? { id: memeId, status: 'loaded', meme: data } : { id: memeId, status: 'not-found' })
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setDetailState({ id: memeId, status: 'error' })
+      })
+
+    return () => controller.abort()
+  }, [memeId])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    void fetchMemeComments(memeId, controller.signal)
+      .then((comments) => setCommentState({ id: memeId, status: 'loaded', comments }))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setCommentState({ id: memeId, status: 'error' })
+      })
+
+    return () => controller.abort()
+  }, [memeId])
+
+  const currentState = detailState.id === memeId ? detailState : { id: memeId, status: 'loading' as const }
+  const currentCommentState = commentState.id === memeId ? commentState : { id: memeId, status: 'loading' as const }
+  if (currentState.status === 'error') return <section className="placeholder-page"><MemeState type="error" onRetry={() => window.location.reload()} /><Link className="primary-link" to="/">Zur Übersicht</Link></section>
+  if (currentState.status === 'not-found') return <section className="placeholder-page"><MemeState type="not-found" /><Link className="primary-link" to="/">Zur Übersicht</Link></section>
+  if (currentState.status === 'loading' || !currentState.meme) return <section className="placeholder-page"><MemeState type="loading" /></section>
+
+  const meme = currentState.meme
 
   return <section className="detail-page">
     <Link className="back-link" to="/">← Zurück zu den Memes</Link>
     <article className="detail-card">
-      <div className="detail-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}><span aria-hidden="true">{meme.emoji}</span></div>
+      <div className="detail-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} /> : <span aria-hidden="true">{meme.emoji}</span>}</div>
       <div className="detail-content">
         <span className="category">{meme.category}</span>
         <h1>{meme.title}</h1>
         <p className="detail-author">Von <strong>{meme.author.username}</strong> · {new Date(meme.createdAt).toLocaleDateString('de-DE')}</p>
         <div className="detail-actions"><button className="like-button liked" type="button"><span aria-hidden="true">♡</span>{meme.likeCount} Likes</button><span className="comment-count">💬 {meme.commentCount} Kommentare</span></div>
-        <section className="comments-section" aria-labelledby="comments-heading"><h2 id="comments-heading">Kommentare</h2><div className="comment-placeholder">Kommentare werden mit dem Backend verbunden.</div></section>
+        <section className="comments-section" aria-labelledby="comments-heading"><h2 id="comments-heading">Kommentare</h2>{currentCommentState.status === 'loading' && <p className="comment-placeholder">Kommentare werden geladen …</p>}{currentCommentState.status === 'error' && <p className="comment-placeholder">Kommentare konnten nicht geladen werden.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments?.length === 0 && <p className="comment-placeholder">Noch keine Kommentare.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments && currentCommentState.comments.length > 0 && <div className="comment-list">{currentCommentState.comments.map((comment) => <article className="comment-item" key={comment.id}><p>{comment.content}</p><small>Von {comment.author.username} · {new Date(comment.createdAt).toLocaleDateString('de-DE')}</small></article>)}</div>}</section>
       </div>
     </article>
   </section>
