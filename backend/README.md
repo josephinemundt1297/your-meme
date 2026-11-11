@@ -1,10 +1,13 @@
 # Your Meme – Backend starten
 
-Stand: 04.11.2026. Express-/TypeScript-Grundgerüst mit vorbereiteter PostgreSQL-/Prisma-Anbindung.
-Aktuell wird mit Node.js 24 gearbeitet; bei der Prüfung ist Node.js 24.14.0 installiert.
-Für diese Anleitung Node.js 24 und npm verwenden.
+Stand: 10.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und vorbereiteter Cloudinary-Anbindung. Der automatische Bild-Upload ist noch nicht implementiert.
 
-## Einrichtung
+## Voraussetzungen und Installation
+
+- Node.js 24 und npm verwenden. Die Paketkonfiguration erlaubt noch `>=22.9.0`, obwohl Prisma laut Lockdatei mindestens Node 22.12 im 22er-Zweig benötigt; diese Angabe ist noch zu korrigieren.
+- PostgreSQL muss laufen; eigene Projektdatenbank und Benutzerzugang einrichten.
+- Zugriff auf dieselbe Clerk-Anwendung wie das Frontend.
+- Cloudinary-Zugangsdaten für den Cloudinary-Client und den späteren Upload.
 
 Alle folgenden Befehle im Ordner `backend/` ausführen:
 
@@ -12,69 +15,86 @@ Alle folgenden Befehle im Ordner `backend/` ausführen:
 npm ci
 ```
 
-Falls noch keine `.env` vorhanden ist, `.env.example` nach `.env` kopieren.
-Eine vorhandene `.env` mit eigenen Zugangsdaten beibehalten.
+## Lokale Konfiguration
 
-- `PORT`: optional, Standardwert `3000`.
-- `DATABASE_URL`: PostgreSQL-Verbindungsadresse für Prisma und das Client-Modul. Die Vorlage enthält ausschließlich Beispieldaten; diese durch die eigene Verbindung ersetzen.
-- Echte Zugangsdaten gehören nur in die lokale `.env`, nicht in Git oder Dokumentation.
+Falls noch keine `.env` vorhanden ist, `.env.example` kopieren und ergänzen. Eine vorhandene `.env` beibehalten. Die Vorlage enthält noch keine Cloudinary-Einträge; diese wie unten ergänzen.
 
-Den Prisma-Client nach der ersten Installation und nach Schemaänderungen erzeugen:
+```env
+PORT=3000
+DATABASE_URL="postgresql://USER:PASSWORT@localhost:5432/DEINE_DATENBANK?schema=public"
+CLERK_PUBLISHABLE_KEY=DEIN_PUBLISHABLE_KEY
+CLERK_SECRET_KEY=DEIN_SECRET_KEY
+CLOUDINARY_CLOUD_NAME=DEIN_CLOUD_NAME
+CLOUDINARY_API_KEY=DEIN_API_KEY
+CLOUDINARY_API_SECRET=DEIN_API_SECRET
+```
+
+Dies sind Platzhalter, keine gültigen Zugangsdaten. `PORT` ist optional. PostgreSQL-Zugangsdaten gehören zum jeweiligen Rechner; `localhost` bezeichnet immer diesen Rechner. Sonderzeichen im Benutzer-/Passwortteil der Verbindungs-URL müssen URL-kodiert werden.
+
+Express erwartet `CLERK_PUBLISHABLE_KEY`, ohne `NEXT_PUBLIC_` oder `VITE_`. Nur im Frontend heißt die Variable `VITE_CLERK_PUBLISHABLE_KEY`. API-Secret und Clerk Secret Key niemals im Frontend speichern. `.env` ist aus Git ausgeschlossen.
+
+Der Cloudinary-Client liest die drei Cloudinary-Variablen beim Import. Er wird noch nicht von einer Upload-Route verwendet; öffentliche Meme-Abfragen lesen nur die gespeicherten Bildadressen.
+
+## Prisma und Datenbank
 
 ```bash
 npx prisma generate
-```
-
-Der Client wird aus `prisma/schema.prisma` unter `src/generated/prisma/` erzeugt und nicht versioniert.
-Er ist für die Typprüfung und den Build des vorhandenen Client-Moduls erforderlich.
-`prisma7.config.ts` lädt die `.env` über `dotenv`; für Prisma-Befehle muss `DATABASE_URL` gesetzt sein.
-
-## Entwicklungsserver starten
-
-```bash
-npm run dev
-```
-
-Der Server startet standardmäßig auf Port 3000 und startet bei Codeänderungen neu.
-Node.js lädt die `.env` beim Serverstart. Mit `Strg+C` beenden.
-Der aktuelle Server verwendet den Prisma-Client noch nicht; die Statusroute funktioniert daher auch ohne Datenbankzugriff.
-
-## Status prüfen
-
-Im Browser oder in Postman `GET http://localhost:3000/api/health` aufrufen.
-Erwartet werden HTTP 200 und:
-
-```json
-{ "status": "ok" }
-```
-
-Die Route prüft, ob der Server antwortet. Sie prüft keine Datenbank oder externen Dienste.
-Unbekannte Adressen liefern HTTP 404 und `{ "error": "Route nicht gefunden." }`.
-Die geplanten Meme-Endpunkte sind noch nicht implementiert.
-
-## Prisma und Datenbank prüfen
-
-```bash
 npx prisma validate
 npx prisma migrate status
 ```
 
-- `validate` prüft das Prisma-Schema, ohne eine funktionierende Datenbankverbindung nachzuweisen.
-- `migrate status` benötigt eine erreichbare PostgreSQL-Datenbank und vergleicht deren Migrationsstand mit den vorhandenen Migrationsdateien.
-- Die erste Migration liegt unter `prisma/migrations/20261104125318_init/`. Ihre Existenz belegt nicht, dass sie bereits angewendet wurde.
+- `generate`: erzeugt den nicht versionierten Client unter `src/generated/prisma/`.
+- `validate`: prüft das Schema, belegt keine Datenbankverbindung.
+- `migrate status`: vergleicht die Migrationen mit der konfigurierten Datenbank.
+- Die installierte CLI erkennt `prisma7.config.ts`; diese Datei lädt die `.env`.
 
-Zum Einrichten einer neuen, leeren Projektdatenbank kann nach Prüfung von `DATABASE_URL` die vorhandene Migration angewendet werden:
+Für eine neue, leere Projektdatenbank nach Kontrolle von `DATABASE_URL`:
 
 ```bash
 npx prisma migrate deploy
 ```
 
-Dieser Befehl verändert die ausgewählte Datenbank. Für eine bereits befüllte Datenbank zuerst den Migrationsstand klären.
-Neue Schemaänderungen und Migrationen werden separat geplant; für den aktuellen Stand ist keine neue `init`-Migration nötig.
+Dieser Befehl verändert die ausgewählte Datenbank. Bei einer befüllten Datenbank zuerst den Migrationsstand klären. Die Migration `20261104125318_init` ist vorhanden; keine zweite Init-Migration erzeugen.
 
-## TypeScript prüfen und JavaScript starten
+Git überträgt keine lokalen Datensätze. Eine frische Datenbank liefert `[]`. Mit `npx prisma studio` können Testnutzer und Test-Memes angelegt werden. Ein Meme braucht einen vorhandenen Ersteller, Titel, Bildadresse und Cloudinary-Public-ID als `imageStorageId`. UUIDs und `updatedAt` erzeugt der Prisma Client; die SQL-Migration enthält dafür keinen Datenbank-Standardwert. Studio kann deshalb manuelle Werte verlangen. Testdaten-Anlage ist noch keine Upload-Funktion.
 
-Nach der Client-Generierung:
+## Server starten und prüfen
+
+```bash
+npm run dev
+```
+
+Standardadresse: `http://localhost:3000`. Nach Env-Änderungen den Server neu starten; mit Strg+C beenden. CORS erlaubt derzeit genau `http://localhost:5173`. Das Frontend wird unter `http://localhost:5173/` geöffnet.
+
+| Anfrage | Erwartung |
+| --- | --- |
+| `GET /api/health` | 200, `{ "status": "ok" }`; nur Serverstatus |
+| `GET /api/health/db` | 200 und `database: "connected"`; bei DB-Ausfall 503 |
+| `GET /api/memes` | 200, Array; ohne Testdaten `[]` |
+| `GET /api/memes/:id` | 200, einzelnes Meme; ungültige UUID 400; fehlendes Meme 404 |
+| `GET /api/memes/:id/comments` | 200, Kommentar-Array; ohne Kommentare `[]` |
+| `GET /api/me` | Ohne Anmeldung 401; mit gültigem Session-Token 200 und Clerk-ID |
+| `POST /api/me/sync` | Ohne Anmeldung 401; mit gültiger Anmeldung lokales Profil anlegen/aktualisieren |
+
+Unbekannte Routen liefern 404 als JSON. Vollständige Formate und Grenzen stehen im [API-Plan](docs/api-plan.md).
+
+## Anmeldung und lokale Nutzer
+
+Bei Anfragen vom Frontend an Port 3000 den Clerk-Session-Token als `Authorization: Bearer <SESSION_TOKEN>` senden. Postman übernimmt die Browser-Anmeldung nicht. Session-Token sind kurzlebig; bei Ablauf einen frischen Token verwenden. Niemals den Clerk Secret Key als Nutzer-Token einsetzen.
+
+`POST /api/me/sync` benötigt keinen Body. Die Route lädt das Clerk-Profil und verwendet `upsert` anhand der eindeutigen `clerkId`. Wiederholte Aufrufe verwenden dieselbe lokale UUID; neue Nutzer erhalten `USER`. Der Anzeigename kommt aus Clerk-Username, alternativ Vorname oder `MemeFan`. Es werden keine Passwörter gespeichert. Der automatische Aufruf aus dem Frontend fehlt noch.
+
+## Cloudinary-Verbindung testen
+
+Nach Einrichtung der lokalen Variablen kann ein lesender Ping ausgeführt werden:
+
+```bash
+npx tsx -e 'import { cloudinary } from "./src/lib/cloudinary.ts"; cloudinary.api.ping().then(result => console.log("Cloudinary:", result.status)).catch(error => { console.error("Cloudinary-Test fehlgeschlagen", error?.http_code ?? error?.error?.http_code); process.exitCode = 1; });'
+```
+
+Erwartet: `Cloudinary: ok`. Dabei wird kein Bild hochgeladen. Bei Fehlern keine vollständigen Konfigurations- oder Fehlerobjekte mit Zugangsdaten veröffentlichen.
+
+## Typprüfung, Build und Tests
 
 ```bash
 npm run typecheck
@@ -82,27 +102,20 @@ npm run build
 npm start
 ```
 
-- `typecheck`: prüft TypeScript, ohne JavaScript-Dateien zu erzeugen.
-- `build`: übersetzt `src/` einschließlich des generierten Clients nach `dist/`.
-- `start`: startet den zuvor gebauten Server. Nach Codeänderungen erneut bauen.
-- Ein automatisiertes Testskript ist noch nicht eingerichtet. Typprüfung und Build ersetzen keine API- oder Datenbanktests.
+`build` erzeugt `dist/`; `start` startet diesen Build. Nach Änderungen erneut bauen. Ein automatisiertes Testskript, Jest und Supertest fehlen noch. Typprüfung und Build ersetzen keine Funktions- oder Rechteprüfung.
 
-## Struktur und Stand
+## Struktur und offene Funktionen
 
-| Pfad | Aufgabe |
+| Datei | Aufgabe |
 | --- | --- |
-| `src/server.ts` | Express-Anwendung, Statusroute, 404-Antwort und Serverstart |
-| `src/lib/prisma.ts` | Prisma-Client mit PostgreSQL-Adapter; noch nicht im Server verwendet |
-| `src/generated/prisma/` | Generierter Prisma-Client, nicht von Hand bearbeiten |
-| `prisma/schema.prisma` | Sechs Modelle mit Beziehungen und Löschkaskaden |
-| `prisma/migrations/` | Versionierte SQL-Migrationen und Provider-Lockdatei |
-| `prisma7.config.ts` | Prisma-Konfiguration; wird von der installierten CLI erkannt |
-| `tsconfig.json` | TypeScript-Einstellungen |
-| `package.json`, `package-lock.json` | Skripte, Abhängigkeiten und festgehaltene Paketversionen |
-| `.agents/skills/`, `skills-lock.json` | Installierte Hilfen für KI-Werkzeuge, kein Anwendungscode |
-| `.claude/skills/`, `.windsurf/skills/` | Verknüpfungen auf diese Hilfen, keine zusätzlichen Kopien |
-| `AGENTS.md` | Regeln für die Backend-Zusammenarbeit |
-| `SPECK.md`, `docs/` | Anforderungen, Datenmodell, API-Plan und geprüfter Projektstand |
+| `src/server.ts` | Express, CORS, Clerk, öffentliche Abfragen, Nutzer-Synchronisation, Platzhalter für Meme-Schreibaktionen |
+| `src/lib/prisma.ts` | Prisma-Client mit PostgreSQL-Adapter |
+| `src/lib/memeSelect.ts` | Öffentliche Meme-Felder, Ersteller und Zähler auswählen |
+| `src/utils/formatMeme.ts` | `author`, `likeCount` und `commentCount` ausgeben |
+| `src/utils/isValidUuid.ts` | UUID-Grundform prüfen |
+| `src/validators/meme.ts` | Zod-Schema; enthält noch ausführbaren Beispieltestcode |
+| `src/lib/cloudinary.ts` | Cloudinary-SDK konfigurieren; noch keine Upload-Verarbeitung |
+| `prisma/` | Schema und vorhandene Migration |
+| `.agents/skills/`, `.claude/skills/`, `.windsurf/skills/` | Werkzeughilfen und Verknüpfungen, kein Anwendungscode |
 
-Clerk, Bildspeicher, fachliche Endpunkte und ihre Validierungs-, Berechtigungs- und Testlogik fehlen noch.
-Details und offene Konfigurationspunkte: [Projektstand](docs/projektstand.md).
+`POST /api/memes` liefert bei ungültigem JSON-Inhalt 400, bei gültigen Schemafeldern weiterhin 503. `DELETE /api/memes/:id` ist ebenfalls ein Platzhalter. Upload, Bearbeiten/Löschen mit Rechteprüfung, Likes, Kommentarverwaltung, Ordner, Moderation und Kontolöschung fehlen. Details: [Projektstand](docs/projektstand.md), [Spezifikation](SPECK.md).

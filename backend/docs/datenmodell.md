@@ -1,19 +1,15 @@
 # Your Meme – Datenmodell
 
-Stand: 04.11.2026. Mit `prisma/schema.prisma` und der ersten Migration
-`prisma/migrations/20261104125318_init/migration.sql` abgeglichen.
-Die sechs Modelle, Felder, Beziehungen, Schlüssel und Löschkaskaden sind dort enthalten.
-Ob die Migration in der konfigurierten Datenbank angewendet ist, wurde bei dieser Dokumentationsprüfung nicht geprüft.
+Stand: 10.11.2026. Schema und erste Migration sind unverändert; die sechs Modelle, Felder, Schlüssel und Löschkaskaden stimmen weiterhin überein. Die lokale Datenbank ist erreichbar und enthält Testdaten. Der angewendete Migrationsstand wurde bei der aktuellen Prüfung nicht erneut mit `migrate status` abgefragt; die Anwendung der ersten Migration ist zuvor dokumentiert.
 
-Die Berechtigungen und dienstübergreifende Kontolöschung in diesem Dokument beschreiben Anforderungen.
-Die API setzt sie noch nicht um; Clerk und Bildspeicher sind noch nicht angebunden.
+Clerk-Identität und lokale Nutzer-Synchronisation sind implementiert. Eigentümer-/Administratorprüfungen für die geplanten Inhaltsänderungen und dienstübergreifende Kontolöschung fehlen noch. Die folgenden Berechtigungs- und Löschregeln bleiben Zielanforderungen.
 
 ## Technische Grundlage
 
 - Node.js, Express und TypeScript
 - PostgreSQL mit Prisma
 - Clerk für Registrierung, Anmeldung und Passwortverwaltung
-- Dauerhafter Bildspeicher: Anbieter noch offen
+- Bildspeicher: Cloudinary; Testbilder manuell hochgeladen, automatische Upload-Verarbeitung noch offen
 - Hosting: optional; Anbieter noch offen
 
 ## Beziehungsdiagramm
@@ -78,7 +74,7 @@ erDiagram
 ## Bedeutung der Modelle
 
 - **User:** lokales Nutzerprofil mit Verknüpfung zum Clerk-Konto und Anwendungsrolle.
-- **Meme:** Titel, Bildadresse, Kennung der Bilddatei beim Speicherdienst und Ersteller.
+- **Meme:** Titel, Bildadresse (`imageUrl`), Cloudinary-Public-ID (`imageStorageId`) und Ersteller. Public ID und vollständige URL sind unterschiedliche Werte; bei Ordnerpfaden gehört der Pfad zur Public ID.
 - **Comment:** Kommentartext mit Verweis auf Verfasser und Meme.
 - **Like:** Zuordnung eines Nutzers zu einem gelikten Meme.
 - **Folder:** persönlicher Ordner eines Nutzers.
@@ -182,12 +178,11 @@ diese ist noch nicht implementiert.
 
 ## Nächste Schritte
 
-1. Datenbeziehungen in kleinen Beispielen nachvollziehen und API-Datenformate mit Dilek abstimmen.
-2. PostgreSQL-Verbindung und angewendeten Migrationsstand prüfen; Schema, erste Migrationsdatei und Prisma-Client-Modul sind bereits vorhanden.
-3. Einen ersten Datenbankzugriff umsetzen und den Prisma-Client in den benötigten API-Code einbinden.
-4. Geplante Meme-Endpunkte umsetzen und ihre Antworten mit Postman prüfen.
-5. Clerk, Zugriffsprüfungen und weitere Funktionen schrittweise ergänzen.
-6. Vor dem Upload den Bildspeicher auswählen. Nur bei gewünschter Veröffentlichung Hosting auswählen und frühzeitig testen.
+1. Bestehende Nutzer-Synchronisation nach Anmeldung im Frontend aufrufen; die verifizierte Clerk-ID bleibt die Grundlage der lokalen Zuordnung.
+2. Automatischen Cloudinary-Upload und Meme-Anlage mit dem lokalen Ersteller implementieren. UUID und `updatedAt` über den Prisma Client erzeugen lassen.
+3. Bearbeiten/Löschen sowie Likes, Kommentare und Ordner mit den vereinbarten Rechten umsetzen.
+4. Cloudinary-Dateilöschung, Clerk-Kontolöschung und wiederholbare Bereinigung bei Teilausfällen implementieren und testen.
+5. Der vorgeschlagene Alternativtext `altText` ist noch kein Schemafeld; eine mögliche Erweiterung separat abstimmen.
 
 Validierung, Rechteprüfung, Tests und Dokumentation werden bei jeder Funktion mitgeführt.
 Aktueller Stand und Trello-Arbeitsweise: [projektstand.md](projektstand.md).
