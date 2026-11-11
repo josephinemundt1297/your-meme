@@ -15,3 +15,11 @@ export type Meme = {
   likedByMe: boolean
   emoji: string
 }
+
+export type MemeComment = {
+  id: string
+  content: string
+  userId: string
+  createdAt: string
+  author: MemeAuthor
+}

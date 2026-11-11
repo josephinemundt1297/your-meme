@@ -1,4 +1,4 @@
-import type { Meme } from '../types/meme'
+import type { Meme, MemeComment } from '../types/meme'
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
@@ -12,6 +12,14 @@ type MemeApiResponse = {
   category?: string
   commentCount?: number
   likedByMe?: boolean
+}
+
+type CommentApiResponse = {
+  id: string
+  content: string
+  userId: string
+  createdAt: string
+  user?: { username?: string }
 }
 
 function normalizeMeme(item: MemeApiResponse): Meme {
@@ -54,4 +62,25 @@ export async function fetchMemeById(id: string, signal?: AbortSignal): Promise<M
 
   const data: MemeApiResponse = await response.json()
   return normalizeMeme(data)
+}
+
+export async function fetchMemeComments(id: string, signal?: AbortSignal): Promise<MemeComment[]> {
+  const response = await fetch(`${apiBaseUrl}/api/memes/${encodeURIComponent(id)}/comments`, { signal })
+
+  if (!response.ok) {
+    throw new Error(`Kommentare konnten nicht geladen werden (${response.status}).`)
+  }
+
+  const data: unknown = await response.json()
+  if (!Array.isArray(data)) {
+    throw new Error('Die Kommentar-Antwort hat ein unerwartetes Format.')
+  }
+
+  return data.map((item: CommentApiResponse): MemeComment => ({
+    id: item.id,
+    content: item.content,
+    userId: item.userId,
+    createdAt: item.createdAt,
+    author: { id: item.userId, username: item.user?.username ?? 'Community' },
+  }))
 }
