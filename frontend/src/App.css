@@ -58,6 +58,7 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .comment-form textarea { border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: inherit; min-height: 96px; padding: 10px; resize: vertical; }
 .comment-form button { justify-self: start; }
 .comment-error { color: #a52f2f; margin: 0; }
+.like-error { color: #a52f2f; margin: 10px 0; }
 .upload-page { margin: 0 auto; max-width: 720px; padding: 28px 0 72px; }
 .upload-intro { margin-bottom: 26px; }
 .upload-intro h1 { margin-bottom: 10px; }
