@@ -116,6 +116,30 @@ Dieser Nachtrag stammt aus dem gemeinsamen Code-/Dokumentationsabgleich und besc
 
 Details: [Frontend-Start](../README.md), [API-Vertrag](../../backend/docs/api-plan.md), [Prüfbelege und Aufwandsschätzung](../../backend/docs/projektstand.md).
 
+## 12.11.2026 – Upload-Sync, Kommentare und Likes
+
+- Upload-Ablauf abgesichert: Der Benutzer-Sync wird mit `await` erfolgreich beendet, bevor der Meme-Upload startet.
+- Fehler beim Benutzer-Sync stoppen den Upload und werden verständlich angezeigt.
+- Kommentarformular für angemeldete Nutzer ergänzt.
+- Kommentare werden über `POST /api/memes/:id/comments` mit Clerk-Token gesendet.
+- Leere Kommentare und Kommentare über 1.000 Zeichen werden verhindert.
+- Senden-Button wird während der Anfrage deaktiviert; nach Erfolg werden Kommentar und Anzahl aktualisiert.
+- Like- und Unlike-Aktionen über `POST` und `DELETE /api/memes/:id/like` angebunden.
+- Like-Status und Like-Anzahl werden aus der API übernommen; lokale Zusatz-Zählung entfernt.
+- `npm run lint`, `npm run build` und `git diff --check` erfolgreich ausgeführt.
+- Commit und Push auf den Branch `Frontend`:
+  - `83b8373 fix: upload meme only after user sync succeeds`
+  - `c302f9c feat: allow signed-in users to post comments`
+  - `14a578f feat: connect meme likes to backend api`
+
+## Aktuell offene Punkte
+
+- Ein vollständiger Browser-Test mit echtem Upload, Kommentar und Like steht noch aus, weil das lokale Backend wegen fehlender Cloudinary-Werte in `backend/.env` nicht startet.
+- Cloudinary-Konfiguration und Backend-Start müssen mit Josi lokal geklärt werden; geheime Werte werden nicht ins Frontend oder Git übernommen.
+- Danach sollen Upload, Kommentar und Like gemeinsam mit einem angemeldeten Testkonto getestet werden.
+- Kategorien bleiben vorerst zurückgestellt.
+- Trello wurde in diesem Arbeitsschritt nicht verändert; die offenen Punkte müssen dort bei Bedarf gemeinsam eingetragen werden.
+
 ## Zuständigkeiten
 
 - **Dilek:** React-Frontend, Layout, Navigation, Authentifizierungsoberfläche und API-Anbindung im Frontend.

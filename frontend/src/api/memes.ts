@@ -95,6 +95,24 @@ export async function createMemeComment(id: string, content: string, token: stri
   return normalizeComment(data as CommentApiResponse)
 }
 
+export async function setMemeLike(id: string, liked: boolean, token: string): Promise<{ liked: boolean; likeCount: number }> {
+  const response = await fetch(`${apiBaseUrl}/api/memes/${encodeURIComponent(id)}/like`, {
+    method: liked ? 'POST' : 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um Memes zu liken.' : `Der Like konnte nicht gespeichert werden (${response.status}).`)
+  }
+
+  const data: unknown = await response.json()
+  if (!data || typeof data !== 'object' || !('liked' in data) || typeof data.liked !== 'boolean' || !('likeCount' in data) || typeof data.likeCount !== 'number') {
+    throw new Error('Die Like-Antwort hat ein unerwartetes Format.')
+  }
+
+  return { liked: data.liked, likeCount: data.likeCount }
+}
+
 function normalizeMeme(item: MemeApiResponse): Meme {
   return {
     id: item.id,
