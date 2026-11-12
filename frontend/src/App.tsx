@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Show, SignIn, SignUp, UserButton, useAuth } from '@clerk/react'
 import type { Meme, MemeComment } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
-import { createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
+import { createMemeComment, createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
 import './App.css'
 
 type MemeListProps = {
@@ -128,8 +128,12 @@ export function UploadPage() {
 }
 export function MemeDetailPage() {
   const { memeId } = useParams({ from: '/memes/$memeId' })
+  const { getToken, isSignedIn } = useAuth()
   const [detailState, setDetailState] = useState<{ id: string; status: 'loading' | 'loaded' | 'not-found' | 'error'; meme?: Meme }>({ id: '', status: 'loading' })
   const [commentState, setCommentState] = useState<{ id: string; status: 'loading' | 'loaded' | 'error'; comments?: MemeComment[] }>({ id: '', status: 'loading' })
+  const [commentText, setCommentText] = useState('')
+  const [commentError, setCommentError] = useState('')
+  const [isSendingComment, setIsSendingComment] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -167,6 +171,35 @@ export function MemeDetailPage() {
 
   const meme = currentState.meme
 
+  const handleCommentSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const content = commentText.trim()
+    if (!content) {
+      setCommentError('Bitte schreibe einen Kommentar.')
+      return
+    }
+    if (content.length > 1000) {
+      setCommentError('Dein Kommentar darf höchstens 1.000 Zeichen enthalten.')
+      return
+    }
+
+    setCommentError('')
+    setIsSendingComment(true)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Bitte melde dich an, um zu kommentieren.')
+      const comment = await createMemeComment(memeId, content, token)
+      setCommentState((current) => ({ id: memeId, status: 'loaded', comments: [...(current.id === memeId ? current.comments ?? [] : []), comment] }))
+      setCommentText('')
+    } catch (error: unknown) {
+      setCommentError(error instanceof Error ? error.message : 'Der Kommentar konnte nicht gespeichert werden.')
+    } finally {
+      setIsSendingComment(false)
+    }
+  }
+
+  const commentCount = currentCommentState.status === 'loaded' ? currentCommentState.comments?.length ?? meme.commentCount : meme.commentCount
+
   return <section className="detail-page">
     <Link className="back-link" to="/">← Zurück zu den Memes</Link>
     <article className="detail-card">
@@ -175,8 +208,8 @@ export function MemeDetailPage() {
         <span className="category">{meme.category}</span>
         <h1>{meme.title}</h1>
         <p className="detail-author">Von <strong>{meme.author.username}</strong> · {new Date(meme.createdAt).toLocaleDateString('de-DE')}</p>
-        <div className="detail-actions"><button className="like-button liked" type="button"><span aria-hidden="true">♡</span>{meme.likeCount} Likes</button><span className="comment-count">💬 {meme.commentCount} Kommentare</span></div>
-        <section className="comments-section" aria-labelledby="comments-heading"><h2 id="comments-heading">Kommentare</h2>{currentCommentState.status === 'loading' && <p className="comment-placeholder">Kommentare werden geladen …</p>}{currentCommentState.status === 'error' && <p className="comment-placeholder">Kommentare konnten nicht geladen werden.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments?.length === 0 && <p className="comment-placeholder">Noch keine Kommentare.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments && currentCommentState.comments.length > 0 && <div className="comment-list">{currentCommentState.comments.map((comment) => <article className="comment-item" key={comment.id}><p>{comment.content}</p><small>Von {comment.author.username} · {new Date(comment.createdAt).toLocaleDateString('de-DE')}</small></article>)}</div>}</section>
+        <div className="detail-actions"><button className="like-button liked" type="button"><span aria-hidden="true">♡</span>{meme.likeCount} Likes</button><span className="comment-count">💬 {commentCount} Kommentare</span></div>
+        <section className="comments-section" aria-labelledby="comments-heading"><h2 id="comments-heading">Kommentare</h2>{isSignedIn ? <form className="comment-form" onSubmit={handleCommentSubmit}><label htmlFor="comment-content">Dein Kommentar</label><textarea id="comment-content" value={commentText} onChange={(event) => { setCommentText(event.target.value); setCommentError('') }} maxLength={1000} rows={4} placeholder="Schreibe einen Kommentar …" required /><button className="primary-link" type="submit" disabled={isSendingComment}>{isSendingComment ? 'Wird gesendet …' : 'Kommentar senden'}</button>{commentError && <p className="comment-error" role="alert">{commentError}</p>}</form> : <p className="comment-placeholder">Bitte <Link to="/account">melde dich an</Link>, um zu kommentieren.</p>}{currentCommentState.status === 'loading' && <p className="comment-placeholder">Kommentare werden geladen …</p>}{currentCommentState.status === 'error' && <p className="comment-placeholder">Kommentare konnten nicht geladen werden.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments?.length === 0 && <p className="comment-placeholder">Noch keine Kommentare.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments && currentCommentState.comments.length > 0 && <div className="comment-list">{currentCommentState.comments.map((comment) => <article className="comment-item" key={comment.id}><p>{comment.content}</p><small>Von {comment.author.username} · {new Date(comment.createdAt).toLocaleDateString('de-DE')}</small></article>)}</div>}</section>
       </div>
     </article>
   </section>

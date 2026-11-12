@@ -53,6 +53,11 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .comment-item { border-bottom: 1px solid var(--line); padding: 4px 0 12px; }
 .comment-item p { margin: 0 0 6px; }
 .comment-item small { color: var(--muted); font-size: .78rem; }
+.comment-form { display: grid; gap: 8px; margin: 18px 0 24px; }
+.comment-form label { font-weight: 700; }
+.comment-form textarea { border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: inherit; min-height: 96px; padding: 10px; resize: vertical; }
+.comment-form button { justify-self: start; }
+.comment-error { color: #a52f2f; margin: 0; }
 .upload-page { margin: 0 auto; max-width: 720px; padding: 28px 0 72px; }
 .upload-intro { margin-bottom: 26px; }
 .upload-intro h1 { margin-bottom: 10px; }
