@@ -140,6 +140,21 @@ Details: [Frontend-Start](../README.md), [API-Vertrag](../../backend/docs/api-pl
 - Kategorien bleiben vorerst zurückgestellt.
 - Trello wurde in diesem Arbeitsschritt nicht verändert; die offenen Punkte müssen dort bei Bedarf gemeinsam eingetragen werden.
 
+## Gemeinsamer Nachtrag vom 12.11.2026 – nach Ordner-API und Merge
+
+Dieser Abschnitt dokumentiert den aktuellen Code-/API-Abgleich, keine zusätzlichen von Dilek ausgeführten Browser-Tests. Vorige Tagesabschnitte bleiben historische Einträge.
+
+- Kommentarformular und Like-/Unlike-Anbindung sind im gemeinsamen Code vorhanden; nicht erneut als unerledigte Implementierung einplanen.
+- Upload wartet jetzt auf erfolgreichen Sync. Der frühere Upload-/Sync-Rennfall ist damit im Code behoben. Layout-Sync verschluckt weiterhin Fehler; Erstlogin für Kommentare/Likes gesondert testen.
+- Backend liefert likedByMe in GET-Liste und GET-Detail; mit Token und ohne Anmeldung geprüft. fetchMemes/fetchMemeById müssen noch Token mitsenden und bei Anmeldewechsel neu laden.
+- Backend-Ordner-Grundfunktionen vorhanden: erstellen, eigene laden, eigener Inhalt, Meme speichern/entfernen. Duplikatvermeidung und Erhalt des ursprünglichen Memes von Josephine bestätigt. Umbenennen, ganzen Ordner löschen, fremder Benutzer und Frontend-UI fehlen noch.
+- Backend typecheck/build und Prisma validate sowie Frontend lint/build am 12.11. erneut erfolgreich. Sichere Parser-JSON-Fehler 400/413 live bestätigt.
+- Frontend-Autor weiterhin Community, eigene Meme-/Kommentarverwaltung und Ordnerseite noch offen. Listen-Likes benötigen Anfrage-Sperre. Kommentar-Anzeige nach POST bei parallelem/fehlgeschlagenem Laden prüfen.
+- Dileks vorher genannter lokaler Cloudinary-Startblocker wurde auf ihrem Rechner nicht erneut geprüft. Josephines lokales Backend funktioniert. Zugangsdaten privat/lokal abstimmen; gemeinsame Kommentar-/Like-Browserabnahme steht aus.
+- Neue gerundete gewichtete Einschätzung: Backend ca. 75 %, Frontend ca. 65 %, insgesamt ca. 70 %, Unsicherheit ±5 Punkte. Belege und genaue Gewichtung im Projektstand.
+
+[API](../../backend/docs/api-plan.md) · [Projektstand](../../backend/docs/projektstand.md) · [Trello](https://trello.com/b/EpjAfv15/your-meme).
+
 ## Zuständigkeiten
 
 - **Dilek:** React-Frontend, Layout, Navigation, Authentifizierungsoberfläche und API-Anbindung im Frontend.

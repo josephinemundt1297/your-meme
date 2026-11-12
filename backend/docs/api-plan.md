@@ -1,6 +1,6 @@
 # Your Meme – API: Implementierung und Planung
 
-Stand: 11.11.2026, nach Meme-, Kommentar- und Like-Schreibfunktionen; mit `src/server.ts` abgeglichen.
+Stand: 12.11.2026, einschließlich persönlichem Like-Status, Fehlerbehandlung und Ordner-Grundfunktionen; mit `src/server.ts` abgeglichen.
 
 Basis: `http://localhost:3000`. CORS: `http://localhost:5173`. Geschützte Anfragen: `Authorization: Bearer <SESSION_TOKEN>`. Kein Clerk Secret Key als Nutzer-Token. Browser-Anmeldung wird nicht automatisch an Postman übertragen.
 
@@ -23,6 +23,11 @@ Basis: `http://localhost:3000`. CORS: `http://localhost:5173`. Geschützte Anfra
 | DELETE /api/comments/:id | Nur Verfasser | Ohne Body; 204 leer; 400/401/403/404/500 |
 | POST /api/memes/:id/like | Angemeldet + lokales Profil | Ohne Body; 200 Like-Zustand; 400/401/404/409/500 |
 | DELETE /api/memes/:id/like | Angemeldet + lokales Profil | Ohne Body; 200 Like-Zustand; 400/401/404/409/500 |
+| POST /api/folders | Angemeldet + lokales Profil | JSON name; 201 Ordner; 400/401/409/500 |
+| GET /api/folders | Angemeldet + lokales Profil | 200 nur eigene Ordner; 401/409/500 |
+| GET /api/folders/:id | Nur Besitzer | 200 Ordner samt memes; 400/401/403/404/500 |
+| POST /api/folders/:id/memes | Nur Besitzer | JSON memeId; 200 saved true, auch bei bestehender Zuordnung; 400/401/403/404/500 |
+| DELETE /api/folders/:id/memes/:memeId | Nur Besitzer | Ohne Body; 200 saved false, auch wenn Zuordnung bereits fehlt; 400/401/403/404/500 |
 
 Unbekannte Routen: 404 `{ "error": "Route nicht gefunden." }`. Geschützte Routen prüfen zuerst Anmeldung; deshalb kann ohne Token auch bei ungültiger ID zunächst 401 kommen. `:id` durch die tatsächliche jeweilige UUID ersetzen. Kommentare verwenden bei PATCH/DELETE die Kommentar-ID, nicht die Meme-ID. Ressourcenrennen zwischen Lesen und Schreiben können derzeit in generischem 500 enden.
 
@@ -30,7 +35,7 @@ Unbekannte Routen: 404 `{ "error": "Route nicht gefunden." }`. Geschützte Route
 
 Die folgenden IDs, Namen und Bildadresse sind Beispiele, keine echten Zugangsdaten oder garantierten Testressourcen.
 
-Meme (Liste enthält ein Array dieser Objekte, GET-Detail und Meme-POST/PATCH ein einzelnes):
+Meme (Liste als Array, GET-Detail und Meme-POST/PATCH als einzelnes Objekt):
 
 ```json
 {
@@ -48,7 +53,7 @@ Meme (Liste enthält ein Array dieser Objekte, GET-Detail und Meme-POST/PATCH ei
 }
 ```
 
-Aktuell kein `category`, `likedByMe`, `altText`, `emoji` oder `imageStorageId` in öffentlichen Meme-Antworten. `userId` und `author.id` sind lokale UUIDs; `GET /api/me` liefert dagegen die Clerk-ID. Für eigene Schaltflächen die lokale ID aus `/api/me/sync` verwenden. Das Backend prüft Rechte unabhängig von der Oberfläche. Der Frontend-Client ersetzt `author` noch durch Community; das ist offen.
+GET-Liste und GET-Detail ergänzen `likedByMe` als Boolean: bei erkanntem Benutzer dessen gespeicherter Like, sonst false. Dafür auch GET-Anfragen mit Bearer-Token senden. Meme-POST/PATCH und Ordner-Memes ergänzen dieses Feld derzeit nicht. Kein `category`, `altText`, `emoji` oder `imageStorageId` in öffentlichen Meme-Antworten. `userId` und `author.id` sind lokale UUIDs; `GET /api/me` liefert dagegen die Clerk-ID. Für eigene Schaltflächen die lokale ID aus `/api/me/sync` verwenden. Das Backend prüft Rechte unabhängig von der Oberfläche. Der Frontend-Client ersetzt `author` noch durch Community; das ist offen.
 
 Kommentar (GET-Liste als Array, POST/PATCH als einzelnes Objekt):
 
@@ -77,7 +82,7 @@ Nach Clerk-Anmeldung `POST /api/me/sync` mit Token und ohne Body. Route lädt Cl
 }
 ```
 
-Automatischer Frontend-Aufruf ist im Branch `4b9947e` implementiert; Upload und Sync sind noch nicht zeitlich abgesichert. Erstlogin-/Fehlertest steht aus. Ohne lokales Profil liefern Upload, Kommentar-POST und Like-Aktionen 409. Ersteller und Rollen werden nicht aus Formularangaben übernommen.
+Automatischer Frontend-Aufruf ist implementiert; der Upload wartet seit dem aktuellen Frontend-Stand ausdrücklich auf erfolgreichen Sync und zeigt dessen Fehler. Layout unterdrückt Sync-Fehler weiterhin; Kommentar-/Like-Erstlogin ohne vorherigen Upload getrennt testen. Ohne lokales Profil liefern Upload, Kommentar-POST und Like-Aktionen 409. Ersteller und Rollen werden nicht aus Formularangaben übernommen.
 
 ## Upload und Titeländerung
 
@@ -105,12 +110,26 @@ POST und DELETE /api/memes/:id/like brauchen keinen Body. POST verwendet `create
 }
 ```
 
-Nach DELETE ist `liked` false; `likeCount` enthält weiterhin Likes anderer Nutzer. Mutation und anschließende Zählung sind getrennte DB-Abfragen. GET-Liste/-Detail geben noch keinen persönlichen Like-Status aus; Vertrag dafür als nächsten Integrationsschritt ergänzen. Das Frontend darf einen bereits gespeicherten Zähler nicht zusätzlich lokal erhöhen.
+Nach DELETE ist `liked` false; `likeCount` enthält weiterhin Likes anderer Nutzer. Mutation und anschließende Zählung sind getrennte DB-Abfragen. GET-Liste/-Detail liefern inzwischen likedByMe anhand des erkannten Benutzers. Frontend-GETs senden aktuell noch keinen Bearer-Token und laden bei Anmeldewechsel nicht neu; diese Anbindung fehlt. Das Frontend darf einen bereits gespeicherten Zähler nicht zusätzlich lokal erhöhen.
+
+## Persönliche Ordner
+
+Alle Ordner-Endpunkte erfordern Anmeldung. Lokale Nutzer-ID und Besitzer werden aus Clerk/DB bestimmt, nicht vom Body übernommen. Ein Ordner darf auch fremde öffentliche Memes enthalten; gespeichert wird nur eine FolderMeme-Zuordnung, kein zweites Bild.
+
+- POST /api/folders erwartet `{ "name": "Meine Lieblingsmemes" }`, Name getrimmt 1–100 Zeichen. 201 mit id/name/createdAt. Gleichnamige Ordner sind derzeit zulässig.
+- GET /api/folders liefert ein Array eigener Ordner (neueste zuerst), jeweils id/name/createdAt; ohne eigene Ordner `[]`.
+- GET /api/folders/:id prüft Besitzer und liefert id/name/createdAt sowie `memes`, ein Array formatierter Meme-Objekte. Leer: `memes: []`. Diese eingebetteten Memes haben derzeit kein likedByMe.
+- POST /api/folders/:id/memes erwartet `{ "memeId": "11111111-1111-4111-8111-111111111111" }`. Schema prüft UUID mit Zod; Ordner und Meme müssen existieren. Erfolg 200 mit `{ "folderId": "...", "memeId": "...", "saved": true }`. Wiederholung erzeugt dank zusammengesetztem Schlüssel und skipDuplicates keinen weiteren Eintrag.
+- DELETE /api/folders/:id/memes/:memeId braucht keinen Body. Entfernt nur die passende Zuordnung, nicht das Meme oder Cloudinary-Bild. Erfolg 200 mit folderId/memeId/saved false; bei bereits fehlender Zuordnung ebenfalls 200. Ein separates Meme-Existenzprüfen findet hier nicht statt.
+
+Fehler: ohne Anmeldung 401; bei Anlage/Liste fehlendes lokales Profil 409; ungültige Eingaben 400; Ordner fehlt 404; fremder Ordner 403; bei Hinzufügen fehlendes Meme 404. Gleichzeitige Löschungen zwischen Lesen und Schreiben können derzeit generische 500 auslösen.
+
+Ordner umbenennen (PATCH) und ganzen Ordner löschen (DELETE /api/folders/:id) sind **noch nicht implementiert**. Ein HTTP-GET auf einen ausschließlich für POST/DELETE vorgesehenen Pfad liefert Route nicht gefunden; URL allein bestimmt nicht die Methode.
 
 ## Fehlerformat und verbleibender Umfang
 
-Anwendungsrouten verwenden `{ "error": "Meldung" }`. Zentrale Parser-/Clerk-/Middlewarefehlerbehandlung fehlt: ungültiges JSON liefert aktuell 400 HTML mit internen Details, live bestätigt. Vor Abnahme korrigieren.
+Anwendungsfehler sind `{ "error": "Meldung" }`. Zentraler Handler nach Routen und 404 behandelt kaputtes JSON mit 400, zu große JSON-Bodies mit 413 und sonstige unbehandelte Fehler mit generischem 500. Parserfälle live als JSON ohne interne Details geprüft. Bereits begonnene Antworten werden über next(error) weitergereicht. Nicht alle denkbaren Clerk-/Middlewarefälle wurden einzeln geprüft; erwartete 4xx außerhalb der ausdrücklich behandelten Fälle können derzeit in 500 münden. Vorhandene fachliche Route-Fehler bleiben bestehen.
 
-Noch keine Ordner-, Moderations- oder Kontolösch-Endpunkte. Pagination und Rate-Limits fehlen. `page=1&limit=20` ist weiterhin nur ein Planungsbeispiel, kein unterstützter Vertrag. Detail-Links lassen sich ohne zusätzlichen Backend-Teilen-Endpunkt verwenden. Kategorien, Suche und Editor gehören nicht zum vereinbarten Pflichtumfang; `altText` wäre eine gesondert abzustimmende Erweiterung.
+Moderations- und Kontolösch-Endpunkte fehlen; Pagination und Rate-Limits ebenfalls. `page=1&limit=20` bleibt Planungsbeispiel. Zwei-Konten-Ordner-/Kommentarrechte, befüllte Kaskaden und externe Teilausfälle abschließend testen. Detail-Links benötigen keinen eigenen Teilen-Endpunkt. Kategorien, Suche und Editor sind kein Pflichtumfang; altText/Bildaustausch separat abstimmen.
 
 [Prüfbelege und Restplan](projektstand.md) · [Backend starten](../README.md)

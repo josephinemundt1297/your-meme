@@ -1,5 +1,7 @@
 # Zwischenbericht für Dilek – 11.11.2026
 
+> Historischer Bericht vom 11.11.2026. Neuer Stand: [Zwischenbericht 12.11.2026](zwischenbericht-2026-11-12.md) und [Projektstand](projektstand.md). Die folgenden offenen Aufgaben und Prozentwerte gelten für den damaligen Stand.
+
 Aktualisiert nach Meme-, Kommentar- und Like-Schreibfunktionen. Dieser Bericht ersetzt den früheren Vormittagsstand desselben Tages. Geprüfter Backend-Code `6d476f4`, Frontend `4b9947e`; gemeinsame Änderungen laut Josephine in main gemergt (GitHub-Abgleich `9990879`).
 
 ## Was Josi inzwischen geschafft hat
