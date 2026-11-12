@@ -104,6 +104,7 @@ export function UploadPage() {
     try {
       const token = await getToken()
       if (!token) throw new Error('Bitte melde dich an, um ein Meme hochzuladen.')
+      await syncCurrentUser(token)
       const { id } = await uploadMeme(createMemeFormData(title, selectedFile), token)
       await navigate({ to: '/memes/$memeId', params: { memeId: id } })
     } catch (error: unknown) {
