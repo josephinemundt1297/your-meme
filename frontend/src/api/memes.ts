@@ -66,6 +66,35 @@ type CommentApiResponse = {
   user?: { username?: string }
 }
 
+function normalizeComment(item: CommentApiResponse): MemeComment {
+  return {
+    id: item.id,
+    content: item.content,
+    userId: item.userId,
+    createdAt: item.createdAt,
+    author: { id: item.userId, username: item.user?.username ?? 'Community' },
+  }
+}
+
+export async function createMemeComment(id: string, content: string, token: string): Promise<MemeComment> {
+  const response = await fetch(`${apiBaseUrl}/api/memes/${encodeURIComponent(id)}/comments`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: content.trim() }),
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um zu kommentieren.' : `Der Kommentar konnte nicht gespeichert werden (${response.status}).`)
+  }
+
+  const data: unknown = await response.json()
+  if (!data || typeof data !== 'object' || !('id' in data) || !('content' in data) || !('userId' in data) || !('createdAt' in data)) {
+    throw new Error('Die Antwort des Servers enthält keinen gültigen Kommentar.')
+  }
+
+  return normalizeComment(data as CommentApiResponse)
+}
+
 function normalizeMeme(item: MemeApiResponse): Meme {
   return {
     id: item.id,
@@ -120,11 +149,5 @@ export async function fetchMemeComments(id: string, signal?: AbortSignal): Promi
     throw new Error('Die Kommentar-Antwort hat ein unerwartetes Format.')
   }
 
-  return data.map((item: CommentApiResponse): MemeComment => ({
-    id: item.id,
-    content: item.content,
-    userId: item.userId,
-    createdAt: item.createdAt,
-    author: { id: item.userId, username: item.user?.username ?? 'Community' },
-  }))
+  return data.map((item: CommentApiResponse) => normalizeComment(item))
 }
