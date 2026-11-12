@@ -1,48 +1,51 @@
 # Your Meme – Frontend
 
-Stand: 11.11.2026. React, TypeScript, Vite, TanStack Router und Clerk. Geprüfter veröffentlichter Frontend-Stand: `4b9947e`; gemeinsamer API-Stand in main laut Abgleich `9990879`. Unveröffentlichte Änderungen sind nicht bewertet.
+Stand: 12.11.2026. Gemeinsamer Code in main und lokalem Backend-Branch: `1ff7cba`; Frontend-Branch `01bc9bc` ist darin enthalten. React, TypeScript, Vite, TanStack Router und Clerk.
 
 ## Lokal starten
 
-Node.js 24 und npm verwenden. Im Ordner `frontend/`:
+Node.js 24/npm verwenden. Im Ordner frontend:
 
 ```bash
 npm ci
 ```
 
-Eigene `.env.local` anlegen, eine vorhandene nicht überschreiben:
+Eigene .env.local einrichten, bestehende Werte nicht überschreiben:
 
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=DEIN_PUBLISHABLE_KEY
 VITE_API_URL=http://localhost:3000
 ```
 
-Publishable Key derselben Clerk-Anwendung wie im Backend verwenden. Secret Keys gehören ausschließlich ins Backend. Danach:
+Dieselbe Clerk-Anwendung wie im Backend verwenden. Secret Keys gehören ausschließlich ins Backend. Danach:
 
 ```bash
 npm run dev
 ```
 
-Normalerweise `http://localhost:5173/` öffnen, nicht `/api/memes`. Bei anderem Port Backend-CORS abstimmen. Backend und PostgreSQL laufen separat; [Einrichtung und Testdaten](../backend/README.md). Nach Env-Änderungen neu starten. Git überträgt keine lokalen Datenbankinhalte.
+Die angezeigte Adresse öffnen, normalerweise http://localhost:5173/. Backend/PostgreSQL laufen separat, API auf Port 3000. Webseite /memes/ID liefert HTML; API /api/memes/ID auf Port 3000 liefert JSON. [Backend und Bild-Testdaten einrichten](../backend/README.md). Dileks Protokoll meldet fehlende lokale Cloudinary-Variablen; alle drei Backend-Werte lokal ergänzen, keine Secrets ins Frontend oder Git.
 
-## Was bereits funktioniert
+## Bereits implementiert
 
-- Layout, Navigation, responsive Styles, Clerk-Anmelden/Registrieren und Benutzer-Button.
-- Übersicht und Detail laden Memes über die API; Kommentar-Liste lädt echte Daten.
-- Lade-, Fehler-, Leer- und Nicht-gefunden-Zustände.
-- Sortierung und lokale Textsuche vorhanden; Kategorienfilter ist nicht fertig. Suche/Kategorien sind kein zusätzlicher Pflichtumfang.
+- Layout, Navigation, responsive Styles, Clerk-Anmelden/Registrieren/Benutzer-Button.
+- API-Übersicht, Detail und Kommentar-Liste mit Lade-/Leer-/Fehlerzuständen.
+- PNG-Upload bis 5 MiB mit Bearer-Token, FormData title/image, abgewartetem Benutzer-Sync, Fehlermeldungen, deaktiviertem Button während Upload und Weiterleitung zur neuen Detailseite.
+- Kommentarformular für angemeldete Nutzer: getrimmt 1–1000 Zeichen, POST mit Token, während Anfrage deaktiviert, Erfolg lokal ergänzen und Zähler aktualisieren, Text bei Fehler behalten.
+- Like/Unlike in Liste und Detail über API, Antworten liked/likeCount übernehmen, keine lokale Zusatz-Zählung. Detailbutton während Anfrage deaktiviert; Listenkarten noch ohne Sperre.
 
-## API-Anbindung und nächste Schritte
+Josephine bestätigt den Browser-Upload bis Cloudinary. Dileks Protokoll bestätigt Code und statische Prüfungen, nennt aber noch keine abgeschlossene vollständige Browser-Abnahme für Kommentare und Likes.
 
-1. Im gepushten Branch `4b9947e` ruft das Layout nach Anmeldung `/api/me/sync` mit Token auf. Sync-Fehler werden noch verschluckt, Upload wartet nicht auf Sync: vor Abnahme Erstlogin absichern. Lokale UUID aus Sync für eigene Inhalte verfügbar machen.
-2. Echter PNG-Upload ist implementiert: FormData title/image, maximal 5 MiB, Bearer-Token, Upload-Button während Anfrage deaktiviert, Kategorie entfernt, Navigation zur zurückgegebenen Meme-ID. Browser-Test gegen aktuellen Backend-Stand noch gemeinsam durchführen.
-3. Meme-Titel bearbeiten/eigene Memes löschen; Kommentarformular und eigene Kommentar-Aktionen ergänzen. Bei 204 keinen JSON-Body lesen.
-4. Likes per POST/DELETE anbinden, `liked` und `likeCount` aus Antwort übernehmen. Persönlicher Like-Status nach Neuladen fehlt noch im Backend-Lesevertrag; gemeinsam ergänzen. Lokale Zusatz-Zählung dann ersetzen.
-5. Gelieferten Meme-`author` übernehmen; der Client setzt bisher Community. Private Ordner, Moderation und Kontolöschung sind noch nicht angebunden und benötigen weitere Backend-Endpunkte.
+## Priorisierte Restarbeit
 
-Alle geschützten Anfragen: `Authorization: Bearer <aktueller Session-Token>`. Die konkreten Pfade, JSON-Formate und Fehler stehen im [API-Vertrag](../backend/docs/api-plan.md).
+1. **Token auch bei GET:** fetchMemes und fetchMemeById haben noch keinen Authorization-Header. Backend liefert inzwischen likedByMe, benötigt dafür aber erkannte Anmeldung. Nach Login/Logout/Kontowechsel Daten erneut laden, damit keine alten persönlichen Zustände sichtbar bleiben.
+2. **Autor:** API-author übernehmen; normalizeMeme setzt noch Community.
+3. **Erstlogin und Mehrfachklicks:** Layout-Sync verschluckt Fehler; Kommentare/Likes warten nicht ausdrücklich darauf. Ohne vorherigen Upload testen. Listen-Likes gegen gleichzeitige Anfragen sperren. Kommentar-Liste nach POST auch bei vorherigem Ladefehler/parallel laufendem GET konsistent halten.
+4. **Eigene Inhalte:** Meme-Titel ändern/löschen und eigene Kommentare bearbeiten/löschen anbinden. Lokale Nutzer-ID aus Sync verfügbar machen (nicht mit Clerk-ID verwechseln). Bei 204 keinen JSON-Body lesen.
+5. **Ordner:** Backend kann jetzt erstellen/laden/speichern/Zuordnung entfernen. Oberfläche und Seitenleiste anbinden; Umbenennen und ganzen Ordner löschen fehlen im Backend noch. Ordner-Memes haben noch kein likedByMe.
+6. Sichtbaren Link nach /upload ergänzen. Vorschau-Object-URLs freigeben. Handy, Tastatur, Kontraste und Bildbeschreibungen praktisch prüfen; vorhandene ARIA/alt-Attribute belegen keine vollständige Barrierefreiheit.
+7. Moderation und Kontolöschung benötigen weitere Backend-Routen und entsprechende Oberflächen. Kategorien/Suche/Editor sind kein zusätzlicher Pflichtumfang.
 
-Das Uploadformular ist im gepushten Branch angebunden; Listen-Likes bleiben lokal. Detail-Like-Button hat noch keine Aktion; Ordnerseite ist ein Platzhalter. Vorschau-Object-URLs werden noch nicht freigegeben. Vor Abnahme Tastatur, Kontraste, Bildbeschreibungen und mobile Darstellung praktisch prüfen; vorhandene ARIA-/alt-Attribute allein belegen keine vollständige Barrierefreiheit.
+[API-Vertrag](../backend/docs/api-plan.md) enthält Methoden, Felder und Fehler. Vorhandenes Kommentarformular und Like-Aktionen nicht als neue Aufgaben erneut bauen.
 
 ## Prüfungen und Zusammenarbeit
 
@@ -51,6 +54,6 @@ npm run lint
 npm run build
 ```
 
-Beide am 11.11. auch mit den neuen Upload-Dateien in einer isolierten Prüfkopie erfolgreich; dies ersetzt keine Browser-/Integrationstests. [Arbeitsprotokoll](docs/arbeitsprotokoll.md) dokumentiert Dileks Arbeiten, [Projektstand](../backend/docs/projektstand.md) den gemeinsamen kritischen Abgleich.
+Beide am 12.11.2026 erfolgreich. Kein Ersatz für echte Browser-/Rechtetests. [Arbeitsprotokoll](docs/arbeitsprotokoll.md) · [Projektstand](../backend/docs/projektstand.md) · [Trello](https://trello.com/b/EpjAfv15/your-meme).
 
-Auf eigenem Frontend-Branch arbeiten. Vor einem Merge lokale Arbeit committen; aktuelle main-Änderungen können dort mit `git pull --no-rebase origin main` übernommen werden. Bei Konflikten betroffene Änderungen gemeinsam prüfen.
+Auf eigenem Frontend-Branch arbeiten; lokale Arbeit vor Zusammenführen sichern. Git überträgt keine lokalen Datenbankinhalte. Keine eigenständigen Commits/Pushes/Merges durch diese Dokumentationspflege.

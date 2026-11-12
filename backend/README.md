@@ -1,6 +1,6 @@
 # Your Meme – Backend starten
 
-Stand: 11.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und vollständiger Cloudinary-Anbindung für Meme-Upload und -Löschung. Kommentar-Schreibaktionen, Titeländerung und Likes sind ebenfalls implementiert.
+Stand: 12.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und vollständiger Cloudinary-Anbindung für Meme-Upload und -Löschung. Kommentar-Schreibaktionen, Titeländerung, Likes, persönliche Like-GETs, zentrale JSON-Fehlerbehandlung und Ordner-Grundfunktionen sind ebenfalls implementiert.
 
 ## Voraussetzungen und Installation
 
@@ -88,6 +88,11 @@ Standardadresse: `http://localhost:3000`. Nach Env-Änderungen den Server neu st
 | `PATCH /api/comments/:id` | Eigenen Kommentar ändern; 200 |
 | `DELETE /api/comments/:id` | Eigenen Kommentar löschen; 204 |
 | `POST` / `DELETE /api/memes/:id/like` | Eigenen Like setzen/entfernen; 200 mit liked und likeCount |
+| `POST /api/folders` | Eigenen Ordner anlegen; JSON name, 201 |
+| `GET /api/folders` | Nur eigene Ordner; 200 Array |
+| `GET /api/folders/:id` | Nur eigener Ordner samt memes; 200 |
+| `POST /api/folders/:id/memes` | JSON memeId, im eigenen Ordner speichern; 200 saved true |
+| `DELETE /api/folders/:id/memes/:memeId` | Nur Zuordnung entfernen, Meme bleibt; 200 saved false |
 
 Unbekannte Routen liefern 404 als JSON. Vollständige Formate und Grenzen stehen im [API-Plan](docs/api-plan.md).
 
@@ -95,7 +100,7 @@ Unbekannte Routen liefern 404 als JSON. Vollständige Formate und Grenzen stehen
 
 Bei Anfragen vom Frontend an Port 3000 den Clerk-Session-Token als `Authorization: Bearer <SESSION_TOKEN>` senden. Postman übernimmt die Browser-Anmeldung nicht. Session-Token sind kurzlebig; bei Ablauf einen frischen Token verwenden. Niemals den Clerk Secret Key als Nutzer-Token einsetzen.
 
-`POST /api/me/sync` benötigt keinen Body. Die Route lädt das Clerk-Profil und verwendet `upsert` anhand der eindeutigen `clerkId`. Wiederholte Aufrufe verwenden dieselbe lokale UUID; neue Nutzer erhalten `USER`. Der Anzeigename kommt aus Clerk-Username, alternativ Vorname oder `MemeFan`. Es werden keine Passwörter gespeichert. Auf dem Frontend-Branch `4b9947e` ist der automatische Aufruf implementiert. Upload wartet jedoch noch nicht auf dessen Abschluss; Fehler werden im Layout verschluckt. Gemeinsamen Erstlogin-Test durchführen.
+`POST /api/me/sync` benötigt keinen Body. Die Route lädt das Clerk-Profil und verwendet `upsert` anhand der eindeutigen `clerkId`. Wiederholte Aufrufe verwenden dieselbe lokale UUID; neue Nutzer erhalten `USER`. Der Anzeigename kommt aus Clerk-Username, alternativ Vorname oder `MemeFan`. Es werden keine Passwörter gespeichert. Der Upload wartet im aktuellen Frontend auf erfolgreichen Sync; der Layout-Sync unterdrückt Fehler weiterhin. Erstlogin bei Kommentaren/Likes ohne vorherigen Upload separat prüfen.
 
 ## Cloudinary-Verbindung testen
 
@@ -141,9 +146,13 @@ Vor Upload, Kommentar-Erstellung und Likes muss das lokale Profil über `/api/me
 
 ## Offene Arbeiten und bekannte Grenzen
 
-- Backend: persönliche Ordner, Administrator-Moderation und vollständige Kontolöschung fehlen; Kategorien sind aus Version 1 ausgeschlossen.
-- GET-Liste/-Detail brauchen noch persönlichen Like-Status; Pagination und Missbrauchsbegrenzung fehlen.
-- Ungültiges JSON liefert aktuell HTML mit internen Details; zentrale Fehlerbehandlung ergänzen. Generische Upload-Meldung enthält `JPNG` statt PNG.
-- Cloudinary und PostgreSQL sind nicht atomar gekoppelt: bei Teilausfällen kann Bereinigung nötig sein. Löschtests ausschließlich mit eigenen separaten Upload-Testbildern durchführen, keine gemeinsamen Fixture-Originale löschen.
-- Beispieltestcode in `src/validators/meme.ts` läuft beim Import; noch aufräumen.
-- Frontend-Sync und Upload sind im Branch `4b9947e` implementiert; gemeinsame Browser-Abnahme und Absicherung des Sync-Abschlusses fehlen. Kommentar-/Like-Aktionen und eigene Meme-Verwaltung sind noch anzubinden. Details und Prüfbelege: [Projektstand](docs/projektstand.md).
+- Ordner umbenennen/löschen fehlen; Zwei-Konten-Privatheitstest offen. Ordner-UI weiterhin Platzhalter.
+- Admin-Moderation und vollständige Kontolöschung über DB, Clerk und Cloudinary fehlen.
+- GET /api/memes und GET /api/memes/:id liefern likedByMe. Bearer-Token auch bei diesen GETs mitsenden; Frontend tut dies aktuell noch nicht. Meme-POST/PATCH und Ordner-Memes enthalten dieses Feld noch nicht.
+- Zentrale JSON-Fehlerbehandlung ist vorhanden: kaputtes JSON 400, zu großer JSON-Body 413, unerwartete Fehler 500. Parserfälle heute live als JSON ohne interne Details geprüft. Pagination und Rate-Limits fehlen.
+- Generische Upload-Meldung enthält JPNG; Validator enthält ausführbaren Beispieltest. Anwendungscode im Dokumentationsauftrag unverändert.
+- Cloudinary und PostgreSQL sind nicht atomar gekoppelt: Teilausfälle können weitere Bereinigung benötigen. Nur separate eigene Upload-Testbilder für Löschtests verwenden; Fixture-Originale sind gemeinsam genutzt.
+- Frontend-Upload und Kommentar-/Like-Schreibaktionen sind angebunden, Upload wartet auf Sync. Autorübernahme, persönliche GET-Zustände und eigene Bearbeiten-/Löschoberflächen noch ergänzen; gemeinsame Browser-Abnahme offen.
+- Dileks Protokoll meldet fehlende Cloudinary-Werte beim lokalen Start. Benötigt werden alle drei Variablen aus der Vorlage; echte Werte nur lokal/privat abstimmen, nie im Frontend oder Git.
+
+[API-Vertrag](docs/api-plan.md) · [Projektstand und Prüfgrenzen](docs/projektstand.md)
