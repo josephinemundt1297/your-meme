@@ -13,6 +13,10 @@ import { uploadImage } from "./lib/uploadImage.js";
 import { cloudinary } from "./lib/cloudinary.js";
 import { createCommentSchema } from "./validators/comment.js";
 import type { ErrorRequestHandler } from "express";
+import {
+  createFolderSchema,
+  addMemeToFolderSchema,
+} from "./validators/folder.js";
 
 const app = express();
 
@@ -886,13 +890,322 @@ const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, next) => {
   });
 };
 
-app.use(errorHandler);
+app.post("/api/folders", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const result = createFolderSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Bitte einen Ordnernamen mit 1 bis 100 Zeichen angeben.",
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return res.status(409).json({
+        error: "Bitte zuerst dein Nutzerprofil synchronisieren.",
+      });
+    }
+
+    const folder = await prisma.folder.create({
+      data: {
+        name: result.data.name,
+        userId: user.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    return res.status(201).json(folder);
+  } catch (error) {
+    console.error("Fehler beim Erstellen des Ordners:", error);
+
+    return res.status(500).json({
+      error: "Ordner konnte nicht erstellt werden.",
+    });
+  }
+});
+
+app.get("/api/folders", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return res.status(409).json({
+        error: "Bitte zuerst dein Nutzerprofil synchronisieren.",
+      });
+    }
+
+    const folders = await prisma.folder.findMany({
+      where: {
+        userId: user.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res.json(folders);
+  } catch (error) {
+    console.error("Fehler beim Laden der Ordner:", error);
+
+    return res.status(500).json({
+      error: "Ordner konnten nicht geladen werden.",
+    });
+  }
+});
+
+app.get("/api/folders/:id", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Ordner-ID.",
+    });
+  }
+
+  try {
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        user: {
+          select: { clerkId: true },
+        },
+        folderMemes: {
+          select: {
+            meme: {
+              select: memeSelect,
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
+    });
+
+    if (!folder) {
+      return res.status(404).json({
+        error: "Ordner nicht gefunden.",
+      });
+    }
+
+    if (folder.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Ordner ansehen.",
+      });
+    }
+
+    return res.json({
+      id: folder.id,
+      name: folder.name,
+      createdAt: folder.createdAt,
+      memes: folder.folderMemes.map((entry) => formatMeme(entry.meme)),
+    });
+  } catch (error) {
+    console.error("Fehler beim Laden des Ordners:", error);
+
+    return res.status(500).json({
+      error: "Ordner konnte nicht geladen werden.",
+    });
+  }
+});
+
+app.post("/api/folders/:id/memes", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Ordner-ID.",
+    });
+  }
+
+  const result = addMemeToFolderSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Bitte eine gültige Meme-ID angeben.",
+    });
+  }
+
+  try {
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      select: {
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!folder) {
+      return res.status(404).json({
+        error: "Ordner nicht gefunden.",
+      });
+    }
+
+    if (folder.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Ordner ändern.",
+      });
+    }
+
+    const meme = await prisma.meme.findUnique({
+      where: { id: result.data.memeId },
+      select: { id: true },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    await prisma.folderMeme.createMany({
+      data: {
+        folderId: id,
+        memeId: meme.id,
+      },
+      skipDuplicates: true,
+    });
+
+    return res.status(200).json({
+      folderId: id,
+      memeId: meme.id,
+      saved: true,
+    });
+  } catch (error) {
+    console.error("Fehler beim Speichern im Ordner:", error);
+
+    return res.status(500).json({
+      error: "Meme konnte nicht im Ordner gespeichert werden.",
+    });
+  }
+});
+
+app.delete("/api/folders/:id/memes/:memeId", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id, memeId } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Ordner-ID.",
+    });
+  }
+
+  if (!memeId || !isValidUuid(memeId)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
+  try {
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      select: {
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!folder) {
+      return res.status(404).json({
+        error: "Ordner nicht gefunden.",
+      });
+    }
+
+    if (folder.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Ordner ändern.",
+      });
+    }
+
+    await prisma.folderMeme.deleteMany({
+      where: {
+        folderId: id,
+        memeId,
+      },
+    });
+
+    return res.json({
+      folderId: id,
+      memeId,
+      saved: false,
+    });
+  } catch (error) {
+    console.error("Fehler beim Entfernen aus dem Ordner:", error);
+
+    return res.status(500).json({
+      error: "Meme konnte nicht aus dem Ordner entfernt werden.",
+    });
+  }
+});
 
 app.use((_req, res) => {
   res.status(404).json({
     error: "Route nicht gefunden.",
   });
 });
+
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Your-Meme-Backend läuft auf http://localhost:${port}`);
