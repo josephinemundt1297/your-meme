@@ -12,6 +12,7 @@ import { isPng } from "./utils/isPng.js";
 import { uploadImage } from "./lib/uploadImage.js";
 import { cloudinary } from "./lib/cloudinary.js";
 import { createCommentSchema } from "./validators/comment.js";
+import type { ErrorRequestHandler } from "express";
 
 const app = express();
 
@@ -108,8 +109,10 @@ app.post("/api/me/sync", async (req, res) => {
   }
 });
 
-app.get("/api/memes", async (_req, res) => {
+app.get("/api/memes", async (req, res) => {
   try {
+    const { userId } = getAuth(req);
+
     const memes = await prisma.meme.findMany({
       select: memeSelect,
       orderBy: {
@@ -117,11 +120,35 @@ app.get("/api/memes", async (_req, res) => {
       },
     });
 
-    res.json(memes.map(formatMeme));
+    const ownLikes =
+      userId && memes.length > 0
+        ? await prisma.like.findMany({
+            where: {
+              user: {
+                clerkId: userId,
+              },
+              memeId: {
+                in: memes.map((meme) => meme.id),
+              },
+            },
+            select: {
+              memeId: true,
+            },
+          })
+        : [];
+
+    const likedMemeIds = new Set(ownLikes.map((like) => like.memeId));
+
+    return res.json(
+      memes.map((meme) => ({
+        ...formatMeme(meme),
+        likedByMe: likedMemeIds.has(meme.id),
+      })),
+    );
   } catch (error) {
     console.error("Fehler beim Laden der Memes:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Memes konnten nicht geladen werden.",
     });
   }
@@ -135,22 +162,43 @@ app.get("/api/memes/:id", async (req, res) => {
       error: "Ungültige Meme-ID.",
     });
   }
+
   try {
+    const { userId } = getAuth(req);
+
     const meme = await prisma.meme.findUnique({
       where: { id },
       select: memeSelect,
     });
+
     if (!meme) {
       return res.status(404).json({
         error: "Meme nicht gefunden.",
       });
     }
 
-    res.json(formatMeme(meme));
+    const ownLike = userId
+      ? await prisma.like.findFirst({
+          where: {
+            memeId: id,
+            user: {
+              clerkId: userId,
+            },
+          },
+          select: {
+            memeId: true,
+          },
+        })
+      : null;
+
+    return res.json({
+      ...formatMeme(meme),
+      likedByMe: ownLike !== null,
+    });
   } catch (error) {
     console.error("Fehler beim Laden des Memes:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Meme konnte nicht geladen werden.",
     });
   }
@@ -808,6 +856,37 @@ app.delete("/api/memes/:id/like", async (req, res) => {
     });
   }
 });
+
+const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, next) => {
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  const errorType =
+    typeof error === "object" && error !== null && "type" in error
+      ? error.type
+      : undefined;
+
+  if (errorType === "entity.parse.failed") {
+    return res.status(400).json({
+      error: "Ungültiges JSON. Bitte den Anfrageinhalt prüfen.",
+    });
+  }
+
+  if (errorType === "entity.too.large") {
+    return res.status(413).json({
+      error: "Der Anfrageinhalt ist zu groß.",
+    });
+  }
+
+  console.error("Unerwarteter Serverfehler.");
+
+  return res.status(500).json({
+    error: "Ein interner Serverfehler ist aufgetreten.",
+  });
+};
+
+app.use(errorHandler);
 
 app.use((_req, res) => {
   res.status(404).json({
