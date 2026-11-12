@@ -32,7 +32,7 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .search-icon { color: #555; font-size: 1.3rem; } .search-box input { border: 0; color: #222; outline: 0; width: 100%; }
 .meme-section { padding-bottom: 72px; } .section-heading { align-items: end; display: flex; justify-content: space-between; margin-bottom: 18px; } .section-heading .eyebrow { display: none; } .section-heading h2 { font-size: 1.45rem; margin: 0; } .meme-count { color: var(--muted); font-size: .9rem; }
 .meme-grid { display: grid; gap: clamp(20px, 2vw, 30px); grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.meme-card { background: transparent; min-width: 0; overflow: hidden; } .meme-image { align-items: center; background: var(--orange); border-radius: 7px; display: flex; font-size: clamp(3rem, 5vw, 4rem); height: clamp(150px, 17vw, 210px); justify-content: center; } .meme-card-content { padding: 10px 2px; } .category { color: var(--muted); font-size: .7rem; font-weight: 700; text-transform: uppercase; } .meme-card h3 { color: var(--ink); font-size: .95rem; line-height: 1.3; margin: 5px 0 10px; min-height: 2.5em; }
+.meme-card { background: transparent; min-width: 0; overflow: hidden; } .meme-image { align-items: center; aspect-ratio: 3 / 2; background: var(--orange); border-radius: 7px; display: flex; font-size: clamp(3rem, 5vw, 4rem); height: clamp(150px, 17vw, 210px); justify-content: center; overflow: hidden; } .meme-image img { height: 100%; object-fit: cover; width: 100%; } .meme-card-content { padding: 10px 2px; } .category { color: var(--muted); font-size: .7rem; font-weight: 700; text-transform: uppercase; } .meme-card h3 { color: var(--ink); font-size: .95rem; line-height: 1.3; margin: 5px 0 10px; min-height: 2.5em; }
 .like-button { background: var(--purple); border: 0; border-radius: 20px; color: white; cursor: pointer; font-size: .8rem; padding: 7px 17px; } .like-button:hover, .like-button:focus-visible, .like-button.liked { background: #a94c32; } .like-button span { margin-right: 5px; } .empty-state { color: var(--muted); }
 .site-footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; padding: 22px; text-align: center; }
 .placeholder-page { margin: 0 auto; max-width: 700px; padding: 100px 24px; text-align: center; } .placeholder-page p:not(.eyebrow) { color: var(--muted); margin-bottom: 28px; } .primary-link { background: var(--purple); border-radius: 10px; color: white; display: inline-block; font-weight: 700; padding: 12px 18px; }
@@ -41,7 +41,7 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .back-link { color: #d8d8d8; display: inline-block; font-size: .9rem; margin-bottom: 18px; }
 .back-link:hover, .back-link:focus-visible { color: white; text-decoration: underline; }
 .detail-card { background: var(--surface); display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); }
-.detail-image { align-items: center; background: var(--orange); display: flex; font-size: clamp(5rem, 12vw, 9rem); justify-content: center; min-height: 440px; }
+.detail-image { align-items: center; background: var(--orange); display: flex; font-size: clamp(5rem, 12vw, 9rem); justify-content: center; min-height: 440px; overflow: hidden; } .detail-image img { height: 100%; max-height: 680px; object-fit: contain; width: 100%; }
 .detail-content { padding: clamp(24px, 4vw, 48px); }
 .detail-content h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin: 10px 0 14px; }
 .detail-author, .comment-count { color: var(--muted); font-size: .9rem; }
