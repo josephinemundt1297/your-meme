@@ -4,254 +4,31 @@ Dieses Protokoll dokumentiert Dileks Frontend-Arbeiten für das Projekt **Your M
 
 ## Detaillierte Übersicht ab Projektstart
 
-### 29.10.2026 – Planung und Zuständigkeiten
+### Ausführliche Tagesberichte
 
-- Das gemeinsame Projekt **Your Meme** als Meme-Plattform festgelegt.
-- Zuständigkeiten getrennt: Dilek arbeitet an React/TypeScript, Layout, Navigation und Frontend-Integration; Josi arbeitet an Express, PostgreSQL, Prisma und Backend-API.
-- Vereinbart, dass Dilek auf `Frontend` und Josi auf ihrer Backend-Branch arbeitet.
-- Pull Requests für die gemeinsame Prüfung und das spätere Mergen durch Josi abgestimmt.
-- Die Frontend-Anforderungen aus Projektunterlagen und Handout sortiert: Übersicht, Detailseite, Navigation, Kategorien, Upload, Anmeldung und responsive Darstellung.
+Am **29.10.2026** haben wir das Projekt Your Meme als gemeinsame Meme-Plattform festgelegt und die Zuständigkeiten verteilt. Ich, Dilek, übernehme das React-/TypeScript-Frontend mit Layout, Navigation, Seiten und der späteren API-Anbindung. Josi übernimmt das Express-/TypeScript-Backend mit PostgreSQL, Prisma, Cloudinary und den API-Endpunkten. Wir haben außerdem vereinbart, dass ich auf der Branch `Frontend` arbeite und Josi ihre Backend-Änderungen auf ihrer eigenen Branch entwickelt. Änderungen sollen vor dem Commit geprüft, verständlich beschrieben und anschließend über einen Pull Request zur gemeinsamen Kontrolle bereitgestellt werden.
 
-### 30.10.2026 – Grundstruktur und erste Oberfläche
+Am **30.10.2026** habe ich die Frontend-Grundlage im Ordner `frontend/` vorbereitet. Dafür wurde die vorhandene React-, TypeScript- und Vite-Struktur verwendet und vom Backend getrennt gehalten. Ich habe eine übersichtliche Komponenten- und Ordnerstruktur angelegt und Beispieldaten vorbereitet, damit die Oberfläche zunächst auch ohne laufendes Backend entwickelt werden konnte. Anschließend habe ich Header, Navigation, Suchfeld und erste Meme-Karten umgesetzt. Die linke Seitenleiste wurde für Kategorien und persönliche Ordner vorbereitet. Außerdem habe ich lokale Like-Buttons, responsive Karten, Fokus-Styling und die zunächst geplanten Kategorien ergänzt.
 
-- Den Frontend-Bereich unter `frontend/` eingerichtet und vom Backend getrennt gehalten.
-- React-, TypeScript- und Vite-Grundlage verwendet.
-- Erste Ordner- und Komponentenstruktur mit echten Inhalten angelegt.
-- Statische Beispieldaten vorbereitet, damit die Oberfläche zunächst ohne Backend entwickelt werden konnte.
-- Header, Navigation, Suchfeld und Meme-Karten umgesetzt.
-- Seitenleiste für Kategorien und persönliche Ordner vorbereitet.
-- Lokale Like-Buttons, responsive Karten und Fokus-Styling ergänzt.
-- Kategorien erweitert: Programmieren, Alltag, Arbeit, Sport, Gaming, Tech, Animal, Movies, Outdoor, Study, Drinks, Food, Holiday, Book und Meeting.
+Am **02.11.2026** habe ich das Layout anhand unseres Mock-ups weiterentwickelt. Die Navigation steht oben, die Kategorien befinden sich links und die Meme-Karten werden mit gleichmäßigen Abständen in einem responsiven Raster dargestellt. Die zunächst sehr groben Mock-up-Farben habe ich durch ein ruhigeres und augenfreundlicheres Farbschema ersetzt. Auf großen Bildschirmen werden vier Meme-Karten pro Reihe angezeigt; auf Tablet und Handy passt sich das Raster an die verfügbare Breite an. Zusätzlich habe ich die Meme-Detailseite, die Meldung für unbekannte Meme-IDs, das Upload-Demoformular sowie Lade-, Leer- und Fehlerzustände umgesetzt. Die geplanten Seiten wurden mit TanStack Router strukturiert.
 
-### 02.11.2026 – Layout, Routing und Seiten
+Am **03.11.2026** lag der Schwerpunkt auf Qualität und Wartbarkeit. Ich habe die Router-Konfiguration von den React-Komponenten getrennt und leere Platzhalterdateien entfernt. Die vorhandenen Meme-Typen wurden geprüft und für API-Daten und Komponenten-Eigenschaften verwendet, damit keine unbegründeten `any`-Typen notwendig sind. Für mobile Geräte wurde die Navigation mit Öffnen- und Schließen-Funktion umgesetzt. Danach habe ich Tastaturbedienung, sichtbaren Fokus, verständliche Beschriftungen und passende ARIA-Zustände geprüft. Abschließend liefen `npm run lint` und `npm run build` ohne Fehler.
 
-- Das Layout nach dem Mock-up aufgebaut: Navigation oben, Kategorien links und Meme-Karten mit gleichmäßigen Abständen.
-- Das Farbschema von den groben Mock-up-Farben zu einer ruhigeren, augenfreundlicheren Gestaltung angepasst.
-- Vier Meme-Karten pro Reihe auf großen Bildschirmen und responsive Anpassungen für kleinere Geräte umgesetzt.
-- TanStack Router für Übersicht, Top-Memes, Upload, Account und Meme-Detailseite verwendet.
-- Detailseite für bekannte Meme-IDs erstellt.
-- Verständliche Meldung für unbekannte Meme-IDs ergänzt.
-- Upload-Formular zunächst als Frontend-Demo vorbereitet.
-- Lade-, Leer- und Fehlerzustände für die Oberfläche ergänzt.
+Am **04.11.2026** habe ich die Clerk-Anmeldung in das Frontend integriert. Auf der Account-Seite können sich Nutzer anmelden oder registrieren; die Oberfläche kann zwischen beiden Zuständen wechseln. Für angemeldete Nutzer wurde außerdem ein Benutzer-Button ergänzt. Den öffentlichen Clerk-Key verwende ich nur lokal im Frontend; geheime Schlüssel werden nicht in das Frontend und nicht in Git übernommen. Die Account-Oberfläche sowie Lint und Build wurden geprüft.
 
-### 03.11.2026 – Lint, Typen und Barrierefreiheit
+Am **05.11.2026** habe ich den typisierten API-Client für die spätere Verbindung mit Josis Backend vorbereitet. Der Client verwendet den vorhandenen `Meme`-Typ und erkennt ungültige API-Antworten sowie Netzwerkfehler. Dadurch kann die Oberfläche zwischen Laden, leerer Liste, Fehler und „Meme nicht gefunden“ unterscheiden. Die Verbindung zur echten Meme-Liste und zur Detailseite war damit vorbereitet, ohne die Frontend-Typisierung zu verlieren.
 
-- Router-Konfiguration und React-Komponenten getrennt.
-- Leere Platzhalterdateien entfernt und nur benötigte Dateien behalten.
-- Vorhandene Meme-Typen für API-Daten und Komponenten-Eigenschaften verwendet.
-- Unbegründete `any`-Typen vermieden.
-- Mobile Navigation mit Öffnen- und Schließen-Funktion umgesetzt.
-- Tastaturbedienung, sichtbaren Fokus, Beschriftungen und ARIA-Zustände geprüft.
-- `npm run lint` und `npm run build` fehlerfrei ausgeführt.
+Am **09.11.2026** habe ich die Übersicht mit `GET /api/memes` verbunden. Dadurch werden Meme-Daten aus PostgreSQL statt der bisherigen statischen Beispieldaten verwendet. Die Bilder werden über das Backend-Feld `imageUrl` geladen. Beim Öffnen einer Karte ruft die Detailseite `GET /api/memes/:id` auf. Für unbekannte IDs erscheint eine verständliche Fehlermeldung. Die ersten Backend-Testdaten und erreichbaren Bildadressen habe ich gemeinsam mit Josi geprüft.
 
-### 04.11.2026 – Clerk-Anmeldung
+Am **10.11.2026** habe ich die Kommentar-Anzeige auf der Detailseite ergänzt. Das Frontend ruft `GET /api/memes/:id/comments` auf und stellt die typisierten Kommentare dar. Während des Abrufs wird ein Ladezustand angezeigt. Bei einem Fehler erscheint eine verständliche Fehlermeldung und bei einer leeren Antwort der Hinweis „Noch keine Kommentare.“. Damit war das Lesen von Kommentaren im Frontend vorbereitet, bevor das Schreiben von Kommentaren als eigene Aufgabe ergänzt wurde.
 
-- Clerk-Anwendung für **Your Meme** eingerichtet und React-Frontend verbunden.
-- Anmeldung und Registrierung auf `/account` ergänzt.
-- Umschaltung zwischen Sign-in und Sign-up umgesetzt.
-- Benutzer-Button für angemeldete Nutzer ergänzt.
-- Den öffentlichen Clerk-Key nur lokal in `frontend/.env.local` verwendet.
-- Geheime Schlüssel nicht in das Frontend oder in Git übernommen.
-- Authentifizierungsoberfläche im Browser sowie Lint und Build geprüft.
+Am **11.11.2026** habe ich die Kategorie-Anzeige mit dem aktuellen Backend-Stand abgeglichen. Dabei wurde festgestellt, dass das Backend noch kein Kategorie-Feld liefert. Deshalb habe ich keine falsche Kategorie-Zuordnung im Frontend erzwungen; `Community` bleibt vorerst ein technischer Ersatzwert. Zusätzlich wurden Startseite und Detailseite im Browser geprüft. `npm run lint` und `npm run build` liefen erfolgreich.
 
-### 05.11.2026 – API-Client vorbereiten
+Am **12.11.2026** habe ich zuerst die geschützten Frontend-Aktionen weitergeführt. Der Benutzer-Sync wird jetzt abgewartet, bevor ein Upload startet. Wenn der Sync fehlschlägt, wird der Upload gestoppt und eine verständliche Fehlermeldung angezeigt. Danach habe ich das Kommentarformular für angemeldete Nutzer umgesetzt. Kommentare werden mit Clerk-Token an `POST /api/memes/:id/comments` gesendet; leere Texte und mehr als 1.000 Zeichen werden verhindert. Während des Sendens ist der Button deaktiviert. Nach erfolgreichem Senden werden Eingabe, Kommentarliste und Kommentaranzahl aktualisiert.
 
-- Typisierten API-Client für `/api/memes` erstellt.
-- Den vorhandenen `Meme`-Type wiederverwendet.
-- Ungültige API-Antworten und Netzwerkfehler erkannt.
-- Lade-, Leer-, Fehler- und „Meme nicht gefunden“-Zustände geprüft.
-- Die spätere Verbindung von Übersicht und Detailseite mit Josis Backend vorbereitet.
+Am selben Tag habe ich die Like-Funktionen angebunden. Ein Like wird über `POST /api/memes/:id/like` gesetzt und über `DELETE /api/memes/:id/like` entfernt. Das Frontend übernimmt `liked` und `likeCount` aus der API und verwendet keine zusätzliche lokale Zählung, damit Likes nicht doppelt angezeigt werden. Danach habe ich die lokale Cloudinary-Konfiguration im Backend geprüft, das Backend gestartet und `GET /api/health`, `GET /api/health/db` sowie `GET /api/memes` getestet. Die Meme-API lieferte 29 Datensätze mit erreichbaren Cloudinary-Bildern. Anschließend habe ich die Frontend-Übersicht unter `http://localhost:5173/` geöffnet und echte Titel und Bilder geprüft.
 
-### 09.11.2026 – Echte Meme-Daten und Detailseite
-
-- `GET /api/memes` mit der Meme-Übersicht verbunden.
-- Echte PostgreSQL-Daten und `imageUrl` im Frontend angezeigt.
-- `GET /api/memes/:id` für die Detailseite angebunden.
-- Unbekannte Meme-IDs mit verständlicher Fehlermeldung behandelt.
-- Backend-Testdaten und erreichbare Bildadressen gemeinsam mit Josi geprüft.
-
-### 10.11.2026 – Kommentare anzeigen
-
-- `GET /api/memes/:id/comments` angebunden.
-- Kommentar-Daten typisiert auf der Detailseite dargestellt.
-- Lade-, Fehler- und Leerzustand für Kommentare ergänzt.
-- „Noch keine Kommentare.“ bei leerer Antwort angezeigt.
-
-### 11.11.2026 – Kategorien und Abschlussprüfung
-
-- Geprüft, dass das Backend noch kein Kategorie-Feld liefert.
-- Deshalb keine falsche Kategorie-Logik erzwungen; `Community` bleibt vorerst Ersatzwert.
-- Startseite und Detailseite im Browser geprüft.
-- `npm run lint` und `npm run build` erfolgreich ausgeführt.
-
-### 12.11.2026 – Authentifizierte Aktionen, echte Bilder und Performance
-
-- Den Upload-Sync abgesichert: `syncCurrentUser` wird abgewartet, bevor `uploadMeme` startet.
-- Bei fehlgeschlagenem Sync wird der Upload gestoppt und eine verständliche Meldung angezeigt.
-- Kommentarformular für angemeldete Nutzer ergänzt.
-- Kommentare über `POST /api/memes/:id/comments` mit Clerk-Token gesendet.
-- Leere Kommentare und mehr als 1.000 Zeichen verhindert.
-- Senden-Button während der Anfrage deaktiviert; nach Erfolg Liste und Anzahl aktualisiert.
-- Likes über `POST /api/memes/:id/like` und `DELETE /api/memes/:id/like` angebunden.
-- API-Werte `liked` und `likeCount` übernommen und lokale Zusatz-Zählung entfernt.
-- Cloudinary-Konfiguration im lokalen Backend geprüft und Backend gestartet.
-- `GET /api/health` und `GET /api/health/db` erfolgreich geprüft.
-- `GET /api/memes` liefert 29 Meme-Datensätze mit erreichbaren Cloudinary-Bildern.
-- Frontend unter `http://localhost:5173/` mit echten Titeln und Bildern geprüft.
-- In `frontend/src/App.tsx` `loading="lazy"`, `decoding="async"` und feste Bildmaße ergänzt.
-- In `frontend/src/App.css` Seitenverhältnisse, Bildbereiche und `object-fit` für stabile Karten- und Detailbilder ergänzt.
-- `npm run lint`, `npm run build` und `git diff --check` erfolgreich ausgeführt.
-- Trello-Checkliste „Darstellung, Bedienbarkeit und Ladezeiten prüfen“ auf 100 % gesetzt.
-- Commit und Push auf `Frontend`: `7a18917 perf: Bilder effizienter laden`.
-
-## 29.10.2026 – Projektstart und Planung
-
-- Frontend- und Backend-Zuständigkeiten festgelegt.
-- Dilek übernimmt das Frontend, Josi übernimmt das Backend.
-- Die Meme-Seite als gemeinsames Projektthema festgelegt.
-- Vorgehen mit eigenen Branches und Pull Requests abgestimmt.
-
-## 30.10.2026 – Frontend-Grundstruktur
-
-- Frontend-Bereich im Ordner `frontend/` eingerichtet.
-- React-, TypeScript- und Vite-Grundlage verwendet.
-- Klare Trennung zwischen Frontend und Josis Backend festgelegt.
-- Erste Ordner- und Komponentenstruktur angelegt.
-- Beispieldaten ohne Backend-Abhängigkeit erstellt.
-
-## 30.10.2026 – Erste Meme-Oberfläche
-
-- Header und Navigation erstellt.
-- Seitenleiste für Kategorien und persönliche Ordner vorbereitet.
-- Meme-Übersicht mit statischen Meme-Karten umgesetzt.
-- Suchfeld ergänzt.
-- Like-Buttons mit funktionierendem lokalen Zustand ergänzt.
-- Responsive Darstellung für Desktop, Tablet und Handy umgesetzt.
-- Fokus-Styling und barrierearme Beschriftungen ergänzt.
-- Kategorien erweitert, unter anderem Sport, Gaming, Tech, Animal, Movies, Outdoor, Study, Drinks, Food, Holiday, Book und Meeting.
-
-## 02.11.2026 – Layout und Seiten
-
-- Meme-Detailseite für bekannte Meme-IDs erstellt.
-- Meldung für unbekannte Meme-IDs ergänzt.
-- Upload-Formular als Frontend-Demo erstellt.
-- Meme-Mock-up und responsive Meme-Grid umgesetzt.
-- Lade- und leere Zustände ergänzt.
-- Navigation und Kategorien erweitert.
-
-## 03.11.2026 – Qualität und Seitenstruktur
-
-- Router-Konfiguration und React-Komponenten getrennt.
-- Leere Platzhalterdateien entfernt.
-- TypeScript-Typen für Meme-Daten und Komponenten geprüft und verbessert.
-- Mobile Navigation mit Öffnen-/Schließen-Funktion umgesetzt.
-- Tastaturbedienung, sichtbarer Fokus und passende ARIA-Zustände geprüft.
-- `npm run lint` und `npm run build` erfolgreich ausgeführt.
-
-## 04.11.2026 – Clerk und Authentifizierung
-
-- Clerk-Anwendung für **Your Meme** eingerichtet.
-- Clerk im React-Frontend integriert.
-- Anmeldung und Registrierung auf `/account` ergänzt.
-- Umschaltung zwischen Anmelden und Registrieren umgesetzt.
-- Benutzer-Button für angemeldete Nutzer ergänzt.
-- Clerk-Publishable-Key lokal in `.env.local` hinterlegt.
-- `npm run lint` und `npm run build` erfolgreich ausgeführt.
-- Commit und Push auf den Branch `Frontend`:
-  - `294c51e feat(frontend): add Clerk authentication`
-
-## 05.11.2026 – Vorbereitung für echte API-Daten
-
-- Clerk-Anmeldung und Navigation erneut geprüft.
-- Typisierten API-Client für den geplanten Endpoint `/api/memes` erstellt.
-- API-Client verwendet den vorhandenen `Meme`-Type.
-- Fehler bei fehlgeschlagenen oder ungültigen API-Antworten werden erkannt.
-- Lade-, Leer-, Fehler- und „Meme nicht gefunden“-Zustände geprüft.
-- `npm run lint` und `npm run build` erfolgreich ausgeführt.
-- Commit und Push auf den Branch `Frontend`:
-  - `ab6fe0c feat(frontend): prepare typed meme api client`
-
-## 09.11.2026 – Echte Meme-Daten und Detailseite
-
-- Den vorhandenen typisierten API-Client mit `/api/memes` verbunden.
-- Echte Meme-Daten aus PostgreSQL in der Übersicht angezeigt.
-- Echte Meme-Bilder über `imageUrl` angezeigt.
-- Beim Anklicken eines Memes wird die Detailseite über `/api/memes/:id` geladen.
-- Für unbekannte Meme-IDs wird eine verständliche Meldung angezeigt.
-- Backend-Testdaten und erreichbare Bildadressen gemeinsam mit Josi geprüft.
-- Commit und Push auf den Branch `Frontend`:
-  - `5002df3 feat: load meme details from api`
-
-## 10.11.2026 – Kommentare vorbereiten und anzeigen
-
-- Vorhandenen Endpoint `/api/memes/:id/comments` im Frontend angebunden.
-- Kommentare auf der Meme-Detailseite typisiert dargestellt.
-- Lade-, Fehler- und Leerzustand für Kommentare ergänzt.
-- Bei leerer Antwort wird „Noch keine Kommentare.“ angezeigt.
-- `npm run lint`, `npm run build` und die Detailseite geprüft.
-- Commit und Push auf den Branch `Frontend`:
-  - `b3b3743 feat: show comments on meme detail pages`
-
-## 11.11.2026 – Kategorien und Abschlussprüfung
-
-- Geprüft, wie Kategorien aus den Backend-Daten im Frontend behandelt werden.
-- Festgestellt: Das Backend liefert aktuell noch kein Kategorie-Feld; deshalb wird teilweise `Community` angezeigt.
-- Keine irreführende Änderung im Frontend vorgenommen, da die Kategorie-Struktur zuerst mit Josi abgestimmt werden muss.
-- Startseite und Detailseite im Browser geprüft.
-- `npm run lint` erfolgreich ausgeführt.
-- `npm run build` erfolgreich ausgeführt.
-- Git-Status geprüft: Branch `Frontend` ist sauber.
-
-## Gemeinsamer Statusabgleich vom 11.11.2026
-
-Dieser Nachtrag stammt aus dem gemeinsamen Code-/Dokumentationsabgleich und beschreibt keine zusätzlich von Dilek erledigten Aufgaben. Die historischen Tagesabschnitte oben bleiben erhalten.
-
-- Backend-Clerk-Prüfung und `/api/me/sync` sind inzwischen implementiert und authentifiziert getestet. Offen ist der automatische Aufruf aus dem Frontend, einschließlich Bearer-Token für Schreibanfragen.
-- Vollständiger PNG-Upload, Titeländerung, eigene Meme-Löschung, Kommentar-Schreibaktionen und Like-POST/DELETE sind verfügbar. Die Meme-Löschung wurde separat über API, Datenbank und Cloudinary erfolgreich geprüft.
-- Der veröffentlichte Frontend-Code lädt Übersicht, Detail und Kommentar-Liste bereits aus der API. Upload und Listen-Likes sind weiterhin lokal; Kommentarformular, Bearbeiten und Löschen fehlen.
-- Kategorien sind laut vereinbartem Backend-Umfang aus der ersten Version ausgeschlossen. Ein Kategorie-Feld ist daher keine Voraussetzung für die übrige Integration. Optionale Erweiterung nur gemeinsam abstimmen; Community bleibt vorerst ein technischer Ersatzwert.
-- Ersteller aus der API übernehmen; Client ersetzt ihn bisher durch Community.
-- Backend-Leseantworten brauchen noch einen persönlichen Like-Status, damit der Button nach Neuladen korrekt bleibt.
-- Echte Interaktionen liegen in der jeweils lokalen Datenbank. Die gemeinsamen Bild-Fixtures übertragen keine Kommentare oder Likes.
-- Nächste Frontend-Reihenfolge: Sync und Token, echter Upload, Meme-/Kommentaraktionen und Likes. Ordner/Moderation/Kontolöschung folgen mit den noch fehlenden Backend-Routen.
-- Frontend-Lint und Build wurden im gemeinsamen Abgleich erneut erfolgreich ausgeführt. Keine neue vollständige mobile/Screenreader-Abnahme.
-
-Details: [Frontend-Start](../README.md), [API-Vertrag](../../backend/docs/api-plan.md), [Prüfbelege und Aufwandsschätzung](../../backend/docs/projektstand.md).
-
-## 12.11.2026 – Upload-Sync, Kommentare und Likes
-
-- Upload-Ablauf abgesichert: Der Benutzer-Sync wird mit `await` erfolgreich beendet, bevor der Meme-Upload startet.
-- Fehler beim Benutzer-Sync stoppen den Upload und werden verständlich angezeigt.
-- Kommentarformular für angemeldete Nutzer ergänzt.
-- Kommentare werden über `POST /api/memes/:id/comments` mit Clerk-Token gesendet.
-- Leere Kommentare und Kommentare über 1.000 Zeichen werden verhindert.
-- Senden-Button wird während der Anfrage deaktiviert; nach Erfolg werden Kommentar und Anzahl aktualisiert.
-- Like- und Unlike-Aktionen über `POST` und `DELETE /api/memes/:id/like` angebunden.
-- Like-Status und Like-Anzahl werden aus der API übernommen; lokale Zusatz-Zählung entfernt.
-- `npm run lint`, `npm run build` und `git diff --check` erfolgreich ausgeführt.
-- Commit und Push auf den Branch `Frontend`:
-  - `83b8373 fix: upload meme only after user sync succeeds`
-  - `c302f9c feat: allow signed-in users to post comments`
-  - `14a578f feat: connect meme likes to backend api`
-
-## 12.11.2026 – Echte Bilder und Performance-Prüfung
-
-- Im lokalen Backend geprüft, dass `backend/.env` die drei benötigten Cloudinary-Variablen enthält. Die geheimen Werte wurden weder angezeigt noch in das Frontend übernommen.
-- Das Backend mit `npm run dev` im Ordner `backend/` gestartet. Dabei wurde die Verbindung von Express, PostgreSQL, Prisma und Cloudinary erfolgreich hergestellt.
-- `GET /api/health` geprüft: Antwort `{"status":"ok"}`.
-- `GET /api/health/db` geprüft: Datenbankstatus `connected`.
-- `GET /api/memes` geprüft: Die API liefert 29 Meme-Datensätze statt einer leeren Liste.
-- Kontrolliert, dass die gelieferten Datensätze echte `imageUrl`-Adressen von Cloudinary enthalten und nicht nur Beispieladressen wie `example.com`.
-- Die Frontend-Übersicht unter `http://localhost:5173/` geöffnet und geprüft, dass echte Meme-Titel und Cloudinary-Bilder angezeigt werden.
-- In `frontend/src/App.tsx` Meme-Kartenbilder mit `loading="lazy"`, `decoding="async"` sowie festen `width`-/`height`-Werten ergänzt.
-- In `frontend/src/App.tsx` auch die Detailseitenbilder und die Upload-Vorschau für effizientes asynchrones Laden angepasst.
-- In `frontend/src/App.css` für Meme-Karten und Detailbilder ein stabiles Seitenverhältnis, begrenzte Bildbereiche und `object-fit` ergänzt, damit große Bilder das Layout nicht verschieben.
-- `npm run lint` erfolgreich ausgeführt.
-- `npm run build` erfolgreich ausgeführt.
-- `git diff --check` erfolgreich ausgeführt; keine Formatierungsfehler gefunden.
-- Trello-Karte „Darstellung, Bedienbarkeit und Ladezeiten prüfen“ geprüft und den Performance-Punkt abgehakt. Die Checkliste steht jetzt bei 100 %.
-- Commit auf dem Branch `Frontend` erstellt und zu `origin/Frontend` gepusht:
-  - `7a18917 perf: Bilder effizienter laden`
+Für die Performance habe ich in `frontend/src/App.tsx` `loading="lazy"`, `decoding="async"` und feste Bildmaße für Karten-, Detail- und Upload-Bilder ergänzt. In `frontend/src/App.css` wurden stabile Seitenverhältnisse, begrenzte Bildbereiche und `object-fit` ergänzt, damit große Bilder das Layout nicht verschieben. `npm run lint`, `npm run build` und `git diff --check` liefen erfolgreich. Die Änderungen wurden mit `7a18917 perf: Bilder effizienter laden` auf `Frontend` gepusht. Die Trello-Checkliste wurde separat auf 100 % gesetzt; der Arbeitsbericht dokumentiert nur die Frontend-Arbeiten und den technischen Prüfstand.
 
 ## Aktuell offene Punkte
 
