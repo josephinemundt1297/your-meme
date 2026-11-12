@@ -1,8 +1,8 @@
 # Your Meme – Datenmodell
 
-Stand: 11.11.2026. Sechs Modelle und Initialmigration unverändert. Aktuelle DB-Abfrage bestätigt die abgeschlossene, nicht zurückgerollte Initialmigration `20261104125318_init`. Meme-, Kommentar- und Like-Schreibaktionen nutzen jetzt diese Modelle. Eine leere oder vorhandene Tabelle allein belegt keine fertige Nutzerfunktion.
+Stand: 12.11.2026. Sechs Modelle und Initialmigration unverändert. Aktuelle DB-Abfrage bestätigt die abgeschlossene, nicht zurückgerollte Initialmigration `20261104125318_init`. Meme-, Kommentar- und Like-Schreibaktionen nutzen jetzt diese Modelle. Eine leere oder vorhandene Tabelle allein belegt keine fertige Nutzerfunktion.
 
-Clerk-Identität, lokale Nutzer-Synchronisation und Besitzerprüfungen für Meme-/Kommentaränderungen sind implementiert. Ordnerzugriffe, Administrator-Moderation und dienstübergreifende Kontolöschung bleiben Zielanforderungen.
+Clerk-Identität, lokale Nutzer-Synchronisation und Besitzerprüfungen für Meme-/Kommentaränderungen sind implementiert. Ordner-Anlage/-Abfragen und Meme-Zuordnungen haben jetzt Besitzerprüfungen. Ordner umbenennen/löschen, Administrator-Moderation und dienstübergreifende Kontolöschung bleiben offen.
 
 ## Technische Grundlage
 
@@ -94,7 +94,7 @@ erDiagram
 
 ## Berechtigungen
 
-Zielregeln für die gesamte Anwendung. Bereits vorhanden: öffentliche Abfragen, eigene Meme-/Kommentarverwaltung und Likes. Noch offen: Ordner, Admin-Ausnahmen und Kontolöschung. Die Tabelle beschreibt daher nicht überall bereits verfügbares Verhalten:
+Zielregeln für die gesamte Anwendung. Bereits vorhanden: öffentliche Abfragen, eigene Meme-/Kommentarverwaltung und Likes. Noch offen: Ordner umbenennen/löschen, Admin-Ausnahmen und Kontolöschung. Die Tabelle beschreibt daher nicht überall bereits verfügbares Verhalten:
 
 | Aktion                                       | Besucher | Angemeldete Nutzer | Administratoren |
 | -------------------------------------------- | -------- | ------------------ | --------------- |
@@ -181,11 +181,11 @@ Meme-Bildlöschung ist implementiert: erst Cloudinary, dann PostgreSQL. Ein sepa
 
 ## Nächste Schritte
 
-1. Frontend-Nutzer-Synchronisation anbinden; lokale UUID aus Sync und Clerk-ID nicht verwechseln.
-2. Persönlichen Like-Status in Leseantworten ergänzen; private Ordner und Meme-Zuordnungen umsetzen.
-3. Administrator-Löschrechte ausschließlich serverseitig prüfen und Rechtevergabe festlegen.
-4. Kontolöschung über PostgreSQL, Clerk und Cloudinary einschließlich wiederholbarer Bereinigung umsetzen; befüllte Löschkaskaden und Teilausfälle testen.
-5. Bildaustausch und `altText` sind noch keine implementierten Erweiterungen. Kategorien sind aus dem Pflichtumfang von Version 1 ausgeschlossen.
+1. Ordner umbenennen/löschen und Besitzerrechte mit zwei Konten prüfen. Erstellen, Laden, Hinzufügen, Duplikatvermeidung und Entfernen ohne Meme-Löschung sind manuell bestätigt.
+2. Frontend-Ordneroberfläche anbinden. Öffentliche Meme-Liste/-Detail liefern likedByMe; Ordner-Memes noch nicht. Bestehende Relation speichert nur Zuordnungen, keine Bildkopien.
+3. Administrator-Löschrechte serverseitig und vertrauenswürdige Rollenvergabe umsetzen.
+4. Kontolöschung über PostgreSQL, Clerk und Cloudinary einschließlich wiederholbarer Bereinigung umsetzen; befüllte Kaskaden und Teilausfälle testen.
+5. Bildaustausch und altText bleiben gesondert abzustimmende Erweiterungen; Kategorien sind aus dem Pflichtumfang ausgeschlossen.
 
 Validierung, Rechteprüfung, Tests und Dokumentation werden bei jeder Funktion mitgeführt.
 Aktueller Stand und Trello-Arbeitsweise: [projektstand.md](projektstand.md).

@@ -1,6 +1,8 @@
 # Zwischenbericht für Dilek – 11.11.2026
 
-Aktualisiert nach Meme-, Kommentar- und Like-Schreibfunktionen. Dieser Bericht ersetzt den früheren Vormittagsstand desselben Tages. Geprüfter Backend-Code `6d476f4`, Frontend `5d966ef`; gemeinsame Änderungen laut Josephine in main gemergt (GitHub-Abgleich `9990879`).
+> Historischer Bericht vom 11.11.2026. Neuer Stand: [Zwischenbericht 12.11.2026](zwischenbericht-2026-11-12.md) und [Projektstand](projektstand.md). Die folgenden offenen Aufgaben und Prozentwerte gelten für den damaligen Stand.
+
+Aktualisiert nach Meme-, Kommentar- und Like-Schreibfunktionen. Dieser Bericht ersetzt den früheren Vormittagsstand desselben Tages. Geprüfter Backend-Code `6d476f4`, Frontend `4b9947e`; gemeinsame Änderungen laut Josephine in main gemergt (GitHub-Abgleich `9990879`).
 
 ## Was Josi inzwischen geschafft hat
 
@@ -17,8 +19,8 @@ Layout, Navigation, Clerk-Oberfläche sowie echte API-Daten für Übersicht, Det
 ## Was Dilek als Nächstes machen kann
 
 1. Eigene Änderungen committen und auf dem eigenen Frontend-Branch den gemergten main-Stand übernehmen: `git pull --no-rebase origin main`. Backend nach `npm install` neu starten; bei fehlendem Prisma-Client `npx prisma generate`.
-2. Nach Login `/api/me/sync` aufrufen und aktuelle Session-Token für geschützte Anfragen mitsenden. Lokale UUID aus Sync für eigene Inhalte verwenden.
-3. Uploadformular mit `POST /api/memes` verbinden: FormData `title`/`image`, ein PNG bis 5 MiB, Content-Type automatisch. Kategorie nicht voraussetzen. Erfolg erst bei 201.
+2. Bereits implementierten Login-Sync absichern: Upload erst nach erfolgreichem Sync zulassen, Sync-Fehler sichtbar behandeln und lokale UUID für eigene Inhalte verwenden.
+3. Bereits implementierten FormData-PNG-Upload gegen aktuellen Backend-Stand gemeinsam testen: Erstlogin, Upload, Weiterleitung und Neuladen. Lint/Build der Upload-Dateien bestehen in isolierter Prüfkopie.
 4. Eigene Meme-Titel/-Löschung und Kommentarformular/-aktionen anbinden. DELETE 204 ohne JSON-Body behandeln.
 5. Like-Buttons mit POST/DELETE `/api/memes/:id/like` verbinden und Antwort `liked`/`likeCount` übernehmen. Vor vollständiger Abnahme persönlichen Like-Status beim Neuladen gemeinsam ergänzen.
 6. Meme-Ersteller aus `author` übernehmen; aktueller Client zeigt Community.
@@ -33,6 +35,6 @@ Persönlichen Like-Status und sichere JSON-Fehlerantworten ergänzen, dann priva
 
 Ungültiges JSON liefert momentan HTML mit internen Fehlerdetails; Cloudinary-/DB-Löschung kann bei Teilausfällen unvollständig bleiben. Backend-Typprüfung/Build, Prisma-Validierung und Frontend-Lint/Build bestehen. Diese Prüfungen sind keine vollständige Nutzerabnahme.
 
-Gewichtete Aufwandsschätzung: Backend ca. 65 %, Frontend ca. 45 %, gemeinsam ca. 55 %; Unsicherheit ungefähr ±5 Prozentpunkte. Die APIs sind weiter als ihre Anbindung in der Oberfläche. Vollständiger Pflichtumfang bis 18./19.11. bleibt anspruchsvoll; 19.–20.11. für Integration und Demo einplanen, Abgabe 23.11. Am 13.11. anhand wirklich fertiger Abläufe neu bewerten. Mittagspause 12–13 Uhr; nächste Zwischenbesprechung vorschlagen, sobald Upload vom Formular testbar ist, Termin gemeinsam bestätigen.
+Gewichtete Aufwandsschätzung: Backend ca. 65 %, Frontend ca. 55 %, gemeinsam ca. 60 %; Unsicherheit ungefähr ±5 Prozentpunkte. Der Upload-Nachtrag ist im Code bestätigt; weitere API-Aktionen müssen noch angebunden werden. Vollständiger Pflichtumfang bis 18./19.11. bleibt anspruchsvoll; 19.–20.11. für Integration und Demo einplanen, Abgabe 23.11. Am 13.11. anhand wirklich fertiger Abläufe neu bewerten. Mittagspause 12–13 Uhr; nächste Zwischenbesprechung vorschlagen, sobald Upload vom Formular testbar ist, Termin gemeinsam bestätigen.
 
 [API-Vertrag](api-plan.md) · [Startanleitung](../README.md) · [Prüfbelege und Bewertungsmethode](projektstand.md)

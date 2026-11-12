@@ -30,6 +30,16 @@ Am selben Tag habe ich die Like-Funktionen angebunden. Ein Like wird über `POST
 
 Für die Performance habe ich in `frontend/src/App.tsx` `loading="lazy"`, `decoding="async"` und feste Bildmaße für Karten-, Detail- und Upload-Bilder ergänzt. In `frontend/src/App.css` wurden stabile Seitenverhältnisse, begrenzte Bildbereiche und `object-fit` ergänzt, damit große Bilder das Layout nicht verschieben. `npm run lint`, `npm run build` und `git diff --check` liefen erfolgreich. Die Änderungen wurden mit `7a18917 perf: Bilder effizienter laden` auf `Frontend` gepusht. Die Trello-Checkliste wurde separat auf 100 % gesetzt; der Arbeitsbericht dokumentiert nur die Frontend-Arbeiten und den technischen Prüfstand.
 
+## Gemeinsamer Statusabgleich
+
+Dieser Abschnitt übernimmt die gemeinsamen Statusinformationen aus `main`, ohne die ausführlichen Tagesberichte zu ersetzen. Er beschreibt den Projektstand und offene Abstimmungen zwischen Frontend und Backend.
+
+Josis Backend unterstützt inzwischen die Benutzer-Synchronisierung über `/api/me/sync`, den PNG-Upload, Titeländerungen, das Löschen eigener Memes, Kommentar-Schreibaktionen sowie Like- und Unlike-Anfragen. Im Frontend sind der Benutzer-Sync vor dem Upload, der authentifizierte Upload-Ablauf, das Kommentarformular und die Like-Anbindung umgesetzt. Der vollständige gemeinsame Erstlogin-Test mit einem echten Benutzer steht noch aus.
+
+Die Übersicht, die Detailseite und die Kommentar-Anzeige laden echte API-Daten. Die Kategorie-Zuordnung bleibt zurückgestellt, weil das Backend derzeit kein Kategorie-Feld speichert. Der persönliche Like-Status nach dem Neuladen und bei einem Kontowechsel muss noch mit einem angemeldeten Testkonto geprüft werden. Die echten Interaktionen liegen jeweils in der lokalen Datenbank; Testdaten und Bild-Fixtures übertragen keine persönlichen Kommentare oder Likes automatisch.
+
+Als nächste gemeinsame Punkte bleiben der vollständige End-to-End-Test für Anmeldung, Sync, Upload, Kommentar und Like sowie die weiteren Backend-Routen für persönliche Ordner, Moderation und Kontolöschung. Die Frontend-Architektur, die API-Anbindung und die ausführlichen Tagesberichte bleiben auf Dileks `Frontend`-Branch.
+
 ## Aktuell offene Punkte
 
 - Ein vollständiger Browser-Test mit angemeldetem Upload, Kommentar und Like steht noch aus.

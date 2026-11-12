@@ -1,14 +1,15 @@
 # Your Meme
 
 Fullstack-Abschlussprojekt von Dilek (Frontend) und Josephine (Backend).
-Stand: 11.11.2026. Abgabe: 23.11.2026; Präsentationstermin offen. Deployment ist freiwillig, eine lokale Präsentation ist zulässig.
+Stand: 12.11.2026. Abgabe: 23.11.2026; Präsentationstermin offen. Deployment ist freiwillig, eine lokale Präsentation ist zulässig.
 
 ## Aktueller Stand
 
-- Frontend: React/TypeScript/Vite, TanStack Router, Clerk-Oberfläche; Übersicht, Detail und Kommentar-Liste laden echte API-Daten. Upload und Likes sind noch lokale Demonstrationen; schreibende Anbindung und automatischer Nutzer-Sync fehlen.
-- Backend: Express/TypeScript, PostgreSQL/Prisma, Clerk-Prüfung und Nutzer-Sync. Vollständiger PNG-Upload nach Cloudinary/PostgreSQL, eigene Meme-Titel bearbeiten und Memes löschen, Kommentare erstellen/bearbeiten/löschen sowie Likes setzen/entfernen sind implementiert.
-- Offen: persönliche Ordner, Moderation, vollständige Kontolöschung, Pagination, persönlicher Like-Status beim Laden, sichere zentrale Fehlerantworten und abschließende Integration/Tests.
-- Aktuelle gewichtete Schätzung: Backend 65 %, Frontend 45 %, gesamt 55 % (jeweils ungefähr, Unsicherheit ±5 Prozentpunkte). Bewertungsgrundlage und Prüfgrenzen: [Projektstand](backend/docs/projektstand.md).
+- Backend: Meme-Upload/-Titeländerung/-Löschung, Kommentarverwaltung, Likes und persönlicher Like-Status in GET-Liste/-Detail. Zentrale sichere JSON-Fehlerantworten vorhanden.
+- Persönliche Ordner: erstellen, eigene auflisten/ansehen und Meme-Zuordnungen hinzufügen/entfernen vorhanden. Umbenennen/löschen und Zwei-Konten-Abnahme fehlen noch.
+- Frontend: Übersicht, Detail, Kommentare, Clerk, PNG-Upload mit abgewartetem Sync, Kommentarformular und Like-/Unlike-Aktionen angebunden. Meme-GETs brauchen noch Token und Neuladen bei Kontowechsel; Autorübernahme, eigene Bearbeiten-/Löschaktionen und Ordner-UI fehlen.
+- Offen: Administrator-Moderation, vollständige Kontolöschung, Pagination, Rate-Limits, Teilausfälle und Abschluss-/Browserabnahme. Dileks Protokoll nennt fehlende lokale Cloudinary-Konfiguration als Testhindernis; ihr Rechner wurde hier nicht geprüft.
+- Gewichtete gerundete Schätzung: Backend ca. 75 %, Frontend ca. 65 %, gesamt ca. 70 %, Unsicherheit ±5 Prozentpunkte. [Projektstand und Belege](backend/docs/projektstand.md).
 
 ## Gemeinsam lokal starten
 
@@ -83,7 +84,8 @@ Die im Terminal angezeigte Adresse öffnen, normalerweise `http://localhost:5173
 - [Datenmodell](backend/docs/datenmodell.md)
 - [Implementierte API und Planung](backend/docs/api-plan.md)
 - [Projektstand und Arbeitsweise](backend/docs/projektstand.md)
-- [Zwischenbericht für Dilek vom 11.11.2026](backend/docs/zwischenbericht-2026-11-11.md)
+- [Aktueller Zwischenbericht für Dilek vom 12.11.2026](backend/docs/zwischenbericht-2026-11-12.md)
+- [Historischer Zwischenbericht vom 11.11.2026](backend/docs/zwischenbericht-2026-11-11.md)
 - [Historisches Hand-out vom 30.10.2026](backend/docs/handout-2026-10-30.md)
 - [Trello-Board](https://trello.com/b/EpjAfv15/your-meme)
 

@@ -12,6 +12,11 @@ import { isPng } from "./utils/isPng.js";
 import { uploadImage } from "./lib/uploadImage.js";
 import { cloudinary } from "./lib/cloudinary.js";
 import { createCommentSchema } from "./validators/comment.js";
+import type { ErrorRequestHandler } from "express";
+import {
+  createFolderSchema,
+  addMemeToFolderSchema,
+} from "./validators/folder.js";
 
 const app = express();
 
@@ -108,8 +113,10 @@ app.post("/api/me/sync", async (req, res) => {
   }
 });
 
-app.get("/api/memes", async (_req, res) => {
+app.get("/api/memes", async (req, res) => {
   try {
+    const { userId } = getAuth(req);
+
     const memes = await prisma.meme.findMany({
       select: memeSelect,
       orderBy: {
@@ -117,11 +124,35 @@ app.get("/api/memes", async (_req, res) => {
       },
     });
 
-    res.json(memes.map(formatMeme));
+    const ownLikes =
+      userId && memes.length > 0
+        ? await prisma.like.findMany({
+            where: {
+              user: {
+                clerkId: userId,
+              },
+              memeId: {
+                in: memes.map((meme) => meme.id),
+              },
+            },
+            select: {
+              memeId: true,
+            },
+          })
+        : [];
+
+    const likedMemeIds = new Set(ownLikes.map((like) => like.memeId));
+
+    return res.json(
+      memes.map((meme) => ({
+        ...formatMeme(meme),
+        likedByMe: likedMemeIds.has(meme.id),
+      })),
+    );
   } catch (error) {
     console.error("Fehler beim Laden der Memes:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Memes konnten nicht geladen werden.",
     });
   }
@@ -135,22 +166,43 @@ app.get("/api/memes/:id", async (req, res) => {
       error: "Ungültige Meme-ID.",
     });
   }
+
   try {
+    const { userId } = getAuth(req);
+
     const meme = await prisma.meme.findUnique({
       where: { id },
       select: memeSelect,
     });
+
     if (!meme) {
       return res.status(404).json({
         error: "Meme nicht gefunden.",
       });
     }
 
-    res.json(formatMeme(meme));
+    const ownLike = userId
+      ? await prisma.like.findFirst({
+          where: {
+            memeId: id,
+            user: {
+              clerkId: userId,
+            },
+          },
+          select: {
+            memeId: true,
+          },
+        })
+      : null;
+
+    return res.json({
+      ...formatMeme(meme),
+      likedByMe: ownLike !== null,
+    });
   } catch (error) {
     console.error("Fehler beim Laden des Memes:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Meme konnte nicht geladen werden.",
     });
   }
@@ -809,11 +861,351 @@ app.delete("/api/memes/:id/like", async (req, res) => {
   }
 });
 
+const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, next) => {
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  const errorType =
+    typeof error === "object" && error !== null && "type" in error
+      ? error.type
+      : undefined;
+
+  if (errorType === "entity.parse.failed") {
+    return res.status(400).json({
+      error: "Ungültiges JSON. Bitte den Anfrageinhalt prüfen.",
+    });
+  }
+
+  if (errorType === "entity.too.large") {
+    return res.status(413).json({
+      error: "Der Anfrageinhalt ist zu groß.",
+    });
+  }
+
+  console.error("Unerwarteter Serverfehler.");
+
+  return res.status(500).json({
+    error: "Ein interner Serverfehler ist aufgetreten.",
+  });
+};
+
+app.post("/api/folders", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const result = createFolderSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Bitte einen Ordnernamen mit 1 bis 100 Zeichen angeben.",
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return res.status(409).json({
+        error: "Bitte zuerst dein Nutzerprofil synchronisieren.",
+      });
+    }
+
+    const folder = await prisma.folder.create({
+      data: {
+        name: result.data.name,
+        userId: user.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    return res.status(201).json(folder);
+  } catch (error) {
+    console.error("Fehler beim Erstellen des Ordners:", error);
+
+    return res.status(500).json({
+      error: "Ordner konnte nicht erstellt werden.",
+    });
+  }
+});
+
+app.get("/api/folders", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return res.status(409).json({
+        error: "Bitte zuerst dein Nutzerprofil synchronisieren.",
+      });
+    }
+
+    const folders = await prisma.folder.findMany({
+      where: {
+        userId: user.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res.json(folders);
+  } catch (error) {
+    console.error("Fehler beim Laden der Ordner:", error);
+
+    return res.status(500).json({
+      error: "Ordner konnten nicht geladen werden.",
+    });
+  }
+});
+
+app.get("/api/folders/:id", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Ordner-ID.",
+    });
+  }
+
+  try {
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        user: {
+          select: { clerkId: true },
+        },
+        folderMemes: {
+          select: {
+            meme: {
+              select: memeSelect,
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
+    });
+
+    if (!folder) {
+      return res.status(404).json({
+        error: "Ordner nicht gefunden.",
+      });
+    }
+
+    if (folder.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Ordner ansehen.",
+      });
+    }
+
+    return res.json({
+      id: folder.id,
+      name: folder.name,
+      createdAt: folder.createdAt,
+      memes: folder.folderMemes.map((entry) => formatMeme(entry.meme)),
+    });
+  } catch (error) {
+    console.error("Fehler beim Laden des Ordners:", error);
+
+    return res.status(500).json({
+      error: "Ordner konnte nicht geladen werden.",
+    });
+  }
+});
+
+app.post("/api/folders/:id/memes", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Ordner-ID.",
+    });
+  }
+
+  const result = addMemeToFolderSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Bitte eine gültige Meme-ID angeben.",
+    });
+  }
+
+  try {
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      select: {
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!folder) {
+      return res.status(404).json({
+        error: "Ordner nicht gefunden.",
+      });
+    }
+
+    if (folder.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Ordner ändern.",
+      });
+    }
+
+    const meme = await prisma.meme.findUnique({
+      where: { id: result.data.memeId },
+      select: { id: true },
+    });
+
+    if (!meme) {
+      return res.status(404).json({
+        error: "Meme nicht gefunden.",
+      });
+    }
+
+    await prisma.folderMeme.createMany({
+      data: {
+        folderId: id,
+        memeId: meme.id,
+      },
+      skipDuplicates: true,
+    });
+
+    return res.status(200).json({
+      folderId: id,
+      memeId: meme.id,
+      saved: true,
+    });
+  } catch (error) {
+    console.error("Fehler beim Speichern im Ordner:", error);
+
+    return res.status(500).json({
+      error: "Meme konnte nicht im Ordner gespeichert werden.",
+    });
+  }
+});
+
+app.delete("/api/folders/:id/memes/:memeId", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id, memeId } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Ordner-ID.",
+    });
+  }
+
+  if (!memeId || !isValidUuid(memeId)) {
+    return res.status(400).json({
+      error: "Ungültige Meme-ID.",
+    });
+  }
+
+  try {
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      select: {
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!folder) {
+      return res.status(404).json({
+        error: "Ordner nicht gefunden.",
+      });
+    }
+
+    if (folder.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Ordner ändern.",
+      });
+    }
+
+    await prisma.folderMeme.deleteMany({
+      where: {
+        folderId: id,
+        memeId,
+      },
+    });
+
+    return res.json({
+      folderId: id,
+      memeId,
+      saved: false,
+    });
+  } catch (error) {
+    console.error("Fehler beim Entfernen aus dem Ordner:", error);
+
+    return res.status(500).json({
+      error: "Meme konnte nicht aus dem Ordner entfernt werden.",
+    });
+  }
+});
+
 app.use((_req, res) => {
   res.status(404).json({
     error: "Route nicht gefunden.",
   });
 });
+
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Your-Meme-Backend läuft auf http://localhost:${port}`);
