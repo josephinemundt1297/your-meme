@@ -17,7 +17,7 @@ type MemeCardProps = {
 
 function MemeCard({ meme, onToggleLike }: MemeCardProps) {
   return <article className="meme-card">
-    <Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} /> : <span aria-hidden="true">{meme.emoji}</span>}</div></Link>
+    <Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} loading="lazy" decoding="async" width="600" height="400" /> : <span aria-hidden="true">{meme.emoji}</span>}</div></Link>
     <div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${meme.likedByMe ? ' liked' : ''}`} type="button" aria-pressed={meme.likedByMe} onClick={() => onToggleLike(meme.id, !meme.likedByMe)}><span aria-hidden="true">{meme.likedByMe ? '♥' : '♡'}</span>{meme.likeCount} Likes</button></div>
   </article>
 }
@@ -133,7 +133,7 @@ export function UploadPage() {
     <Link className="back-link" to="/">← Zurück zu den Memes</Link>
     <div className="upload-intro"><p className="eyebrow">Dein Beitrag</p><h1>Eigenes Meme hochladen</h1><p>Teile dein Meme mit der Your-Meme-Community.</p></div>
     <form className="upload-form" onSubmit={handleSubmit}>
-      <label className="upload-field"><span>Meme-Bild</span><input type="file" accept="image/png" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSelectedFile(file); setFileError(file ? validateMemeImage(file) ?? '' : '') }} required />{previewUrl && <img className="upload-preview" src={previewUrl} alt="Vorschau des ausgewählten Memes" />}{fileError && <span className="upload-error" role="alert">{fileError}</span>}</label>
+      <label className="upload-field"><span>Meme-Bild</span><input type="file" accept="image/png" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSelectedFile(file); setFileError(file ? validateMemeImage(file) ?? '' : '') }} required />{previewUrl && <img className="upload-preview" src={previewUrl} alt="Vorschau des ausgewählten Memes" loading="lazy" decoding="async" />}{fileError && <span className="upload-error" role="alert">{fileError}</span>}</label>
       <label className="upload-field"><span>Titel</span><input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Gib deinem Meme einen Titel" maxLength={100} required /></label>
       <p className="upload-hint">Erlaubt ist eine PNG-Datei mit maximal 5 MiB.</p>
       {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
@@ -241,7 +241,7 @@ export function MemeDetailPage() {
   return <section className="detail-page">
     <Link className="back-link" to="/">← Zurück zu den Memes</Link>
     <article className="detail-card">
-      <div className="detail-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} /> : <span aria-hidden="true">{meme.emoji}</span>}</div>
+      <div className="detail-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} decoding="async" width="900" height="600" /> : <span aria-hidden="true">{meme.emoji}</span>}</div>
       <div className="detail-content">
         <span className="category">{meme.category}</span>
         <h1>{meme.title}</h1>
