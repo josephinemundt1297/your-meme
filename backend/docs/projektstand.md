@@ -1,6 +1,21 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-## Aktueller Nachtrag vom 13.11.2026 – Backend-Aufteilung
+## Aktuelle Priorisierung vom 13.11.2026
+
+Erneuter lokaler Codeabgleich auf Branch `Backend`, Ausgangscommit `7e32961`; Arbeitsverzeichnis vor dieser Dokumentationspflege sauber. Die Backend-Aufteilung ist im vorliegenden Commit enthalten. Kein Remote-Abgleich und keine neue Funktionsabnahme in diesem Dokumentationsauftrag.
+
+**Nächste größte offene Pflichtfunktion: vollständige Kontolöschung.** Der Nutzer-Router enthält derzeit nur `GET /api/me` und `POST /api/me/sync`; der Nutzer-Service synchronisiert Profile. Eine Kontolöschroute, ein koordinierter Löschservice und eine Anbindung für extern ausgelöste Clerk-Kontolöschungen sind im geprüften Anwendungscode nicht vorhanden. Das Prisma-Schema enthält Löschkaskaden; sie ersetzen weder Cloudinary-Bereinigung noch Clerk-Kontolöschung.
+
+Empfohlene Reihenfolge:
+
+1. **Kurze Prüfung nach der Umstrukturierung:** angemeldete Schreibaktionen mit eigenen separaten Testinhalten durchführen. Die letzte Prüfung umfasst 59 automatisierte HTTP-Tests mit simulierten Diensten, 99 Vorher-nachher-Vergleiche und echte Leseabfragen; sie ersetzt diese angemeldete Abnahme nicht.
+2. **Kontolöschung konkret planen und vor Umsetzung vorlegen:** Bestätigung und Identität, betroffene lokale Daten, Bildkennungen, Clerk-Konto, Sperre während der Löschung sowie Verhalten bei Dienstfehlern und erneutem Versuch. Die Planung ist noch keine Freigabe für Code, neue Datenfelder oder echte Löschungen.
+3. **Nach Freigabe schrittweise bauen und testen:** im bestehenden Nutzer-Modul bleiben, fachlichen Ablauf und HTTP-Verarbeitung trennen. Testfälle zuerst mit simulierten Diensten; echte Abnahme ausschließlich mit einem entbehrlichen Testkonto und eigenen Bildern. Fremde Memes und fremde Ordner müssen erhalten bleiben; Verweise auf gelöschte eigene Memes müssen entfernt werden.
+4. **Danach:** Pagination, Missbrauchsbegrenzung und vollständige Integration/Abnahme. Bekannte Teilausfälle bei bestehenden Inhaltslöschungen bleiben ein eigener offener Punkt.
+
+Ordner umbenennen/löschen und ADMIN-Löschrechte werden nicht erneut als fehlende Implementierung eingeplant. Die Dokumentation von API, Datenmodell und Spezifikation wurde entsprechend berichtigt. Keine neue Prozent- oder Terminschätzung ohne vollständige Neubewertung. Der unten stehende Bericht zur Aufteilung hält die damaligen Prüfergebnisse fest; historische Tagesstände bleiben gekennzeichnet.
+
+## Prüfbericht vom 13.11.2026 – Backend-Aufteilung
 
 Auf Josephines ausdrückliche Freigabe wurde die bisherige Serverdatei auf Branch `Backend` in Module für Memes einschließlich Likes, Kommentare, Ordner, Nutzer und Health aufgeteilt. Routen, HTTP-Controller und fachliche Services haben getrennte Zuständigkeiten. `src/app.ts` verbindet sie; `src/server.ts` enthält nur noch Dienstanbindung, Portprüfung und Serverstart. Validatoren und Dienstanbindungen bleiben gemeinsam nutzbar. Beschreibung: [Backend-Architektur](architektur.md).
 

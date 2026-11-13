@@ -1,8 +1,8 @@
 # Your Meme – Datenmodell
 
-Stand: 12.11.2026. Sechs Modelle und Initialmigration unverändert. Aktuelle DB-Abfrage bestätigt die abgeschlossene, nicht zurückgerollte Initialmigration `20261104125318_init`. Meme-, Kommentar- und Like-Schreibaktionen nutzen jetzt diese Modelle. Eine leere oder vorhandene Tabelle allein belegt keine fertige Nutzerfunktion.
+Stand: 13.11.2026, mit dem vorliegenden Prisma-Schema abgeglichen. Sechs Modelle und Initialmigration unverändert. Die DB-Prüfung vom 12.11. bestätigte die abgeschlossene, nicht zurückgerollte Initialmigration `20261104125318_init`; dies wurde in diesem Dokumentationsauftrag nicht erneut abgefragt. Meme-, Kommentar- und Like-Schreibaktionen nutzen jetzt diese Modelle. Eine leere oder vorhandene Tabelle allein belegt keine fertige Nutzerfunktion.
 
-Clerk-Identität, lokale Nutzer-Synchronisation und Besitzerprüfungen für Meme-/Kommentaränderungen sind implementiert. Ordner-Anlage/-Abfragen und Meme-Zuordnungen haben jetzt Besitzerprüfungen. Ordner umbenennen/löschen, Administrator-Moderation und dienstübergreifende Kontolöschung bleiben offen.
+Clerk-Identität, lokale Nutzer-Synchronisation und Besitzerprüfungen für Meme-/Kommentaränderungen sind implementiert. Ordner-Anlage/-Abfragen und Meme-Zuordnungen haben jetzt Besitzerprüfungen. Ordner umbenennen/löschen und ADMIN-Löschrechte für Memes/Kommentare sind implementiert. Die dienstübergreifende Kontolöschung bleibt offen und hat die nächste fachliche Priorität.
 
 ## Technische Grundlage
 
@@ -94,7 +94,7 @@ erDiagram
 
 ## Berechtigungen
 
-Zielregeln für die gesamte Anwendung. Bereits vorhanden: öffentliche Abfragen, eigene Meme-/Kommentarverwaltung und Likes. Noch offen: Ordner umbenennen/löschen, Admin-Ausnahmen und Kontolöschung. Die Tabelle beschreibt daher nicht überall bereits verfügbares Verhalten:
+Zielregeln für die gesamte Anwendung. Bereits vorhanden: öffentliche Abfragen, eigene Meme-/Kommentarverwaltung, Likes, vollständige Ordner-Endpunkte und ADMIN-Löschrechte. Kontolöschung ist noch nicht implementiert; die Tabelle beschreibt insofern auch Zielverhalten:
 
 | Aktion                                       | Besucher | Angemeldete Nutzer | Administratoren |
 | -------------------------------------------- | -------- | ------------------ | --------------- |
@@ -181,9 +181,9 @@ Meme-Bildlöschung ist implementiert: erst Cloudinary, dann PostgreSQL. Ein sepa
 
 ## Nächste Schritte
 
-1. Ordner umbenennen/löschen und Besitzerrechte mit zwei Konten prüfen. Erstellen, Laden, Hinzufügen, Duplikatvermeidung und Entfernen ohne Meme-Löschung sind manuell bestätigt.
+1. Angemeldete Schreibaktionen nach der Backend-Aufteilung mit separaten Testinhalten erneut prüfen; vollständige Zwei-Konten- und befüllte Kaskadentests gesondert abnehmen. Vorhandene Ordner- und ADMIN-Funktionen nicht erneut implementieren.
 2. Frontend-Ordneroberfläche anbinden. Öffentliche Meme-Liste/-Detail liefern likedByMe; Ordner-Memes noch nicht. Bestehende Relation speichert nur Zuordnungen, keine Bildkopien.
-3. Administrator-Löschrechte serverseitig und vertrauenswürdige Rollenvergabe umsetzen.
+3. Als nächste Backend-Pflichtfunktion den konkreten Kontolöschvertrag und den wiederholbaren Ablauf zur Freigabe vorlegen. ADMIN-Löschrechte bestehen bereits; öffentliche Rollenvergabe ist nicht vorgesehen.
 4. Kontolöschung über PostgreSQL, Clerk und Cloudinary einschließlich wiederholbarer Bereinigung umsetzen; befüllte Kaskaden und Teilausfälle testen.
 5. Bildaustausch und altText bleiben gesondert abzustimmende Erweiterungen; Kategorien sind aus dem Pflichtumfang ausgeschlossen.
 
