@@ -1,242 +1,166 @@
 import type { ApiHandler, ReadUserId } from "../../types/dependencies.js";
-import { HttpError } from "../../utils/HttpError.js";
+import { handleRequest } from "../../middleware/handleRequest.js";
 import { isValidUuid } from "../../utils/isValidUuid.js";
 import type { createMemeService } from "./meme.service.js";
 import { createMemeSchema } from "../../validators/meme.js";
 import { isPng } from "../../utils/isPng.js";
+import { paginationSchema } from "../../validators/pagination.js";
 
 export function createMemeController(
   service: ReturnType<typeof createMemeService>,
   readUserId: ReadUserId,
 ) {
-  const listMemes: ApiHandler = async (req, res) => {
-    try {
-      const userId = readUserId(req);
-      const response = await service.listMemes(userId);
-      return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+  const listMemes: ApiHandler = handleRequest(
+    async (req, res) => {
+      const pagination = paginationSchema.safeParse(req.query);
+      if (!pagination.success) {
+        return res.status(400).json({
+          error: "page muss zwischen 1 und 10000, limit zwischen 1 und 100 liegen.",
+        });
+      }
+      const clerkUserId = readUserId(req);
+      const response = await service.listMemes(clerkUserId, pagination.data);
+      res.setHeader("X-Page", String(pagination.data.page));
+      res.setHeader("X-Limit", String(pagination.data.limit));
+      res.setHeader("X-Has-More", String(response.hasMore));
+      return res.status(200).json(response.memes);
+    },
+    "Memes konnten nicht geladen werden.",
+    "Fehler beim Laden der Memes:",
+  );
+
+  const getMeme: ApiHandler = handleRequest(
+    async (req, res) => {
+      const { id } = req.params;
+
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Meme-ID.",
+        });
       }
 
-      console.error("Fehler beim Laden der Memes:", error);
-
-      return res.status(500).json({
-        error: "Memes konnten nicht geladen werden.",
-      });
-    }
-  };
-
-  const getMeme: ApiHandler = async (req, res) => {
-    const { id } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Meme-ID.",
-      });
-    }
-
-    try {
-      const userId = readUserId(req);
-      const response = await service.getMeme(id, userId);
+      const clerkUserId = readUserId(req);
+      const response = await service.getMeme(id, clerkUserId);
       return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+    },
+    "Meme konnte nicht geladen werden.",
+    "Fehler beim Laden des Memes:",
+  );
+
+  const updateMeme: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
+
+      const { id } = req.params;
+
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Meme-ID.",
+        });
       }
 
-      console.error("Fehler beim Laden des Memes:", error);
+      const result = createMemeSchema.pick({ title: true }).safeParse(req.body);
 
-      return res.status(500).json({
-        error: "Meme konnte nicht geladen werden.",
-      });
-    }
-  };
-
-  const updateMeme: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    const { id } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Meme-ID.",
-      });
-    }
-
-    const result = createMemeSchema.pick({ title: true }).safeParse(req.body);
-
-    if (!result.success) {
-      return res.status(400).json({
-        error: "Bitte einen Titel mit 1 bis 100 Zeichen angeben.",
-      });
-    }
-
-    try {
-      const response = await service.updateMeme(id, userId, result.data.title);
-      return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+      if (!result.success) {
+        return res.status(400).json({
+          error: "Bitte einen Titel mit 1 bis 100 Zeichen angeben.",
+        });
       }
 
-      console.error("Fehler beim Bearbeiten des Memes:", error);
+      const response = await service.updateMeme(id, clerkUserId, result.data.title);
+      return res.status(200).json(response);
+    },
+    "Meme konnte nicht bearbeitet werden.",
+    "Fehler beim Bearbeiten des Memes:",
+  );
 
-      return res.status(500).json({
-        error: "Meme konnte nicht bearbeitet werden.",
-      });
-    }
-  };
+  const deleteMeme: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
 
-  const deleteMeme: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
+      const { id } = req.params;
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Meme-ID.",
+        });
+      }
 
-    const { id } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Meme-ID.",
-      });
-    }
-
-    try {
-      await service.deleteMeme(id, userId);
+      await service.deleteMeme(id, clerkUserId);
       return res.status(204).send();
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+    },
+    "Meme konnte nicht gelöscht werden.",
+    "Fehler beim Löschen des Memes:",
+  );
+
+  const addLike: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
+
+      const { id } = req.params;
+
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Meme-ID.",
+        });
       }
 
-      console.error("Fehler beim Löschen des Memes:", error);
-
-      return res.status(500).json({
-        error: "Meme konnte nicht gelöscht werden.",
-      });
-    }
-  };
-
-  const addLike: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    const { id } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Meme-ID.",
-      });
-    }
-
-    try {
-      const response = await service.addLike(id, userId);
+      const response = await service.addLike(id, clerkUserId);
       return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+    },
+    "Like konnte nicht gespeichert werden.",
+    "Fehler beim Liken des Memes:",
+  );
+
+  const removeLike: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
+
+      const { id } = req.params;
+
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Meme-ID.",
+        });
       }
 
-      console.error("Fehler beim Liken des Memes:", error);
-
-      return res.status(500).json({
-        error: "Like konnte nicht gespeichert werden.",
-      });
-    }
-  };
-
-  const removeLike: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    const { id } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Meme-ID.",
-      });
-    }
-
-    try {
-      const response = await service.removeLike(id, userId);
+      const response = await service.removeLike(id, clerkUserId);
       return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+    },
+    "Like konnte nicht entfernt werden.",
+    "Fehler beim Entfernen des Likes:",
+  );
+
+  const createMeme: ApiHandler = handleRequest(
+    async (req, res) => {
+      const result = createMemeSchema.pick({ title: true }).safeParse(req.body);
+
+      if (!result.success) {
+        return res.status(400).json({
+          error: "Bitte einen Titel mit 1 bis 100 Zeichen angeben.",
+        });
       }
 
-      console.error("Fehler beim Entfernen des Likes:", error);
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Bitte ein Bild auswählen.",
+        });
+      }
 
-      return res.status(500).json({
-        error: "Like konnte nicht entfernt werden.",
-      });
-    }
-  };
+      if (!(await isPng(req.file.buffer))) {
+        return res.status(400).json({
+          error: "Die Datei wurde nicht als PNG erkannt.",
+        });
+      }
 
-  const createMeme: ApiHandler = async (req, res) => {
-    const result = createMemeSchema.pick({ title: true }).safeParse(req.body);
+      const clerkUserId = res.locals.clerkUserId;
 
-    if (!result.success) {
-      return res.status(400).json({
-        error: "Bitte einen Titel mit 1 bis 100 Zeichen angeben.",
-      });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({
-        error: "Bitte ein Bild auswählen.",
-      });
-    }
-
-    if (!(await isPng(req.file.buffer))) {
-      return res.status(400).json({
-        error: "Die Datei wurde nicht als PNG erkannt.",
-      });
-    }
-
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    try {
-      const response = await service.createMeme(userId, result.data.title, req.file.buffer);
+      const response = await service.createMeme(clerkUserId, result.data.title, req.file.buffer);
       return res.status(201).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
-      }
-
-      console.error("Fehler beim Erstellen des Memes:", error);
-
-      return res.status(500).json({
-        error: "Meme konnte nicht gespeichert werden.",
-      });
-    }
-  };
+    },
+    "Meme konnte nicht gespeichert werden.",
+    "Fehler beim Erstellen des Memes:",
+  );
 
   return { listMemes, getMeme, updateMeme, deleteMeme, addLike, removeLike, createMeme };
 }

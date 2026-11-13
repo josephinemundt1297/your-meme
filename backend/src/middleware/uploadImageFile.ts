@@ -15,7 +15,7 @@ export const uploadImageFile: ApiHandler = (req, res, next) => {
 
     if (error) {
       return res.status(400).json({
-        error: "Bitte genau ein JPNG-Bild im Feld image senden.",
+        error: "Bitte genau ein PNG-Bild im Feld image senden.",
       });
     }
 

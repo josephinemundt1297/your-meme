@@ -1,6 +1,25 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-## Aktuelle Priorisierung vom 13.11.2026
+## Aktueller Nachtrag vom 13.11.2026 – Backend-Bereinigung und Begrenzung
+
+Part 1 wurde vor Umsetzung vorgeschlagen und von Josephine ausdrücklich freigegeben. Part 2 war für Backend-Punkte freigegeben. Ausschließlich auf Branch Backend gearbeitet; keine Frontend-Dateien, Migrationen oder Abhängigkeiten geändert. Kein Commit, Push oder Merge ausgeführt.
+
+Umgesetzt:
+
+- Gemeinsame requireAuth-Middleware für alle geschützten Routen; verifizierte Clerk-ID aus res.locals. Besitzer-/ADMIN-Prüfungen bleiben in Services und wurden nicht erweitert.
+- Gemeinsamer handleRequest-Wrapper statt wiederholter try/catch-Blöcke in Fachcontrollern; bisherige öffentliche Fehlertexte und Statuscodes bleiben erhalten. Health behält seine besondere 503-Antwort.
+- Ausführbaren Validator-Beispielcode entfernt, JPNG zu PNG korrigiert und betroffene Controller übersichtlich formatiert.
+- likedByMe auch in Meme-POST/PATCH und Ordner-Memes ergänzt. Persönliche Likes für eine Liste werden gemeinsam geladen, nicht einzeln pro Meme. Eine fremde Ordneranfrage wird vor der Like-Abfrage abgewiesen.
+- GET /api/memes mit validiertem page/limit, Standard 1/50, maximal page 10000 und limit 100. Array-Antwort bleibt bestehen; Folgeseite über X-Has-More. Nur page und limit als Query-Felder erlaubt. Sortierung createdAt/id absteigend. Kommentar-/Ordnerlisten nicht paginiert; Frontend zeigt weiterhin die erste Seite und benötigt Navigation.
+- Prozesslokale IP-Begrenzung: 300 API-/60 Schreib-/10 Upload-Anfragen pro 60 Sekunden, OPTIONS ausgenommen. Vor JSON-Parser und Clerk; 429 mit Retry-After. Maximal 10000 IP-Einträge je Limiter, bei voller Tabelle für neue Clients 503. Neustart setzt Zähler zurück; mehrere Prozesse teilen keine Limits. Keine zusätzliche Bibliothek oder Infrastruktur.
+- API-Plan und Backend-Unterlagen berichtigt: Übersicht und Detail im Frontend senden inzwischen Token, berücksichtigen Kontowechsel und übernehmen den Autor. Dies wurde im vorhandenen Code gelesen, nicht als neue Frontend-Arbeit umgesetzt.
+
+Abgrenzung Part 2: Object-URL-Freigabe, Laufzeitprüfung empfangener API-Antworten im Frontend, Dokumentensprache und Farbkontrast bleiben Frontend-Aufgaben. Backend-DTOs und Zod-Eingabeprüfung ersetzen diese Client-Prüfung nicht. Keine Barrierefreiheits-Abnahme behauptet.
+
+Prüfung: Backend-Typprüfung und Build erfolgreich; 72 HTTP-/Middleware-Tests bestanden. Darin enthalten: bisherige Rechteprüfungen, persönliche Likes in Schreib-/Ordnerantworten, begrenzte DB-Abfragen, ungültige Query-Werte, Seitenende, Rate-Limits in der tatsächlichen App, Ablauf/Retry-After, Speichergrenze und kein Umgehen durch beliebige Forwarded-Header bei der aktuellen Express-Konfiguration. Externe Dienste sind dabei simuliert. Die neuen Funktionstests ersetzen keine authentifizierte Browser-/Clerk-/Cloudinary-Abnahme. Kontolöschung und dienstübergreifende Wiederholungslogik bleiben offen. Zusätzlicher echter Starttest nach der Bereinigung: Health 200, DB-Health 200/connected, Meme-Liste 200 mit 32 Memes und CORS für localhost:5173. Ausschließlich Leseabfragen; separaten Testserver anschließend beendet.
+
+
+## Vorherige Priorisierung vom 13.11.2026
 
 Erneuter lokaler Codeabgleich auf Branch `Backend`, Ausgangscommit `7e32961`; Arbeitsverzeichnis vor dieser Dokumentationspflege sauber. Die Backend-Aufteilung ist im vorliegenden Commit enthalten. Kein Remote-Abgleich und keine neue Funktionsabnahme in diesem Dokumentationsauftrag.
 

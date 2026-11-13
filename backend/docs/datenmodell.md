@@ -182,7 +182,7 @@ Meme-Bildlöschung ist implementiert: erst Cloudinary, dann PostgreSQL. Ein sepa
 ## Nächste Schritte
 
 1. Angemeldete Schreibaktionen nach der Backend-Aufteilung mit separaten Testinhalten erneut prüfen; vollständige Zwei-Konten- und befüllte Kaskadentests gesondert abnehmen. Vorhandene Ordner- und ADMIN-Funktionen nicht erneut implementieren.
-2. Frontend-Ordneroberfläche anbinden. Öffentliche Meme-Liste/-Detail liefern likedByMe; Ordner-Memes noch nicht. Bestehende Relation speichert nur Zuordnungen, keine Bildkopien.
+2. Frontend-Ordneroberfläche anbinden. Alle Meme-Antworten einschließlich Ordner-Memes liefern likedByMe bezogen auf den angemeldeten Nutzer. Bestehende Relation speichert nur Zuordnungen, keine Bildkopien.
 3. Als nächste Backend-Pflichtfunktion den konkreten Kontolöschvertrag und den wiederholbaren Ablauf zur Freigabe vorlegen. ADMIN-Löschrechte bestehen bereits; öffentliche Rollenvergabe ist nicht vorgesehen.
 4. Kontolöschung über PostgreSQL, Clerk und Cloudinary einschließlich wiederholbarer Bereinigung umsetzen; befüllte Kaskaden und Teilausfälle testen.
 5. Bildaustausch und altText bleiben gesondert abzustimmende Erweiterungen; Kategorien sind aus dem Pflichtumfang ausgeschlossen.

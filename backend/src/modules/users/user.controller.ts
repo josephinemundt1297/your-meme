@@ -1,49 +1,28 @@
-import type { ApiHandler, ReadUserId } from "../../types/dependencies.js";
-import { HttpError } from "../../utils/HttpError.js";
+import type { ApiHandler } from "../../types/dependencies.js";
+import { handleRequest } from "../../middleware/handleRequest.js";
 import type { createUserService } from "./user.service.js";
 
 export function createUserController(
   service: ReturnType<typeof createUserService>,
-  readUserId: ReadUserId,
 ) {
-  const getCurrentUser: ApiHandler = (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
+  const getCurrentUser: ApiHandler = (_req, res) => {
+    const clerkUserId = res.locals.clerkUserId;
 
     return res.json({
-      clerkId: userId,
+      clerkId: clerkUserId,
     });
   };
 
-  const syncCurrentUser: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
+  const syncCurrentUser: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    try {
-      const response = await service.syncCurrentUser(userId);
+      const response = await service.syncCurrentUser(clerkUserId);
       return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
-      }
-
-      console.error("Fehler beim Abgleichen des Nutzerprofils:", error);
-
-      return res.status(500).json({
-        error: "Nutzerprofil konnte nicht abgeglichen werden.",
-      });
-    }
-  };
+    },
+    "Nutzerprofil konnte nicht abgeglichen werden.",
+    "Fehler beim Abgleichen des Nutzerprofils:",
+  );
 
   return { getCurrentUser, syncCurrentUser };
 }

@@ -110,7 +110,7 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 - Vollständige Kontolöschung einschließlich Bestätigung, Schutz vor parallelen Änderungen und wiederholbarer Bereinigung.
 - Reale angemeldete Schreibaktionen nach der Backend-Aufteilung erneut abnehmen; vollständige Zwei-Konten- und Kaskadentests bleiben gesonderte Abnahmen.
-- Pagination und Missbrauchsbegrenzung. Frontend-Anbindung des persönlichen Like-Status in Übersicht und Detail getrennt prüfen.
+- Meme-Pagination und lokale Anfragebegrenzung sind vorhanden; Frontend-Seitennavigation, Limits unter realen Einsatzbedingungen und vollständige Integration bleiben zu prüfen. Persönlicher Like-Status wird inzwischen in Übersicht und Detail mit Token geladen.
 - Dauerhafte Behandlung von Cloudinary-/Datenbank-Teilausfällen.
 - Ob beim Bearbeiten eines Memes neben dem Titel auch das Bild ersetzt werden kann.
 - Upload wartet bereits auf Sync; weitere Erstlogin-/Fehlerfälle der Kommentar-/Like-Aktionen und des Layout-Sync prüfen.
@@ -121,10 +121,10 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 ## Nächster Arbeitsschritt
 
-1. Kurze angemeldete Abnahme nach der Aufteilung: mit einem separaten eigenen Test-Meme Upload, Titeländerung, Like/Unlike, Kommentarverwaltung und einen Testordner prüfen. Nur eigens angelegte Testinhalte löschen. Die 59 automatisierten Tests simulieren externe Dienste; die bisherige reale Nachprüfung war lesend.
+1. Kurze angemeldete Abnahme nach der Aufteilung: mit einem separaten eigenen Test-Meme Upload, Titeländerung, Like/Unlike, Kommentarverwaltung und einen Testordner prüfen. Nur eigens angelegte Testinhalte löschen. Die 72 automatisierten Tests simulieren externe Dienste; die bisherige reale Nachprüfung war lesend.
 2. **Höchste fachliche Priorität: vollständige Kontolöschung.** Zuerst Vertrag, Bestätigung, betroffene Daten und Verhalten bei Teilausfällen festlegen und Josephine vorlegen. Die konkrete Route, neue Persistenz und Umsetzung sind damit noch nicht freigegeben.
 3. Nach Freigabe im Nutzer-Modul umsetzen: Identität und Bestätigung im Controller, Löschablauf im Service, bestehende Dienstanbindungen verwenden. Externe Löschungen lassen sich durch eine PostgreSQL-Transaktion nicht zurückrollen. Fehlgeschlagene Schritte müssen nachvollziehbar wiederholbar bleiben; keine vollständige Löschung melden, solange Teile fehlen.
 4. Mit Testdoubles Erfolgs-, Rechte-, Bestätigungs-, Ausfall- und Wiederholungsfälle prüfen; anschließend ausschließlich mit einem entbehrlichen Testkonto real abnehmen. Gemeinsame Cloudinary-Fixtures nicht für Löschtests verwenden.
-5. Danach verbleibende Absicherung, Pagination und vollständige Integration abarbeiten. Frontend-Aufgaben richten sich nach dem tatsächlich vorhandenen Stand; keine bereits erledigten Funktionen erneut bauen.
+5. Danach verbleibende Absicherung und vollständige Integration abarbeiten. Die Backend-Meme-Pagination ist vorhanden; die Frontend-Navigation dafür fehlt noch. Frontend-Aufgaben richten sich nach dem tatsächlich vorhandenen Stand; keine bereits erledigten Funktionen erneut bauen.
 
 [Projektstand](docs/projektstand.md) dokumentiert Belege und Grenzen. Kategorien/Suche/Editor bleiben außerhalb des Pflichtumfangs.
