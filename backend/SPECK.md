@@ -65,7 +65,7 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 - Schnittstellen vor der Umsetzung mit dem Frontend abstimmen.
 - Bereits geplante Meme-Endpunkte stehen in [docs/api-plan.md](docs/api-plan.md).
-- Kommentar-, Like- und Ordner-Grundendpunkte sind implementiert; Ordner-Umbenennen/-Löschen, Moderation und Kontolöschung fehlen noch.
+- Meme-, Kommentar-, Like- und Ordner-Endpunkte einschließlich Umbenennen/Löschen sind implementiert. ADMIN kann fremde Memes/Kommentare löschen. Vollständige Kontolöschung fehlt noch.
 - Aussagekräftige HTTP-Methoden und Statuscodes sowie konsistente JSON-Antworten verwenden.
 - Meme-Listen seitenweise ausliefern und die angeforderte Seitengröße begrenzen.
 - Anfrage- und Antwortformate einschließlich Fehlerfällen vor der Frontend-Anbindung dokumentieren.
@@ -108,8 +108,9 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 ## Noch offen
 
-- Frontend-Anbindung des vorhandenen persönlichen Like-Status beim Laden; Pagination und Missbrauchsbegrenzung.
-- Ordner umbenennen/löschen und Rechte mit zwei Nutzern testen; Administrator-Moderation und vollständige Kontolöschung.
+- Vollständige Kontolöschung einschließlich Bestätigung, Schutz vor parallelen Änderungen und wiederholbarer Bereinigung.
+- Reale angemeldete Schreibaktionen nach der Backend-Aufteilung erneut abnehmen; vollständige Zwei-Konten- und Kaskadentests bleiben gesonderte Abnahmen.
+- Pagination und Missbrauchsbegrenzung. Frontend-Anbindung des persönlichen Like-Status in Übersicht und Detail getrennt prüfen.
 - Dauerhafte Behandlung von Cloudinary-/Datenbank-Teilausfällen.
 - Ob beim Bearbeiten eines Memes neben dem Titel auch das Bild ersetzt werden kann.
 - Upload wartet bereits auf Sync; weitere Erstlogin-/Fehlerfälle der Kommentar-/Like-Aktionen und des Layout-Sync prüfen.
@@ -120,8 +121,10 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 ## Nächster Arbeitsschritt
 
-- Ordner umbenennen/löschen und private Zugriffe mit zwei Konten testen.
-- Frontend parallel: Bearer-Token bei Meme-GET und Neuladen bei Kontowechsel, Autor übernehmen; bestehende Kommentar-/Like-Aktionen gemeinsam browserseitig prüfen.
-- Danach eigene Meme-/Kommentarverwaltung und Ordneroberfläche anbinden; Admin-Moderation und Kontolöschung umsetzen.
-- Teilausfälle, befüllte Löschkaskaden und Grenzfälle prüfen; Anwendung und Unterlagen gemeinsam abnehmen.
-- [Projektstand](docs/projektstand.md) dokumentiert Belege und Grenzen. Kategorien/Suche/Editor bleiben außerhalb des Pflichtumfangs.
+1. Kurze angemeldete Abnahme nach der Aufteilung: mit einem separaten eigenen Test-Meme Upload, Titeländerung, Like/Unlike, Kommentarverwaltung und einen Testordner prüfen. Nur eigens angelegte Testinhalte löschen. Die 59 automatisierten Tests simulieren externe Dienste; die bisherige reale Nachprüfung war lesend.
+2. **Höchste fachliche Priorität: vollständige Kontolöschung.** Zuerst Vertrag, Bestätigung, betroffene Daten und Verhalten bei Teilausfällen festlegen und Josephine vorlegen. Die konkrete Route, neue Persistenz und Umsetzung sind damit noch nicht freigegeben.
+3. Nach Freigabe im Nutzer-Modul umsetzen: Identität und Bestätigung im Controller, Löschablauf im Service, bestehende Dienstanbindungen verwenden. Externe Löschungen lassen sich durch eine PostgreSQL-Transaktion nicht zurückrollen. Fehlgeschlagene Schritte müssen nachvollziehbar wiederholbar bleiben; keine vollständige Löschung melden, solange Teile fehlen.
+4. Mit Testdoubles Erfolgs-, Rechte-, Bestätigungs-, Ausfall- und Wiederholungsfälle prüfen; anschließend ausschließlich mit einem entbehrlichen Testkonto real abnehmen. Gemeinsame Cloudinary-Fixtures nicht für Löschtests verwenden.
+5. Danach verbleibende Absicherung, Pagination und vollständige Integration abarbeiten. Frontend-Aufgaben richten sich nach dem tatsächlich vorhandenen Stand; keine bereits erledigten Funktionen erneut bauen.
+
+[Projektstand](docs/projektstand.md) dokumentiert Belege und Grenzen. Kategorien/Suche/Editor bleiben außerhalb des Pflichtumfangs.

@@ -153,6 +153,10 @@ Die Zuständigkeiten und ein Beispielablauf stehen in [Backend-Architektur](docs
 
 Vor Upload, Kommentar-Erstellung und Likes muss das lokale Profil über `/api/me/sync` vorhanden sein, sonst 409. Profil-ID aus der Sync-Antwort ist eine lokale UUID; Clerk-ID ist ein anderer Wert. Vollständige Anfrage-/Antwortformate und Statuscodes: [API-Vertrag](docs/api-plan.md).
 
+## Nächste Priorität
+
+Nach einer kurzen angemeldeten Schreibprüfung der aufgeteilten API folgt als größte fehlende Pflichtfunktion die vollständige Kontolöschung. Zuerst werden Bestätigung, Datenumfang und der wiederholbare Ablauf über PostgreSQL, Cloudinary und Clerk vorgeschlagen. Die konkrete Implementierung und neue Persistenz sind noch nicht freigegeben. Bereits vorhandene Ordner- und ADMIN-Funktionen werden nicht erneut gebaut. [Reihenfolge und Prüfgrenzen](docs/projektstand.md).
+
 ## Offene Arbeiten und bekannte Grenzen
 
 - Vollständige Kontolöschung über DB, Clerk und Cloudinary fehlt. ADMIN darf fremde Memes/Kommentare löschen, aber weder fremde Inhalte bearbeiten noch fremde private Ordner verwalten.

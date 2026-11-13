@@ -1,12 +1,18 @@
 # Your Meme – API: Implementierung und Planung
 
-## Ergänzung vom 13.11.2026: Administrator-Löschung
+## Aktueller Abgleich vom 13.11.2026
+
+Mit den Routern und Controllern unter `src/modules/` abgeglichen: 22 Methoden-/Pfad-Kombinationen. Aufteilung und letzte Testnachweise: [Architektur](architektur.md), [Projektstand](projektstand.md). Die 59 HTTP-Tests verwenden simulierte externe Dienste; die früheren 21 Moderationstests sind darin enthalten. Eine neue Live-Abnahme angemeldeter Schreibaktionen ist noch offen.
+
+Vollständige Kontolöschung ist die nächste große offene Pflichtfunktion. Eine konkrete Route und ihr Fehler-/Wiederholungsvertrag werden vor Umsetzung vorgeschlagen; es gibt aktuell keinen implementierten Kontolösch-Endpunkt. Die folgende Übersicht beschreibt bestehende Endpunkte.
+
+## Administrator-Löschung
 
 DELETE /api/memes/:id und DELETE /api/comments/:id erlauben jetzt den jeweiligen Besitzer **oder ADMIN**. Die Administratorrolle stammt ausschließlich aus PostgreSQL, gesucht über die verifizierte Clerk-ID. Ein fehlendes lokales Profil gewährt keine Adminrechte. Ohne Anmeldung weiterhin 401, normaler fremder Benutzer 403, fehlender Inhalt 404; Erfolg 204 ohne Body. Die vorhandene Cloudinary-/DB-Löschreihenfolge und ihre Teilausfallgrenzen bleiben bestehen.
 
-PATCH auf fremde Memes/Kommentare bleibt auch für ADMIN verboten. Keine Administratorausnahme für private Ordner. Kein Rollenvergabe-Endpunkt; bestehende Konten wurden nicht hochgestuft. 21 isolierte Handler-Tests, Typprüfung und Build erfolgreich; Live-Integration mit echtem Administratorkonto noch offen. Diese Ergänzung ersetzt die unten auf den 12.11. bezogenen Aussagen zur fehlenden Administrator-Ausnahme; übrige Verträge bleiben unverändert.
+PATCH auf fremde Memes/Kommentare bleibt auch für ADMIN verboten. Keine Administratorausnahme für private Ordner. Kein öffentlicher Rollenvergabe-Endpunkt. Die ADMIN-Ausnahme ist in den HTTP-Regressionstests enthalten; diese simulieren Rollen und Dienstanbindungen. Fremde Inhalte bearbeiten und fremde private Ordner verwalten bleibt verboten.
 
-Stand: 12.11.2026, einschließlich persönlichem Like-Status, Fehlerbehandlung und Ordner-Grundfunktionen; mit `src/server.ts` abgeglichen.
+Stand: 13.11.2026, einschließlich persönlichem Like-Status, Fehlerbehandlung, vollständiger Ordner-Endpunkte und ADMIN-Löschrechten; anhand der modularen Implementierung abgeglichen.
 
 Basis: `http://localhost:3000`. CORS: `http://localhost:5173`. Geschützte Anfragen: `Authorization: Bearer <SESSION_TOKEN>`. Kein Clerk Secret Key als Nutzer-Token. Browser-Anmeldung wird nicht automatisch an Postman übertragen.
 
@@ -32,6 +38,8 @@ Basis: `http://localhost:3000`. CORS: `http://localhost:5173`. Geschützte Anfra
 | POST /api/folders | Angemeldet + lokales Profil | JSON name; 201 Ordner; 400/401/409/500 |
 | GET /api/folders | Angemeldet + lokales Profil | 200 nur eigene Ordner; 401/409/500 |
 | GET /api/folders/:id | Nur Besitzer | 200 Ordner samt memes; 400/401/403/404/500 |
+| PATCH /api/folders/:id | Nur Besitzer | JSON name, getrimmt 1–100 Zeichen; 200 Ordner; 400/401/403/404/500 |
+| DELETE /api/folders/:id | Nur Besitzer | Ohne Body; 204 leer; 400/401/403/404/500; ursprüngliche Memes bleiben erhalten |
 | POST /api/folders/:id/memes | Nur Besitzer | JSON memeId; 200 saved true, auch bei bestehender Zuordnung; 400/401/403/404/500 |
 | DELETE /api/folders/:id/memes/:memeId | Nur Besitzer | Ohne Body; 200 saved false, auch wenn Zuordnung bereits fehlt; 400/401/403/404/500 |
 
@@ -102,7 +110,7 @@ DELETE /api/memes/:id: Besitzerprüfung, anschließend Cloudinary `destroy` mit 
 
 ## Kommentare
 
-POST und PATCH erwarten JSON `{ "content": "Mein Kommentar" }`. Getrimmt 1–1000 Zeichen. POST verknüpft Meme und lokalen angemeldeten Benutzer. PATCH/DELETE prüfen den Verfasser anhand der verifizierten Clerk-ID; fremde Kommentare 403. Erfolgreiches DELETE: 204. Anschließendes erneutes DELETE: 404. Administrator-Ausnahme noch nicht implementiert.
+POST und PATCH erwarten JSON `{ "content": "Mein Kommentar" }`. Getrimmt 1–1000 Zeichen. POST verknüpft Meme und lokalen angemeldeten Benutzer. PATCH/DELETE prüfen den Verfasser anhand der verifizierten Clerk-ID; fremde Kommentare 403. Erfolgreiches DELETE: 204. Anschließendes erneutes DELETE: 404. Bei DELETE darf zusätzlich ADMIN löschen; PATCH bleibt dem Verfasser vorbehalten.
 
 ## Likes
 
@@ -116,7 +124,7 @@ POST und DELETE /api/memes/:id/like brauchen keinen Body. POST verwendet `create
 }
 ```
 
-Nach DELETE ist `liked` false; `likeCount` enthält weiterhin Likes anderer Nutzer. Mutation und anschließende Zählung sind getrennte DB-Abfragen. GET-Liste/-Detail liefern inzwischen likedByMe anhand des erkannten Benutzers. Frontend-GETs senden aktuell noch keinen Bearer-Token und laden bei Anmeldewechsel nicht neu; diese Anbindung fehlt. Das Frontend darf einen bereits gespeicherten Zähler nicht zusätzlich lokal erhöhen.
+Nach DELETE ist `liked` false; `likeCount` enthält weiterhin Likes anderer Nutzer. Mutation und anschließende Zählung sind getrennte DB-Abfragen. GET-Liste/-Detail liefern inzwischen likedByMe anhand des erkannten Benutzers. Der Client muss bei angemeldeten GETs einen Bearer-Token senden und bei Anmeldewechsel neu laden. Im geprüften Frontend-Code berücksichtigt die Übersicht bereits Token und Anmeldezustand; die Detailabfrage ruft `fetchMemeById(memeId, controller.signal)` ohne Token auf und ihr Effekt hängt nur von `memeId` ab. Die Detailanbindung ist daher noch zu vervollständigen. Das Frontend darf einen bereits gespeicherten Zähler nicht zusätzlich lokal erhöhen.
 
 ## Persönliche Ordner
 
@@ -124,18 +132,20 @@ Alle Ordner-Endpunkte erfordern Anmeldung. Lokale Nutzer-ID und Besitzer werden 
 
 - POST /api/folders erwartet `{ "name": "Meine Lieblingsmemes" }`, Name getrimmt 1–100 Zeichen. 201 mit id/name/createdAt. Gleichnamige Ordner sind derzeit zulässig.
 - GET /api/folders liefert ein Array eigener Ordner (neueste zuerst), jeweils id/name/createdAt; ohne eigene Ordner `[]`.
+- PATCH /api/folders/:id erwartet JSON name, getrimmt 1–100 Zeichen. Nur Besitzer; 200 mit id/name/createdAt.
+- DELETE /api/folders/:id benötigt keinen Body. Nur Besitzer; 204 ohne Antwortinhalt. Zuordnungen werden per DB-Kaskade entfernt; ursprüngliche Memes und Bilder bleiben bestehen.
 - GET /api/folders/:id prüft Besitzer und liefert id/name/createdAt sowie `memes`, ein Array formatierter Meme-Objekte. Leer: `memes: []`. Diese eingebetteten Memes haben derzeit kein likedByMe.
 - POST /api/folders/:id/memes erwartet `{ "memeId": "11111111-1111-4111-8111-111111111111" }`. Schema prüft UUID mit Zod; Ordner und Meme müssen existieren. Erfolg 200 mit `{ "folderId": "...", "memeId": "...", "saved": true }`. Wiederholung erzeugt dank zusammengesetztem Schlüssel und skipDuplicates keinen weiteren Eintrag.
 - DELETE /api/folders/:id/memes/:memeId braucht keinen Body. Entfernt nur die passende Zuordnung, nicht das Meme oder Cloudinary-Bild. Erfolg 200 mit folderId/memeId/saved false; bei bereits fehlender Zuordnung ebenfalls 200. Ein separates Meme-Existenzprüfen findet hier nicht statt.
 
 Fehler: ohne Anmeldung 401; bei Anlage/Liste fehlendes lokales Profil 409; ungültige Eingaben 400; Ordner fehlt 404; fremder Ordner 403; bei Hinzufügen fehlendes Meme 404. Gleichzeitige Löschungen zwischen Lesen und Schreiben können derzeit generische 500 auslösen.
 
-Ordner umbenennen (PATCH) und ganzen Ordner löschen (DELETE /api/folders/:id) sind **noch nicht implementiert**. Ein HTTP-GET auf einen ausschließlich für POST/DELETE vorgesehenen Pfad liefert Route nicht gefunden; URL allein bestimmt nicht die Methode.
+Ordner umbenennen (PATCH /api/folders/:id) und ganzen Ordner löschen (DELETE /api/folders/:id) sind implementiert. Auch ADMIN erhält keinen Zugriff auf fremde private Ordner. Ein HTTP-GET auf einen ausschließlich für POST/DELETE vorgesehenen Pfad liefert Route nicht gefunden; URL allein bestimmt nicht die Methode.
 
 ## Fehlerformat und verbleibender Umfang
 
 Anwendungsfehler sind `{ "error": "Meldung" }`. Zentraler Handler nach Routen und 404 behandelt kaputtes JSON mit 400, zu große JSON-Bodies mit 413 und sonstige unbehandelte Fehler mit generischem 500. Parserfälle live als JSON ohne interne Details geprüft. Bereits begonnene Antworten werden über next(error) weitergereicht. Nicht alle denkbaren Clerk-/Middlewarefälle wurden einzeln geprüft; erwartete 4xx außerhalb der ausdrücklich behandelten Fälle können derzeit in 500 münden. Vorhandene fachliche Route-Fehler bleiben bestehen.
 
-Moderations- und Kontolösch-Endpunkte fehlen; Pagination und Rate-Limits ebenfalls. `page=1&limit=20` bleibt Planungsbeispiel. Zwei-Konten-Ordner-/Kommentarrechte, befüllte Kaskaden und externe Teilausfälle abschließend testen. Detail-Links benötigen keinen eigenen Teilen-Endpunkt. Kategorien, Suche und Editor sind kein Pflichtumfang; altText/Bildaustausch separat abstimmen.
+ADMIN-Löschrechte sind in den bestehenden Meme-/Kommentar-DELETE-Routen enthalten. Kontolöschung, Pagination und Rate-Limits fehlen noch. `page=1&limit=20` bleibt Planungsbeispiel. Zwei-Konten-Ordner-/Kommentarrechte, befüllte Kaskaden und externe Teilausfälle abschließend testen. Detail-Links benötigen keinen eigenen Teilen-Endpunkt. Kategorien, Suche und Editor sind kein Pflichtumfang; altText/Bildaustausch separat abstimmen.
 
 [Prüfbelege und Restplan](projektstand.md) · [Backend starten](../README.md)
