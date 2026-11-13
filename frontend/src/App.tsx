@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Show, SignIn, SignUp, UserButton, useAuth } from '@clerk/react'
+import { Show, SignIn, SignUp, UserButton, useAuth, useUser } from '@clerk/react'
 import type { Meme, MemeComment } from './types/meme'
 import { MemeState } from './components/ui/MemeState'
 import { createMemeComment, createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, setMemeLike, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
@@ -13,12 +13,13 @@ type MemeListProps = {
 type MemeCardProps = {
   meme: Meme
   onToggleLike: (memeId: string, liked: boolean) => void
+  isUpdating: boolean
 }
 
-function MemeCard({ meme, onToggleLike }: MemeCardProps) {
+function MemeCard({ meme, onToggleLike, isUpdating }: MemeCardProps) {
   return <article className="meme-card">
     <Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} loading="lazy" decoding="async" width="600" height="400" /> : <span aria-hidden="true">{meme.emoji}</span>}</div></Link>
-    <div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${meme.likedByMe ? ' liked' : ''}`} type="button" aria-pressed={meme.likedByMe} onClick={() => onToggleLike(meme.id, !meme.likedByMe)}><span aria-hidden="true">{meme.likedByMe ? '♥' : '♡'}</span>{meme.likeCount} Likes</button></div>
+    <div className="meme-card-content"><span className="category">{meme.category}</span><h3>{meme.title}</h3><button className={`like-button${meme.likedByMe ? ' liked' : ''}`} type="button" aria-pressed={meme.likedByMe} disabled={isUpdating} onClick={() => onToggleLike(meme.id, !meme.likedByMe)}><span aria-hidden="true">{meme.likedByMe ? '♥' : '♡'}</span>{meme.likeCount} Likes</button></div>
   </article>
 }
 
@@ -62,18 +63,44 @@ export function MemeList({ top = false }: MemeListProps) {
   const [memes, setMemes] = useState<Meme[] | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [likeError, setLikeError] = useState('')
-  const { getToken, isSignedIn } = useAuth()
-  const loadMemeList = () => { setLoadError(false); setMemes(null); void fetchMemes().then(setMemes).catch(() => setLoadError(true)) }
+  const [updatingLikeId, setUpdatingLikeId] = useState('')
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const { user } = useUser()
+  const loadMemeList = () => {
+    setLoadError(false)
+    setMemes(null)
+    void getToken()
+      .then((token) => fetchMemes(token ?? undefined))
+      .then(setMemes)
+      .catch(() => setLoadError(true))
+  }
   useEffect(() => {
+    if (!isLoaded) return
+
     let active = true
-    void fetchMemes().then((data) => { if (active) setMemes(data) }).catch(() => { if (active) setLoadError(true) })
-    return () => { active = false }
-  }, [])
+    const controller = new AbortController()
+    void getToken()
+      .then((token) => {
+        if (active) {
+          setLoadError(false)
+          setLikeError('')
+          setMemes(null)
+        }
+        return fetchMemes(token ?? undefined, controller.signal)
+      })
+      .then((data) => { if (active) setMemes(data) })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        if (active) setLoadError(true)
+      })
+    return () => { active = false; controller.abort() }
+  }, [getToken, isLoaded, isSignedIn, user?.id])
   const handleToggleLike = async (memeId: string, liked: boolean) => {
     if (!isSignedIn) {
       setLikeError('Bitte melde dich an, um Memes zu liken.')
       return
     }
+    setUpdatingLikeId(memeId)
     try {
       const token = await getToken()
       if (!token) throw new Error('Bitte melde dich an, um Memes zu liken.')
@@ -82,13 +109,15 @@ export function MemeList({ top = false }: MemeListProps) {
       setLikeError('')
     } catch (error: unknown) {
       setLikeError(error instanceof Error ? error.message : 'Der Like konnte nicht gespeichert werden.')
+    } finally {
+      setUpdatingLikeId('')
     }
   }
   const visibleMemes = memes ? [...memes].sort((a, b) => top ? b.likeCount - a.likeCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase())) : []
   return <>
     <section className="hero-section"><p className="eyebrow">Deine tägliche Meme-Auszeit</p><h1>{top ? 'Die meist gelikten Memes' : 'Finde dein nächstes Lieblingsmeme'}</h1><p className="intro">Entdecke lustige Memes und teile sie mit der Community.</p><label className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><span className="sr-only">Memes durchsuchen</span><input type="search" placeholder="Memes durchsuchen ..." value={search} onChange={(event) => setSearch(event.target.value)} /></label></section>
     <section className="meme-section" aria-labelledby="meme-heading"><div className="section-heading"><div><p className="eyebrow">{top ? 'Community-Favoriten' : 'Für dich ausgewählt'}</p><h2 id="meme-heading">{top ? 'Meist geliked' : 'Neue Memes'}</h2></div><span className="meme-count">{visibleMemes.length} Memes</span></div>
-      {likeError && <p className="like-error" role="alert">{likeError}</p>}{loadError ? <MemeState type="error" onRetry={loadMemeList} /> : !memes ? <MemeState type="loading" /> : visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme) => <MemeCard key={meme.id} meme={meme} onToggleLike={handleToggleLike} />)}</div> : <MemeState type="empty" />}
+      {likeError && <p className="like-error" role="alert">{likeError}</p>}{loadError ? <MemeState type="error" onRetry={loadMemeList} /> : !memes ? <MemeState type="loading" /> : visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme) => <MemeCard key={meme.id} meme={meme} onToggleLike={handleToggleLike} isUpdating={updatingLikeId === meme.id} />)}</div> : <MemeState type="empty" />}
     </section>
   </>
 }
@@ -143,7 +172,8 @@ export function UploadPage() {
 }
 export function MemeDetailPage() {
   const { memeId } = useParams({ from: '/memes/$memeId' })
-  const { getToken, isSignedIn } = useAuth()
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const { user } = useUser()
   const [detailState, setDetailState] = useState<{ id: string; status: 'loading' | 'loaded' | 'not-found' | 'error'; meme?: Meme }>({ id: '', status: 'loading' })
   const [commentState, setCommentState] = useState<{ id: string; status: 'loading' | 'loaded' | 'error'; comments?: MemeComment[] }>({ id: '', status: 'loading' })
   const [commentText, setCommentText] = useState('')
@@ -154,9 +184,16 @@ export function MemeDetailPage() {
   const [isUpdatingLike, setIsUpdatingLike] = useState(false)
 
   useEffect(() => {
+    if (!isLoaded) return
+
     const controller = new AbortController()
 
-    void fetchMemeById(memeId, controller.signal)
+    void getToken()
+      .then((token) => {
+        setDetailState({ id: memeId, status: 'loading' })
+        setDetailLike({ id: '', liked: false, likeCount: 0 })
+        return fetchMemeById(memeId, token ?? undefined, controller.signal)
+      })
       .then((data) => {
         setDetailState(data ? { id: memeId, status: 'loaded', meme: data } : { id: memeId, status: 'not-found' })
       })
@@ -166,7 +203,7 @@ export function MemeDetailPage() {
       })
 
     return () => controller.abort()
-  }, [memeId])
+  }, [getToken, isLoaded, isSignedIn, memeId, user?.id])
 
   useEffect(() => {
     const controller = new AbortController()
