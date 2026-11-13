@@ -1,6 +1,7 @@
 import type { AppDependencies } from "../../types/dependencies.js";
 import { HttpError } from "../../utils/HttpError.js";
 import { memeSelect } from "../../lib/memeSelect.js";
+import { getLikedMemeIds } from "../../lib/getLikedMemeIds.js";
 import { formatMeme } from "../../utils/formatMeme.js";
 
 export function createFolderService(dependencies: Pick<AppDependencies, "database">) {
@@ -89,11 +90,19 @@ export function createFolderService(dependencies: Pick<AppDependencies, "databas
       throw new HttpError(403, "Du darfst nur eigene Ordner ansehen.");
     }
 
+    const likedMemeIds = await getLikedMemeIds(
+      prisma,
+      folder.folderMemes.map((entry) => entry.meme.id),
+      clerkUserId,
+    );
+
     return {
       id: folder.id,
       name: folder.name,
       createdAt: folder.createdAt,
-      memes: folder.folderMemes.map((entry) => formatMeme(entry.meme)),
+      memes: folder.folderMemes.map((entry) =>
+        formatMeme(entry.meme, likedMemeIds.has(entry.meme.id)),
+      ),
     };
   }
 

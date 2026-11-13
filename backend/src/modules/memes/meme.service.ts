@@ -1,7 +1,9 @@
 import type { AppDependencies } from "../../types/dependencies.js";
 import { HttpError } from "../../utils/HttpError.js";
 import { memeSelect } from "../../lib/memeSelect.js";
+import { getLikedMemeIds } from "../../lib/getLikedMemeIds.js";
 import { formatMeme } from "../../utils/formatMeme.js";
+import type { Pagination } from "../../validators/pagination.js";
 
 export function createMemeService(
   dependencies: Pick<AppDependencies, "database" | "imageStorage">,
@@ -9,37 +11,29 @@ export function createMemeService(
   const prisma = dependencies.database;
   const imageStorage = dependencies.imageStorage;
 
-  async function listMemes(clerkUserId: string | null | undefined) {
-    const memes = await prisma.meme.findMany({
+  async function listMemes(
+    clerkUserId: string | null | undefined,
+    pagination: Pagination,
+  ) {
+    const rows = await prisma.meme.findMany({
       select: memeSelect,
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit + 1,
     });
 
-    const ownLikes =
-      clerkUserId && memes.length > 0
-        ? await prisma.like.findMany({
-            where: {
-              user: {
-                clerkId: clerkUserId,
-              },
-              memeId: {
-                in: memes.map((meme) => meme.id),
-              },
-            },
-            select: {
-              memeId: true,
-            },
-          })
-        : [];
+    const memes = rows.slice(0, pagination.limit);
 
-    const likedMemeIds = new Set(ownLikes.map((like) => like.memeId));
+    const likedMemeIds = await getLikedMemeIds(
+      prisma,
+      memes.map((meme) => meme.id),
+      clerkUserId,
+    );
 
-    return memes.map((meme) => ({
-      ...formatMeme(meme),
-      likedByMe: likedMemeIds.has(meme.id),
-    }));
+    return {
+      memes: memes.map((meme) => formatMeme(meme, likedMemeIds.has(meme.id))),
+      hasMore: rows.length > pagination.limit,
+    };
   }
 
   async function getMeme(id: string, clerkUserId: string | null | undefined) {
@@ -66,10 +60,7 @@ export function createMemeService(
         })
       : null;
 
-    return {
-      ...formatMeme(meme),
-      likedByMe: ownLike !== null,
-    };
+    return formatMeme(meme, ownLike !== null);
   }
 
   async function updateMeme(id: string, clerkUserId: string, title: string) {
@@ -99,7 +90,8 @@ export function createMemeService(
       select: memeSelect,
     });
 
-    return formatMeme(updatedMeme);
+    const likedMemeIds = await getLikedMemeIds(prisma, [id], clerkUserId);
+    return formatMeme(updatedMeme, likedMemeIds.has(id));
   }
 
   async function deleteMeme(id: string, clerkUserId: string) {
@@ -261,7 +253,8 @@ export function createMemeService(
         throw databaseError;
       });
 
-    return formatMeme(meme);
+    const likedMemeIds = await getLikedMemeIds(prisma, [meme.id], clerkUserId);
+    return formatMeme(meme, likedMemeIds.has(meme.id));
   }
 
   return {

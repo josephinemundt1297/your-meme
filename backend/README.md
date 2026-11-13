@@ -76,7 +76,7 @@ Standardadresse: `http://localhost:3000`. Nach Env-Änderungen den Server neu st
 | --- | --- |
 | `GET /api/health` | 200, `{ "status": "ok" }`; nur Serverstatus |
 | `GET /api/health/db` | 200 und `database: "connected"`; bei DB-Ausfall 503 |
-| `GET /api/memes` | 200, Array; ohne Testdaten `[]` |
+| `GET /api/memes` | 200, Array; standardmäßig erste 50 Memes, page/limit möglich; ohne Daten `[]` |
 | `GET /api/memes/:id` | 200, einzelnes Meme; ungültige UUID 400; fehlendes Meme 404 |
 | `GET /api/memes/:id/comments` | 200, Kommentar-Array; ohne Kommentare `[]` |
 | `GET /api/me` | Ohne Anmeldung 401; mit gültigem Session-Token 200 und Clerk-ID |
@@ -121,7 +121,7 @@ npm test
 npm start
 ```
 
-`build` erzeugt `dist/`; `start` startet diesen Build. Nach Änderungen erneut bauen. `npm test` baut ebenfalls und führt 59 Tests mit dem eingebauten Node-Testläufer aus. Sie senden echte HTTP-Anfragen an lokale Express-Testserver; Clerk, PostgreSQL und Cloudinary werden dabei simuliert. Echte Konten und Bilder werden nicht verändert. Jest und Supertest sind dafür nicht erforderlich. Diese Tests ersetzen keine Abnahme mit den echten Diensten und im Browser.
+`build` erzeugt `dist/`; `start` startet diesen Build. Nach Änderungen erneut bauen. `npm test` baut ebenfalls und führt 72 Tests mit dem eingebauten Node-Testläufer aus. Sie senden echte HTTP-Anfragen an lokale Express-Testserver; Clerk, PostgreSQL und Cloudinary werden dabei simuliert. Echte Konten und Bilder werden nicht verändert. Jest und Supertest sind dafür nicht erforderlich. Diese Tests ersetzen keine Abnahme mit den echten Diensten und im Browser.
 
 ## Struktur und offene Funktionen
 
@@ -132,13 +132,15 @@ npm start
 | `src/modules/{memes,comments,folders,users}/` | Jeweils Routen, Controller und Service; Likes gehören zum Meme-Modul |
 | `src/modules/health/` | Einfache Statusrouten und Controller |
 | `src/types/dependencies.ts` | Typisierte Schnittstelle für die benötigten Dienste |
-| `src/middleware/` | Anmeldung vor Upload, Dateiannahme, 404 und zentrale Fehlerbehandlung |
+| `src/middleware/` | Gemeinsame Anmeldung geschützter Routen, Anfragebegrenzung, Dateiannahme und Fehlerbehandlung |
 | `src/utils/HttpError.ts` | Erwartete fachliche Fehler mit Status und öffentlicher Meldung |
 | `src/lib/prisma.ts` | Prisma-Client mit PostgreSQL-Adapter |
 | `src/lib/memeSelect.ts` | Öffentliche Meme-Felder, Ersteller und Zähler auswählen |
 | `src/utils/formatMeme.ts` | `author`, `likeCount` und `commentCount` ausgeben |
 | `src/utils/isValidUuid.ts` | UUID-Grundform prüfen |
-| `src/validators/meme.ts` | Zod-Schema; enthält noch ausführbaren Beispieltestcode |
+| `src/validators/meme.ts` | Zod-Schema ohne ausführbare Beispiele beim Import |
+| `src/validators/pagination.ts` | page/limit für die Meme-Liste prüfen |
+| `src/lib/getLikedMemeIds.ts` | Persönliche Likes für mehrere Memes gemeinsam laden |
 | `src/lib/cloudinary.ts` | Cloudinary-SDK konfigurieren |
 | `src/lib/uploadImage.ts` | PNG per Upload-Stream übertragen; wird von der POST-Route verwendet |
 | `src/middleware/upload.ts` | Multer: eine Datei im Speicher, maximal 5 MiB, MIME-Vorprüfung auf PNG |
@@ -153,6 +155,14 @@ Die Zuständigkeiten und ein Beispielablauf stehen in [Backend-Architektur](docs
 
 Vor Upload, Kommentar-Erstellung und Likes muss das lokale Profil über `/api/me/sync` vorhanden sein, sonst 409. Profil-ID aus der Sync-Antwort ist eine lokale UUID; Clerk-ID ist ein anderer Wert. Vollständige Anfrage-/Antwortformate und Statuscodes: [API-Vertrag](docs/api-plan.md).
 
+## Pagination und Anfragebegrenzung
+
+`GET /api/memes?page=1&limit=50` liefert weiterhin ein Array. Standard: page 1 und limit 50; erlaubt sind page 1–10000 und limit 1–100. Nur diese beiden Query-Felder werden akzeptiert; ungültige Werte ergeben 400. Sortierung: createdAt absteigend, bei gleichem Zeitpunkt id absteigend. Header `X-Page`, `X-Limit`, `X-Has-More` sind über CORS lesbar. Das Frontend wurde nicht verändert und zeigt daher weiterhin nur die erste Seite; Seitennavigation ist dort noch anzubinden. Kommentare und Ordnerlisten wurden in diesem Auftrag nicht paginiert.
+
+Pro IP und Serverprozess gelten innerhalb von 60 Sekunden höchstens 300 API-Anfragen, davon 60 Schreibanfragen und 10 Upload-Anfragen. Auch fehlgeschlagene Versuche zählen; OPTIONS-Anfragen werden ausgenommen. Begrenzung erfolgt vor JSON-Parsing und Clerk: bei Überschreitung 429 als JSON mit `Retry-After`. Maximal 10000 IP-Einträge pro Limiter; bei ausgelasteter Tabelle bekommen neue Clients vorübergehend 503 mit `Retry-After`.
+
+Die Zähler liegen im Arbeitsspeicher, werden bei Neustart zurückgesetzt und nicht zwischen mehreren Serverprozessen geteilt. Nutzer hinter derselben IP teilen die Limits. Express vertraut derzeit keinen Forwarded-Headern; ein späterer Reverse-Proxy-Betrieb benötigt eine gezielte Konfiguration. Keine zusätzliche Bibliothek oder Infrastruktur installiert.
+
 ## Nächste Priorität
 
 Nach einer kurzen angemeldeten Schreibprüfung der aufgeteilten API folgt als größte fehlende Pflichtfunktion die vollständige Kontolöschung. Zuerst werden Bestätigung, Datenumfang und der wiederholbare Ablauf über PostgreSQL, Cloudinary und Clerk vorgeschlagen. Die konkrete Implementierung und neue Persistenz sind noch nicht freigegeben. Bereits vorhandene Ordner- und ADMIN-Funktionen werden nicht erneut gebaut. [Reihenfolge und Prüfgrenzen](docs/projektstand.md).
@@ -160,9 +170,9 @@ Nach einer kurzen angemeldeten Schreibprüfung der aufgeteilten API folgt als gr
 ## Offene Arbeiten und bekannte Grenzen
 
 - Vollständige Kontolöschung über DB, Clerk und Cloudinary fehlt. ADMIN darf fremde Memes/Kommentare löschen, aber weder fremde Inhalte bearbeiten noch fremde private Ordner verwalten.
-- GET /api/memes und GET /api/memes/:id liefern likedByMe. Bearer-Token auch bei diesen GETs mitsenden. Meme-POST/PATCH und Ordner-Memes enthalten dieses Feld noch nicht.
-- Zentrale JSON-Fehlerbehandlung ist vorhanden: kaputtes JSON 400, zu großer JSON-Body 413, unerwartete Fehler 500. Parserfälle heute live als JSON ohne interne Details geprüft. Pagination und Rate-Limits fehlen.
-- Generische Upload-Meldung enthält JPNG; Validator enthält ausführbaren Beispieltest. Beide wurden bei der Strukturänderung beibehalten.
+- GET /api/memes und GET /api/memes/:id liefern likedByMe. Bearer-Token auch bei diesen GETs mitsenden. Auch Meme-POST/PATCH und Ordner-Memes liefern den persönlichen Like-Status.
+- Zentrale JSON-Fehlerbehandlung ist vorhanden: kaputtes JSON 400, zu großer JSON-Body 413, unerwartete Fehler 500. Parserfälle heute live als JSON ohne interne Details geprüft. Die Meme-Liste ist seitenweise begrenzt, und die API besitzt eine Anfragebegrenzung; Details unten.
+- Upload-Meldung auf PNG korrigiert; ausführbarer Validator-Beispieltest entfernt. Der verbleibende Integrations- und Fehlerfalltestbedarf ist im Projektstand dokumentiert.
 - Cloudinary und PostgreSQL sind nicht atomar gekoppelt: Teilausfälle können weitere Bereinigung benötigen. Nur separate eigene Upload-Testbilder für Löschtests verwenden; Fixture-Originale sind gemeinsam genutzt.
 - Der aktuelle Frontend-Funktionsstand wurde bei dieser Backend-Strukturänderung nicht erneut bewertet. Historische Beobachtungen stehen mit Datum im Projektstand; Dileks Arbeitsprotokoll dokumentiert ihre Änderungen.
 

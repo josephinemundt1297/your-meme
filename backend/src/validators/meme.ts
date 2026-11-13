@@ -7,14 +7,3 @@ export const createMemeSchema = z.object({
 
   imageStorageId: z.string().trim().min(1),
 });
-const testMeme = {
-  title: "   ",
-  imageUrl: "keine-gueltige-url",
-  imageStorageId: "",
-};
-
-const result = createMemeSchema.safeParse(testMeme);
-
-if (!result.success) {
-  console.log(z.treeifyError(result.error));
-}

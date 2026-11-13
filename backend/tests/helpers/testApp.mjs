@@ -9,7 +9,7 @@ export const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAA
 // All services are isolated. No real Clerk account, database or image is touched.
 export function createTestDependencies(options = {}) {
   const calls = [];
-  const links = new Set();
+  const links = new Set(options.folderMemeIds ?? []);
   const deletedModels = new Set();
   let name = "Meine Memes";
   let title = "Test-Meme";
@@ -24,7 +24,7 @@ export function createTestDependencies(options = {}) {
     id: resourceId, title, name, content: "Testkommentar", userId: ownerId,
     imageStorageId: "test-only/image", imageUrl: "https://images.example/test.png",
     createdAt, user: userFor("clerk-owner"), _count: { likes: options.liked ? 1 : 0, comments: 1 },
-    folderMemes: [...links].map(() => ({ meme: { ...recordWithoutFolders() } })),
+    folderMemes: [...links].map((memeId) => ({ meme: { ...recordWithoutFolders(), id: memeId } })),
   });
   function recordWithoutFolders() {
     return { id: resourceId, title, imageUrl: "https://images.example/test.png", userId: ownerId,
@@ -43,7 +43,18 @@ export function createTestDependencies(options = {}) {
       trace(`${modelName}.findUnique`, args);
       return options.missing || deletedModels.has(modelName) || args.where.id !== resourceId ? null : selectFields(record(), args.select);
     },
-    async findMany(args) { trace(`${modelName}.findMany`, args); return deletedModels.has(modelName) ? [] : [selectFields(record(), args.select)]; },
+    async findMany(args) {
+      trace(`${modelName}.findMany`, args);
+      if (deletedModels.has(modelName)) return [];
+      const rows = Array.from({ length: modelName === "meme" ? options.memeCount ?? 1 : 1 }, (_, index) => ({
+        ...record(),
+        id: index === 0 ? resourceId : `${String(index + 1).padStart(8, "0")}-1111-4111-8111-111111111111`,
+        createdAt: new Date(createdAt.getTime() - index * 1000),
+      }));
+      const start = args.skip ?? 0;
+      return rows.slice(start, args.take === undefined ? undefined : start + args.take)
+        .map((row) => selectFields(row, args.select));
+    },
     async create(args) {
       trace(`${modelName}.create`, args);
       if (options.createFailure) throw new Error("Simulierter Datenbankfehler");
@@ -133,7 +144,10 @@ export async function serveTestApp(app) {
       const response = await fetch(address + path, { method, headers, body });
       const text = await response.text();
       return { status: response.status, body: text ? JSON.parse(text) : undefined,
-        contentType: response.headers.get("content-type"), cors: response.headers.get("access-control-allow-origin") };
+        contentType: response.headers.get("content-type"), cors: response.headers.get("access-control-allow-origin"),
+        page: response.headers.get("x-page"), limit: response.headers.get("x-limit"),
+        hasMore: response.headers.get("x-has-more"), retryAfter: response.headers.get("retry-after"),
+        exposedHeaders: response.headers.get("access-control-expose-headers") };
     },
     async close() {
       await new Promise((resolve, reject) => {

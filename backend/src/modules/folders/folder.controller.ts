@@ -1,257 +1,158 @@
-import type { ApiHandler, ReadUserId } from "../../types/dependencies.js";
-import { HttpError } from "../../utils/HttpError.js";
+import type { ApiHandler } from "../../types/dependencies.js";
+import { handleRequest } from "../../middleware/handleRequest.js";
 import { isValidUuid } from "../../utils/isValidUuid.js";
 import type { createFolderService } from "./folder.service.js";
 import { createFolderSchema, addMemeToFolderSchema } from "../../validators/folder.js";
 
 export function createFolderController(
   service: ReturnType<typeof createFolderService>,
-  readUserId: ReadUserId,
 ) {
-  const createFolder: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
+  const createFolder: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
+      const result = createFolderSchema.safeParse(req.body);
 
-    const result = createFolderSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          error: "Bitte einen Ordnernamen mit 1 bis 100 Zeichen angeben.",
+        });
+      }
 
-    if (!result.success) {
-      return res.status(400).json({
-        error: "Bitte einen Ordnernamen mit 1 bis 100 Zeichen angeben.",
-      });
-    }
-
-    try {
-      const response = await service.createFolder(userId, result.data.name);
+      const response = await service.createFolder(clerkUserId, result.data.name);
       return res.status(201).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
-      }
+    },
+    "Ordner konnte nicht erstellt werden.",
+    "Fehler beim Erstellen des Ordners:",
+  );
 
-      console.error("Fehler beim Erstellen des Ordners:", error);
+  const listFolders: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
 
-      return res.status(500).json({
-        error: "Ordner konnte nicht erstellt werden.",
-      });
-    }
-  };
-
-  const listFolders: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    try {
-      const response = await service.listFolders(userId);
+      const response = await service.listFolders(clerkUserId);
       return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+    },
+    "Ordner konnten nicht geladen werden.",
+    "Fehler beim Laden der Ordner:",
+  );
+
+  const getFolder: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
+
+      const { id } = req.params;
+
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Ordner-ID.",
+        });
       }
 
-      console.error("Fehler beim Laden der Ordner:", error);
-
-      return res.status(500).json({
-        error: "Ordner konnten nicht geladen werden.",
-      });
-    }
-  };
-
-  const getFolder: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    const { id } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Ordner-ID.",
-      });
-    }
-
-    try {
-      const response = await service.getFolder(id, userId);
+      const response = await service.getFolder(id, clerkUserId);
       return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+    },
+    "Ordner konnte nicht geladen werden.",
+    "Fehler beim Laden des Ordners:",
+  );
+
+  const addMeme: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
+
+      const { id } = req.params;
+
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Ordner-ID.",
+        });
       }
 
-      console.error("Fehler beim Laden des Ordners:", error);
+      const result = addMemeToFolderSchema.safeParse(req.body);
 
-      return res.status(500).json({
-        error: "Ordner konnte nicht geladen werden.",
-      });
-    }
-  };
+      if (!result.success) {
+        return res.status(400).json({
+          error: "Bitte eine gültige Meme-ID angeben.",
+        });
+      }
 
-  const addMeme: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    const { id } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Ordner-ID.",
-      });
-    }
-
-    const result = addMemeToFolderSchema.safeParse(req.body);
-
-    if (!result.success) {
-      return res.status(400).json({
-        error: "Bitte eine gültige Meme-ID angeben.",
-      });
-    }
-
-    try {
-      const response = await service.addMeme(id, userId, result.data.memeId);
+      const response = await service.addMeme(id, clerkUserId, result.data.memeId);
       return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+    },
+    "Meme konnte nicht im Ordner gespeichert werden.",
+    "Fehler beim Speichern im Ordner:",
+  );
+
+  const removeMeme: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
+
+      const { id, memeId } = req.params;
+
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Ordner-ID.",
+        });
       }
 
-      console.error("Fehler beim Speichern im Ordner:", error);
+      if (!memeId || !isValidUuid(memeId)) {
+        return res.status(400).json({
+          error: "Ungültige Meme-ID.",
+        });
+      }
 
-      return res.status(500).json({
-        error: "Meme konnte nicht im Ordner gespeichert werden.",
-      });
-    }
-  };
-
-  const removeMeme: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    const { id, memeId } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Ordner-ID.",
-      });
-    }
-
-    if (!memeId || !isValidUuid(memeId)) {
-      return res.status(400).json({
-        error: "Ungültige Meme-ID.",
-      });
-    }
-
-    try {
-      const response = await service.removeMeme(id, memeId, userId);
+      const response = await service.removeMeme(id, memeId, clerkUserId);
       return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+    },
+    "Meme konnte nicht aus dem Ordner entfernt werden.",
+    "Fehler beim Entfernen aus dem Ordner:",
+  );
+
+  const renameFolder: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
+
+      const { id } = req.params;
+
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Ordner-ID.",
+        });
       }
 
-      console.error("Fehler beim Entfernen aus dem Ordner:", error);
+      const result = createFolderSchema.safeParse(req.body);
 
-      return res.status(500).json({
-        error: "Meme konnte nicht aus dem Ordner entfernt werden.",
-      });
-    }
-  };
+      if (!result.success) {
+        return res.status(400).json({
+          error: "Bitte einen Ordnernamen mit 1 bis 100 Zeichen angeben.",
+        });
+      }
 
-  const renameFolder: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    const { id } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Ordner-ID.",
-      });
-    }
-
-    const result = createFolderSchema.safeParse(req.body);
-
-    if (!result.success) {
-      return res.status(400).json({
-        error: "Bitte einen Ordnernamen mit 1 bis 100 Zeichen angeben.",
-      });
-    }
-
-    try {
-      const response = await service.renameFolder(id, userId, result.data.name);
+      const response = await service.renameFolder(id, clerkUserId, result.data.name);
       return res.status(200).json(response);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
+    },
+    "Ordner konnte nicht umbenannt werden.",
+    "Fehler beim Umbenennen des Ordners:",
+  );
+
+  const deleteFolder: ApiHandler = handleRequest(
+    async (req, res) => {
+      const clerkUserId = res.locals.clerkUserId;
+
+      const { id } = req.params;
+
+      if (!id || !isValidUuid(id)) {
+        return res.status(400).json({
+          error: "Ungültige Ordner-ID.",
+        });
       }
 
-      console.error("Fehler beim Umbenennen des Ordners:", error);
-
-      return res.status(500).json({
-        error: "Ordner konnte nicht umbenannt werden.",
-      });
-    }
-  };
-
-  const deleteFolder: ApiHandler = async (req, res) => {
-    const userId = readUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Bitte zuerst anmelden.",
-      });
-    }
-
-    const { id } = req.params;
-
-    if (!id || !isValidUuid(id)) {
-      return res.status(400).json({
-        error: "Ungültige Ordner-ID.",
-      });
-    }
-
-    try {
-      await service.deleteFolder(id, userId);
+      await service.deleteFolder(id, clerkUserId);
       return res.status(204).send();
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ error: error.message });
-      }
-
-      console.error("Fehler beim Löschen des Ordners:", error);
-
-      return res.status(500).json({
-        error: "Ordner konnte nicht gelöscht werden.",
-      });
-    }
-  };
+    },
+    "Ordner konnte nicht gelöscht werden.",
+    "Fehler beim Löschen des Ordners:",
+  );
 
   return {
     createFolder,
