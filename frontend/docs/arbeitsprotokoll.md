@@ -30,6 +30,10 @@ Am selben Tag habe ich die Like-Funktionen angebunden. Ein Like wird über `POST
 
 Für die Performance habe ich in `frontend/src/App.tsx` `loading="lazy"`, `decoding="async"` und feste Bildmaße für Karten-, Detail- und Upload-Bilder ergänzt. In `frontend/src/App.css` wurden stabile Seitenverhältnisse, begrenzte Bildbereiche und `object-fit` ergänzt, damit große Bilder das Layout nicht verschieben. `npm run lint`, `npm run build` und `git diff --check` liefen erfolgreich. Die Änderungen wurden mit `7a18917 perf: Bilder effizienter laden` auf `Frontend` gepusht. Die Trello-Checkliste wurde separat auf 100 % gesetzt; der Arbeitsbericht dokumentiert nur die Frontend-Arbeiten und den technischen Prüfstand.
 
+Am **13.11.2026** habe ich den persönlichen Like-Status beim Laden weiter vervollständigt. Der typisierte API-Client kann jetzt bei `fetchMemes` und `fetchMemeById` optional den aktuellen Clerk-Token als `Authorization: Bearer ...` mitsenden. Öffentliche Anfragen ohne Anmeldung bleiben möglich. Die Meme-Übersicht und die Detailseite laden ihre Daten nach Anmeldung, Abmeldung und Kontowechsel erneut, damit kein persönlicher Like-Zustand eines anderen Kontos übernommen wird. Der Wert `likedByMe` aus der API steuert die Darstellung des Herzens und des `aria-pressed`-Zustands. In der Übersicht wird der jeweils angeklickte Like-Button während der Anfrage deaktiviert. Lint und Build liefen erfolgreich. Die Änderung wurde mit `34ac4c8 feat(frontend): load personal like status from API` auf `Frontend` gepusht und in PR #45 aufgenommen.
+
+Anschließend habe ich den Ersteller und den Upload-Einstieg korrigiert. Der API-Client übernimmt den tatsächlichen Ersteller aus dem Feld `author` und verwendet dessen ID und Benutzernamen für die typisierten Meme-Daten. Auf jeder Meme-Karte wird der Ersteller jetzt mit „Von ...“ angezeigt; die Detailseite verwendet den Namen ebenfalls. Zusätzlich habe ich neben dem Suchfeld einen sichtbaren Link „Meme hochladen“ ergänzt, der direkt zu `/upload` führt. Mit den laufenden lokalen Diensten habe ich die Übersicht im Browser geprüft: 29 Meme-Datensätze mit Cloudinary-Bildern, Titeln, Erstellern und Like-Buttons wurden geladen. `npm run lint` und `npm run build` liefen erfolgreich. Die Änderung wurde mit `fe627cd feat(frontend): show meme authors and upload link` auf `Frontend` gepusht und PR #45 wurde mit den beiden Aufgaben aktualisiert.
+
 ## Gemeinsamer Statusabgleich
 
 Dieser Abschnitt übernimmt die gemeinsamen Statusinformationen aus `main`, ohne die ausführlichen Tagesberichte zu ersetzen. Er beschreibt den Projektstand und offene Abstimmungen zwischen Frontend und Backend.
@@ -45,7 +49,7 @@ Als nächste gemeinsame Punkte bleiben der vollständige End-to-End-Test für An
 - Ein vollständiger Browser-Test mit angemeldetem Upload, Kommentar und Like steht noch aus.
 - Die persönliche Like-Anzeige nach einem Neuladen und bei einem Kontowechsel muss mit einem angemeldeten Testkonto geprüft werden.
 - Kategorien bleiben vorerst zurückgestellt, da das Backend aktuell kein Kategorie-Feld speichert.
-- Sichtbarer Upload-Link und persönliche Ordner sind noch offen.
+- Persönliche Ordner sind noch offen.
 
 ## Zuständigkeiten
 
