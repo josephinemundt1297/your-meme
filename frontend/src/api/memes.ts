@@ -53,6 +53,7 @@ type MemeApiResponse = {
   userId: string
   createdAt: string
   likeCount: number
+  author?: { id?: string; username?: string }
   category?: string
   commentCount?: number
   likedByMe?: boolean
@@ -119,7 +120,7 @@ function normalizeMeme(item: MemeApiResponse): Meme {
     title: item.title,
     imageUrl: item.imageUrl,
     createdAt: item.createdAt,
-    author: { id: item.userId, username: 'Community' },
+    author: { id: item.author?.id ?? item.userId, username: item.author?.username ?? 'Community' },
     category: item.category ?? 'Community',
     likeCount: item.likeCount,
     commentCount: item.commentCount ?? 0,
