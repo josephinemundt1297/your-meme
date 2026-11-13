@@ -2,8 +2,10 @@ import { Link, Outlet, useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Show, SignIn, SignUp, UserButton, useAuth, useUser } from '@clerk/react'
 import type { Meme, MemeComment } from './types/meme'
+import type { MemeFolder } from './types/folder'
 import { MemeState } from './components/ui/MemeState'
 import { createMemeComment, createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, setMemeLike, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
+import { fetchFolders } from './api/folders'
 import './App.css'
 
 type MemeListProps = {
@@ -25,7 +27,10 @@ function MemeCard({ meme, onToggleLike, isUpdating }: MemeCardProps) {
 
 export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [folders, setFolders] = useState<MemeFolder[] | null>(null)
+  const [folderError, setFolderError] = useState('')
   const { getToken, isSignedIn } = useAuth()
+  const { user } = useUser()
   const categories = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
 
   useEffect(() => {
@@ -33,12 +38,26 @@ export function Layout() {
 
     let active = true
     void getToken().then((token) => {
-      if (active && token) return syncCurrentUser(token)
-      return undefined
-    }).catch(() => undefined)
+      if (!token) throw new Error('Bitte melde dich an, um deine Ordner zu sehen.')
+      if (active) {
+        setFolders(null)
+        setFolderError('')
+      }
+      return syncCurrentUser(token).then(() => fetchFolders(token))
+    }).then((loadedFolders) => {
+      if (active) {
+        setFolders(loadedFolders)
+        setFolderError('')
+      }
+    }).catch((error: unknown) => {
+      if (active) {
+        setFolders([])
+        setFolderError(error instanceof Error ? error.message : 'Ordner konnten nicht geladen werden.')
+      }
+    })
 
     return () => { active = false }
-  }, [getToken, isSignedIn])
+  }, [getToken, isSignedIn, user?.id])
 
   return <div className="app-shell">
     <header className="site-header">
@@ -50,7 +69,13 @@ export function Layout() {
       <aside id="site-sidebar" className="site-sidebar">
         <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category} to="/" search={{ category }}>{category}</Link>)}</div>
         <div className="sidebar-divider" />
-        <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p><Link className="add-folder" to="/account" aria-label="Ordner anlegen">＋</Link></div><p className="sidebar-note">Anmelden, um Ordner anzulegen.</p></div>
+        <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p><Link className="add-folder" to="/account" aria-label="Ordner anlegen">＋</Link></div>
+          {!isSignedIn && <p className="sidebar-note">Anmelden, um Ordner anzulegen.</p>}
+          {isSignedIn && !folders && <p className="sidebar-note">Ordner werden geladen …</p>}
+          {isSignedIn && folderError && <p className="sidebar-note" role="alert">{folderError}</p>}
+          {isSignedIn && folders?.length === 0 && !folderError && <p className="sidebar-note">Noch keine Ordner.</p>}
+          {isSignedIn && folders && folders.length > 0 && <div className="folder-links">{folders.map((folder) => <Link key={folder.id} to="/folders/$folderId" params={{ folderId: folder.id }}>{folder.name}</Link>)}</div>}
+        </div>
       </aside>
       <main className="page-content"><Outlet /></main>
     </div>
