@@ -1,5 +1,13 @@
 # Your Meme – Projektstand und Arbeitsweise
 
+## Nachtrag vom 13.11.2026 – Administrator-Löschrechte
+
+Auf ausdrücklichen Auftrag wurden ausschließlich die beiden vorhandenen Löschrouten für Memes und Kommentare um die ADMIN-Ausnahme erweitert. Die Rolle wird über die verifizierte Clerk-ID aus dem lokalen User-Datensatz gelesen; Angaben zu Rolle oder Benutzer-ID im Request-Body verleihen keine Rechte. Besitzer dürfen weiterhin eigene Inhalte löschen. Fremde Inhalte bearbeiten und fremde private Ordner lesen/ändern/löschen bleibt auch für Administratoren verboten. Neue Benutzer erhalten weiterhin USER. Keine Migration, neue Bibliothek, öffentliche Rollenvergabe oder Änderung einer echten Kontorolle.
+
+Prüfung: Backend-Typprüfung und Build erfolgreich. `node --test --test-isolation=none tests/moderation.test.mjs` führt 21 erfolgreiche isolierte Tests der tatsächlichen Route-Handler aus. Clerk, Prisma und Cloudinary sind Testdoubles; keine echten Konten, Bilder oder Datenbankeinträge wurden verändert. Enthalten sind anonyme Zugriffe, Besitzer, normale fremde Benutzer, ADMIN-Löschung, gefälschte Rolle im Body, fehlendes Profil, DB-Rollenfehler, fehlende Inhalte, Cloudinary-Fehler/Wiederholung sowie das weiterhin geltende Bearbeitungs- und Ordnerverbot. Diese Tests ersetzen keine HTTP-/Clerk-/Datenbank-/Cloudinary-Integration. Ein Live-Administratortest und sichere kontrollierte Rollenvergabe sind noch offen.
+
+Änderungen lokal, ohne Commit/Push/Merge. Die folgenden Angaben und Prozentwerte dokumentieren den älteren Stand vom 12.11.; die dort noch als fehlend genannte Admin-Löschlogik ist durch diesen Nachtrag überholt, ihre Live-Abnahme bleibt offen.
+
 Stand: 12.11.2026, nach Ordner-Anlage, Listen-/Detailabfrage und Meme-Zuordnungen. Lokaler Backend-Branch und GitHub-main beim Abgleich: `1ff7cba`; veröffentlichter Frontend-Branch: `01bc9bc` (bereits in gemeinsamem Stand enthalten). Arbeitsverzeichnis vor dieser Dokumentationspflege sauber. Nicht veröffentlichte Änderungen auf anderen Rechnern sind nicht bewertet. Abgabe 23.11.2026; Deployment freiwillig.
 
 ## Was tatsächlich vorhanden ist
