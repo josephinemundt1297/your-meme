@@ -53,6 +53,7 @@ type MemeApiResponse = {
   userId: string
   createdAt: string
   likeCount: number
+  author?: { id?: string; username?: string }
   category?: string
   commentCount?: number
   likedByMe?: boolean
@@ -119,7 +120,7 @@ function normalizeMeme(item: MemeApiResponse): Meme {
     title: item.title,
     imageUrl: item.imageUrl,
     createdAt: item.createdAt,
-    author: { id: item.userId, username: 'Community' },
+    author: { id: item.author?.id ?? item.userId, username: item.author?.username ?? 'Community' },
     category: item.category ?? 'Community',
     likeCount: item.likeCount,
     commentCount: item.commentCount ?? 0,
@@ -128,8 +129,9 @@ function normalizeMeme(item: MemeApiResponse): Meme {
   }
 }
 
-export async function fetchMemes(signal?: AbortSignal): Promise<Meme[]> {
-  const response = await fetch(`${apiBaseUrl}/api/memes`, { signal })
+export async function fetchMemes(token?: string, signal?: AbortSignal): Promise<Meme[]> {
+  const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
+  const response = await fetch(`${apiBaseUrl}/api/memes`, { headers, signal })
 
   if (!response.ok) {
     throw new Error(`Memes konnten nicht geladen werden (${response.status}).`)
@@ -143,8 +145,9 @@ export async function fetchMemes(signal?: AbortSignal): Promise<Meme[]> {
   return data.map((item: MemeApiResponse) => normalizeMeme(item))
 }
 
-export async function fetchMemeById(id: string, signal?: AbortSignal): Promise<Meme | null> {
-  const response = await fetch(`${apiBaseUrl}/api/memes/${encodeURIComponent(id)}`, { signal })
+export async function fetchMemeById(id: string, token?: string, signal?: AbortSignal): Promise<Meme | null> {
+  const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
+  const response = await fetch(`${apiBaseUrl}/api/memes/${encodeURIComponent(id)}`, { headers, signal })
 
   if (response.status === 404) return null
   if (!response.ok) {
