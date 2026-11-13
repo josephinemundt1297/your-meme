@@ -1,6 +1,6 @@
 # Your Meme – Backend starten
 
-Stand: 12.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und vollständiger Cloudinary-Anbindung für Meme-Upload und -Löschung. Kommentar-Schreibaktionen, Titeländerung, Likes, persönliche Like-GETs, zentrale JSON-Fehlerbehandlung und Ordner-Grundfunktionen sind ebenfalls implementiert.
+Stand: 13.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und Cloudinary für Meme-Upload und -Löschung. Kommentar-Schreibaktionen, Titeländerung, Likes, persönliche Like-GETs, zentrale JSON-Fehlerbehandlung, Ordner einschließlich Umbenennen/Löschen und ADMIN-Löschrechte sind implementiert. Die API ist in fachliche Module mit getrennten Routen, Controllern und Services aufgeteilt.
 
 ## Voraussetzungen und Installation
 
@@ -117,16 +117,23 @@ Erwartet: `Cloudinary: ok`. Dabei wird kein Bild hochgeladen. Bei Fehlern keine 
 ```bash
 npm run typecheck
 npm run build
+npm test
 npm start
 ```
 
-`build` erzeugt `dist/`; `start` startet diesen Build. Nach Änderungen erneut bauen. Ein automatisiertes Testskript, Jest und Supertest fehlen noch. Typprüfung und Build ersetzen keine Funktions- oder Rechteprüfung.
+`build` erzeugt `dist/`; `start` startet diesen Build. Nach Änderungen erneut bauen. `npm test` baut ebenfalls und führt 59 Tests mit dem eingebauten Node-Testläufer aus. Sie senden echte HTTP-Anfragen an lokale Express-Testserver; Clerk, PostgreSQL und Cloudinary werden dabei simuliert. Echte Konten und Bilder werden nicht verändert. Jest und Supertest sind dafür nicht erforderlich. Diese Tests ersetzen keine Abnahme mit den echten Diensten und im Browser.
 
 ## Struktur und offene Funktionen
 
 | Datei | Aufgabe |
 | --- | --- |
-| `src/server.ts` | Express, CORS, Clerk, Lese-API, Nutzer-Sync, Meme-/Kommentar-/Like-Schreibaktionen |
+| `src/server.ts` | Echte Dienste bereitstellen, Port prüfen und Server starten |
+| `src/app.ts` | Express konfigurieren, Module und Middleware verbinden; öffnet keinen Port |
+| `src/modules/{memes,comments,folders,users}/` | Jeweils Routen, Controller und Service; Likes gehören zum Meme-Modul |
+| `src/modules/health/` | Einfache Statusrouten und Controller |
+| `src/types/dependencies.ts` | Typisierte Schnittstelle für die benötigten Dienste |
+| `src/middleware/` | Anmeldung vor Upload, Dateiannahme, 404 und zentrale Fehlerbehandlung |
+| `src/utils/HttpError.ts` | Erwartete fachliche Fehler mit Status und öffentlicher Meldung |
 | `src/lib/prisma.ts` | Prisma-Client mit PostgreSQL-Adapter |
 | `src/lib/memeSelect.ts` | Öffentliche Meme-Felder, Ersteller und Zähler auswählen |
 | `src/utils/formatMeme.ts` | `author`, `likeCount` und `commentCount` ausgeben |
@@ -140,19 +147,19 @@ npm start
 | `prisma/` | Schema und vorhandene Migration |
 | `.agents/skills/`, `.claude/skills/`, `.windsurf/skills/` | Werkzeughilfen und Verknüpfungen, kein Anwendungscode |
 
+Die Zuständigkeiten und ein Beispielablauf stehen in [Backend-Architektur](docs/architektur.md). URL-Pfade, Antwortfelder und bestehende Berechtigungen wurden bei dieser Aufteilung beibehalten.
+
 `POST /api/memes` erwartet `FormData`: `title` als Text, `image` als Datei und Bearer-Token. Genau ein PNG bis 5 MiB, Titel getrimmt 1–100 Zeichen. Erfolg 201 liefert das gespeicherte Meme. Kommentare erwarten JSON `content` (1–1000 Zeichen), Titeländerung JSON `title`. DELETE und Like-Anfragen benötigen keinen Body. Bei 204 keine JSON-Antwort auslesen.
 
 Vor Upload, Kommentar-Erstellung und Likes muss das lokale Profil über `/api/me/sync` vorhanden sein, sonst 409. Profil-ID aus der Sync-Antwort ist eine lokale UUID; Clerk-ID ist ein anderer Wert. Vollständige Anfrage-/Antwortformate und Statuscodes: [API-Vertrag](docs/api-plan.md).
 
 ## Offene Arbeiten und bekannte Grenzen
 
-- Ordner umbenennen/löschen fehlen; Zwei-Konten-Privatheitstest offen. Ordner-UI weiterhin Platzhalter.
-- Admin-Moderation und vollständige Kontolöschung über DB, Clerk und Cloudinary fehlen.
-- GET /api/memes und GET /api/memes/:id liefern likedByMe. Bearer-Token auch bei diesen GETs mitsenden; Frontend tut dies aktuell noch nicht. Meme-POST/PATCH und Ordner-Memes enthalten dieses Feld noch nicht.
+- Vollständige Kontolöschung über DB, Clerk und Cloudinary fehlt. ADMIN darf fremde Memes/Kommentare löschen, aber weder fremde Inhalte bearbeiten noch fremde private Ordner verwalten.
+- GET /api/memes und GET /api/memes/:id liefern likedByMe. Bearer-Token auch bei diesen GETs mitsenden. Meme-POST/PATCH und Ordner-Memes enthalten dieses Feld noch nicht.
 - Zentrale JSON-Fehlerbehandlung ist vorhanden: kaputtes JSON 400, zu großer JSON-Body 413, unerwartete Fehler 500. Parserfälle heute live als JSON ohne interne Details geprüft. Pagination und Rate-Limits fehlen.
-- Generische Upload-Meldung enthält JPNG; Validator enthält ausführbaren Beispieltest. Anwendungscode im Dokumentationsauftrag unverändert.
+- Generische Upload-Meldung enthält JPNG; Validator enthält ausführbaren Beispieltest. Beide wurden bei der Strukturänderung beibehalten.
 - Cloudinary und PostgreSQL sind nicht atomar gekoppelt: Teilausfälle können weitere Bereinigung benötigen. Nur separate eigene Upload-Testbilder für Löschtests verwenden; Fixture-Originale sind gemeinsam genutzt.
-- Frontend-Upload und Kommentar-/Like-Schreibaktionen sind angebunden, Upload wartet auf Sync. Autorübernahme, persönliche GET-Zustände und eigene Bearbeiten-/Löschoberflächen noch ergänzen; gemeinsame Browser-Abnahme offen.
-- Dileks Protokoll meldet fehlende Cloudinary-Werte beim lokalen Start. Benötigt werden alle drei Variablen aus der Vorlage; echte Werte nur lokal/privat abstimmen, nie im Frontend oder Git.
+- Der aktuelle Frontend-Funktionsstand wurde bei dieser Backend-Strukturänderung nicht erneut bewertet. Historische Beobachtungen stehen mit Datum im Projektstand; Dileks Arbeitsprotokoll dokumentiert ihre Änderungen.
 
 [API-Vertrag](docs/api-plan.md) · [Projektstand und Prüfgrenzen](docs/projektstand.md)

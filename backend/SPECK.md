@@ -21,7 +21,15 @@
 - Cloudinary als Bildspeicher; Hosting optional und noch offen.
 - Unterrichtsgrundlagen für Validierung und Tests: Zod, Postman, Jest und Supertest; schrittweise nach Bedarf einrichten.
 
-## Umsetzungsstand am 12.11.2026
+## Backend-Architektur
+
+- Fachliche Module für Memes einschließlich Likes, Kommentare, Ordner und Nutzer.
+- Routen ordnen Methoden und Pfade zu. Controller lesen und validieren HTTP-Eingaben und erzeugen Antworten. Services enthalten fachliche Abläufe, Rechteprüfungen und Datenzugriffe ohne Express-Request/-Response.
+- `app.ts` verbindet Module und Middleware; `server.ts` stellt die echten Dienste bereit und startet den Server. Kleine Statusrouten benötigen keinen zusätzlichen Service.
+- Bestehende Validatoren, Hilfsfunktionen und Dienstanbindungen bleiben gemeinsam nutzbar. Keine zusätzliche Repository-Schicht ohne konkreten Bedarf.
+- Die Aufteilung verändert keine vereinbarten API-Pfade, Antwortformate oder Zugriffsrechte. Beschreibung und Prüfgrenzen: [Architektur](docs/architektur.md).
+
+## Historischer Umsetzungsstand am 12.11.2026
 
 Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind keine Erledigt-Meldungen.
 
