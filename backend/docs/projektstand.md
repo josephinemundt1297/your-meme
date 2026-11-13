@@ -1,6 +1,28 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-## Nachtrag vom 13.11.2026 – Administrator-Löschrechte
+## Aktueller Nachtrag vom 13.11.2026 – Backend-Aufteilung
+
+Auf Josephines ausdrückliche Freigabe wurde die bisherige Serverdatei auf Branch `Backend` in Module für Memes einschließlich Likes, Kommentare, Ordner, Nutzer und Health aufgeteilt. Routen, HTTP-Controller und fachliche Services haben getrennte Zuständigkeiten. `src/app.ts` verbindet sie; `src/server.ts` enthält nur noch Dienstanbindung, Portprüfung und Serverstart. Validatoren und Dienstanbindungen bleiben gemeinsam nutzbar. Beschreibung: [Backend-Architektur](architektur.md).
+
+Der Ausgangsstand dieser Aufteilung war Commit `b59a848`. Ordner umbenennen/löschen und die ADMIN-Ausnahme beim Löschen fremder Memes/Kommentare waren bereits vorhanden und sind keine neuen Funktionen dieser Änderung. Fremde Inhalte bearbeiten und fremde private Ordner verwalten bleibt verboten. Prisma-Schema, Migrationen, Pakete, Frontend und öffentliche API-Verträge wurden nicht geändert.
+
+| Prüfung dieser Aufteilung | Ergebnis |
+| --- | --- |
+| `npm run typecheck` / `npm run build` | Erfolgreich |
+| `npm test` | 59 erfolgreiche HTTP-Regressionstests mit tatsächlicher Express-App und simulierten externen Diensten |
+| Alter Monolith gegen aufgeteilte App | 99 Vergleichsfälle: gleiche HTTP-Antworten und gleiche Argumente/Reihenfolge externer Dienstaufrufe |
+| Routenabgleich | Alle 22 Kombinationen aus Methode und Pfad erhalten |
+| Zuständigkeitsprüfung | Services ohne Express-Zugriff; Fachcontroller ohne direkte Daten-/Bildspeicherzugriffe; `app.ts` öffnet keinen Port |
+| Start des gebauten Servers mit bestehender lokaler Konfiguration | Erfolgreich auf freiem Testport; anschließend beendet |
+| Echte lokale Leseabfragen | Health 200, DB-Health 200/connected, Meme-Liste 200 mit 32 Memes; CORS für localhost:5173 vorhanden |
+
+Die bisherigen 21 Moderationstests sind Bestandteil der 59 Tests und prüfen jetzt über HTTP statt über das Auslesen von Handler-Quelltext. Die Testdienste verändern keine echten Nutzer, Bilder oder Datenbankeinträge. Der anschließende reale Starttest führte ausschließlich Leseabfragen aus. Eine erneute Live-Abnahme angemeldeter Schreibaktionen, externer Ausfälle oder der Frontend-Oberfläche ist damit nicht behauptet.
+
+Keine neuen Funktionen, Migrationen oder Abhängigkeiten. Keine Commits, Pushes oder Merges durch diesen Refactoring-Auftrag. Bekannte funktionale Grenzen bestehen weiter, insbesondere Kontolöschung, dienstübergreifende Teilausfälle und fehlendes `likedByMe` in Ordner-Memes. Eine neue Fortschritts-Prozentzahl wurde für diesen Architekturauftrag nicht ermittelt.
+
+**Die folgenden Einträge sind historische Momentaufnahmen.** Aussagen zu fehlenden Funktionen, Live-Abnahmen, Tests und Prozentwerten gelten jeweils für den dort beschriebenen Prüfzeitpunkt und dürfen nicht als aktueller Gesamtstand gelesen werden.
+
+## Früherer Nachtrag vom 13.11.2026 – Administrator-Löschrechte
 
 Auf ausdrücklichen Auftrag wurden ausschließlich die beiden vorhandenen Löschrouten für Memes und Kommentare um die ADMIN-Ausnahme erweitert. Die Rolle wird über die verifizierte Clerk-ID aus dem lokalen User-Datensatz gelesen; Angaben zu Rolle oder Benutzer-ID im Request-Body verleihen keine Rechte. Besitzer dürfen weiterhin eigene Inhalte löschen. Fremde Inhalte bearbeiten und fremde private Ordner lesen/ändern/löschen bleibt auch für Administratoren verboten. Neue Benutzer erhalten weiterhin USER. Keine Migration, neue Bibliothek, öffentliche Rollenvergabe oder Änderung einer echten Kontorolle.
 
