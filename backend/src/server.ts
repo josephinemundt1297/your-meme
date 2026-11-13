@@ -564,7 +564,12 @@ app.delete("/api/memes/:id", async (req, res) => {
       });
     }
 
-    if (meme.user.clerkId !== userId) {
+    const requestingUser = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { role: true },
+    });
+
+    if (meme.user.clerkId !== userId && requestingUser?.role !== "ADMIN") {
       return res.status(403).json({
         error: "Du darfst nur eigene Memes löschen.",
       });
@@ -707,7 +712,12 @@ app.delete("/api/comments/:id", async (req, res) => {
       });
     }
 
-    if (comment.user.clerkId !== userId) {
+    const requestingUser = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { role: true },
+    });
+
+    if (comment.user.clerkId !== userId && requestingUser?.role !== "ADMIN") {
       return res.status(403).json({
         error: "Du darfst nur eigene Kommentare löschen.",
       });

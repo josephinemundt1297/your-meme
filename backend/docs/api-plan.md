@@ -1,5 +1,11 @@
 # Your Meme – API: Implementierung und Planung
 
+## Ergänzung vom 13.11.2026: Administrator-Löschung
+
+DELETE /api/memes/:id und DELETE /api/comments/:id erlauben jetzt den jeweiligen Besitzer **oder ADMIN**. Die Administratorrolle stammt ausschließlich aus PostgreSQL, gesucht über die verifizierte Clerk-ID. Ein fehlendes lokales Profil gewährt keine Adminrechte. Ohne Anmeldung weiterhin 401, normaler fremder Benutzer 403, fehlender Inhalt 404; Erfolg 204 ohne Body. Die vorhandene Cloudinary-/DB-Löschreihenfolge und ihre Teilausfallgrenzen bleiben bestehen.
+
+PATCH auf fremde Memes/Kommentare bleibt auch für ADMIN verboten. Keine Administratorausnahme für private Ordner. Kein Rollenvergabe-Endpunkt; bestehende Konten wurden nicht hochgestuft. 21 isolierte Handler-Tests, Typprüfung und Build erfolgreich; Live-Integration mit echtem Administratorkonto noch offen. Diese Ergänzung ersetzt die unten auf den 12.11. bezogenen Aussagen zur fehlenden Administrator-Ausnahme; übrige Verträge bleiben unverändert.
+
 Stand: 12.11.2026, einschließlich persönlichem Like-Status, Fehlerbehandlung und Ordner-Grundfunktionen; mit `src/server.ts` abgeglichen.
 
 Basis: `http://localhost:3000`. CORS: `http://localhost:5173`. Geschützte Anfragen: `Authorization: Bearer <SESSION_TOKEN>`. Kein Clerk Secret Key als Nutzer-Token. Browser-Anmeldung wird nicht automatisch an Postman übertragen.
@@ -17,10 +23,10 @@ Basis: `http://localhost:3000`. CORS: `http://localhost:5173`. Geschützte Anfra
 | POST /api/me/sync | Angemeldet | Ohne Body; 200 lokales Profil; 401/500 |
 | POST /api/memes | Angemeldet + lokales Profil | Multipart; 201 Meme; 400/401/409/413/500 |
 | PATCH /api/memes/:id | Nur Ersteller | JSON title; 200 Meme; 400/401/403/404/500 |
-| DELETE /api/memes/:id | Nur Ersteller | Ohne Body; 204 leer; 400/401/403/404/500 |
+| DELETE /api/memes/:id | Ersteller oder ADMIN | Ohne Body; 204 leer; 400/401/403/404/500 |
 | POST /api/memes/:id/comments | Angemeldet + lokales Profil | JSON content; 201 Kommentar; 400/401/404/409/500 |
 | PATCH /api/comments/:id | Nur Verfasser | JSON content; 200 Kommentar; 400/401/403/404/500 |
-| DELETE /api/comments/:id | Nur Verfasser | Ohne Body; 204 leer; 400/401/403/404/500 |
+| DELETE /api/comments/:id | Verfasser oder ADMIN | Ohne Body; 204 leer; 400/401/403/404/500 |
 | POST /api/memes/:id/like | Angemeldet + lokales Profil | Ohne Body; 200 Like-Zustand; 400/401/404/409/500 |
 | DELETE /api/memes/:id/like | Angemeldet + lokales Profil | Ohne Body; 200 Like-Zustand; 400/401/404/409/500 |
 | POST /api/folders | Angemeldet + lokales Profil | JSON name; 201 Ordner; 400/401/409/500 |
