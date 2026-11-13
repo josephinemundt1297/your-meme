@@ -1199,6 +1199,136 @@ app.delete("/api/folders/:id/memes/:memeId", async (req, res) => {
   }
 });
 
+app.patch("/api/folders/:id", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Ordner-ID.",
+    });
+  }
+
+  const result = createFolderSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Bitte einen Ordnernamen mit 1 bis 100 Zeichen angeben.",
+    });
+  }
+
+  try {
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!folder) {
+      return res.status(404).json({
+        error: "Ordner nicht gefunden.",
+      });
+    }
+
+    if (folder.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Ordner ändern.",
+      });
+    }
+
+    const updatedFolder = await prisma.folder.update({
+      where: {
+        id,
+        userId: folder.userId,
+      },
+      data: {
+        name: result.data.name,
+      },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    return res.json(updatedFolder);
+  } catch (error) {
+    console.error("Fehler beim Umbenennen des Ordners:", error);
+
+    return res.status(500).json({
+      error: "Ordner konnte nicht umbenannt werden.",
+    });
+  }
+});
+
+app.delete("/api/folders/:id", async (req, res) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: "Bitte zuerst anmelden.",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || !isValidUuid(id)) {
+    return res.status(400).json({
+      error: "Ungültige Ordner-ID.",
+    });
+  }
+
+  try {
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        user: {
+          select: { clerkId: true },
+        },
+      },
+    });
+
+    if (!folder) {
+      return res.status(404).json({
+        error: "Ordner nicht gefunden.",
+      });
+    }
+
+    if (folder.user.clerkId !== userId) {
+      return res.status(403).json({
+        error: "Du darfst nur eigene Ordner löschen.",
+      });
+    }
+
+    await prisma.folder.delete({
+      where: {
+        id,
+        userId: folder.userId,
+      },
+    });
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Fehler beim Löschen des Ordners:", error);
+
+    return res.status(500).json({
+      error: "Ordner konnte nicht gelöscht werden.",
+    });
+  }
+});
+
 app.use((_req, res) => {
   res.status(404).json({
     error: "Route nicht gefunden.",
