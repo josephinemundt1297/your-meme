@@ -1,6 +1,35 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-## Aktueller Nachtrag vom 16.11.2026 – Kategorien im Backend
+## Aktueller Nachtrag vom 16.11.2026 – vorhandene Memes zugeordnet
+
+Josephine hat die Zuordnung vorhandener Daten ausdrücklich beauftragt und `imageStorageId` als Grundlage festgelegt (Beispiel `food_2` → `Food`). Auf der lokalen Datenbank `your_meme_db` wurden 29 bisher nicht zugeordnete Meme-Einträge innerhalb einer Transaktion aktualisiert. Nummernsuffixe wie `_2`, `_02` und `_3` gehören zum Bildnamen; der Grundname bestimmt die Kategorie. `movie` wird zu `Movies`, `drink`/`drinks` zu `Drinks` und `books` zu `Book`. Die bestehenden Kategorienamen mit Großschreibung bleiben erhalten.
+
+| Kategorie | Anzahl |
+| --- | ---: |
+| Ohne Kategorie | 4 |
+| Programmieren | 3 |
+| Alltag | 1 |
+| Arbeit | 1 |
+| Sport | 2 |
+| Gaming | 2 |
+| Tech | 3 |
+| Animal | 2 |
+| Movies | 2 |
+| Outdoor | 2 |
+| Study | 2 |
+| Drinks | 3 |
+| Food | 2 |
+| Holiday | 1 |
+| Book | 1 |
+| Meeting | 2 |
+
+Die vier zufälligen `your-meme/...`-Kennungen (`test3`, `test2`, `TestRick` und `Dieser Titel darf nicht gespeichert werden`) erlauben keine Zuordnung anhand von `imageStorageId` und bleiben ausdrücklich `Ohne Kategorie`. Keine Zuordnung nach Titel oder Bildinhalt vorgenommen.
+
+Prüfung: alle 33 Meme-Einträge vor/nach der Änderung verglichen. Fachlich nur `category` geändert; Prisma aktualisiert dabei auch `updatedAt`. Titel, Bildadresse, `imageStorageId`, Ersteller, IDs und Erstellungszeitpunkte unverändert. Anzahl weiterhin 33. Alle 16 Kategorie-Abfragen einschließlich `Ohne Kategorie` über den tatsächlichen Meme-Service gegen PostgreSQL geprüft: erwartete Anzahl, ausschließlich passende Kategorien und korrektes Seitenende. Keine neue Browser-/Clerk-Abnahme. Cloudinary nicht verändert. Ausgangsstand vor dem Schreiben lokal unter `/tmp/your-meme-categories-before-1794830021344.json` gesichert.
+
+Dies ist eine lokale Datenpflege, keine neue Migration und keine automatische Kategorieerkennung für spätere Uploads. Dileks getrennte Datenbank und die versionierten Import-Fixtures wurden nicht verändert; Git überträgt diese lokale Zuordnung nicht. Die Frontend-Übergabe des vorhandenen Kategorie-Parameters bleibt erforderlich. Kein Commit, Push oder Merge.
+
+## Vorheriger Nachtrag vom 16.11.2026 – Kategorien im Backend
 
 Auf Josephines ausdrückliche Freigabe nach Prüfung des vorhandenen Menüs ausschließlich Backend, Migration, Tests und Backend-Unterlagen auf Branch `Backend` bearbeitet. Ausgangscommit `d7a6cb4` enthält den Frontend-Merge #50. Keine Frontend-Dateien, Abhängigkeiten oder externen Konten geändert; kein Commit, Push oder Merge ausgeführt.
 
