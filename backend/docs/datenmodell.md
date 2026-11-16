@@ -87,7 +87,7 @@ erDiagram
 
 Die erlaubten Namen entsprechen dem aktuellen Frontend-Menü plus `Ohne Kategorie`; vollständige Liste und API-Beispiele stehen im [API-Plan](api-plan.md). Zod prüft die Werte vor der Verarbeitung, die Migration ergänzt außerdem den CHECK `Meme_category_check` in PostgreSQL. Der CHECK steht in der SQL-Migration, nicht im Prisma-Schema; bei späteren Änderungen an der Kategorienliste beide Stellen gemeinsam pflegen. Bilder bleiben unverändert bei Cloudinary gespeichert.
 
-Lokale Prüfung: 33 vorhandene Memes nach Migration mit `Ohne Kategorie`. Zusätzliche Testdatensätze wurden vollständig zurückgerollt. Eine fachliche Einordnung der vorhandenen Bilder wurde nicht vorgenommen.
+Bei der Migration erhielten zunächst alle 33 vorhandenen Memes `Ohne Kategorie`. Anschließend hat Josephine am 16.11. die Zuordnung anhand von `imageStorageId` beauftragt: 29 lokale Meme-Einträge sind jetzt kategorisiert, vier zufällig benannte Test-Uploads bleiben `Ohne Kategorie`. Bilddateien und Bildkennungen wurden nicht verändert. Verteilung und Prüfbelege stehen im [Projektstand](projektstand.md). Die Zuordnung gilt für die lokale Datenbank; versionierte Import-Fixtures bleiben unverändert.
 
 ## Eindeutigkeit und Standardwerte
 
