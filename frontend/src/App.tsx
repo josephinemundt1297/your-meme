@@ -9,7 +9,7 @@ import { addMemeToFolder, createFolder, deleteFolder, fetchFolderById, fetchFold
 import './App.css'
 
 type MemeListProps = {
-  top?: boolean
+  sortMode?: 'latest' | 'popular' | 'today' | 'comments'
   category?: string
 }
 
@@ -134,7 +134,7 @@ export function Layout() {
       <button className="menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="main-navigation"><span aria-hidden="true">☰</span><span className="sr-only">{menuOpen ? 'Menü schließen' : 'Menü öffnen'}</span></button>
       <div className="account-link"><Show when="signed-out"><div className="account-actions"><Link className="sign-in-link" to="/account">Anmelden</Link><Link className="register-link" to="/account">Registrieren</Link></div></Show><Show when="signed-in"><UserButton /></Show></div>
     </header>
-    <nav id="main-navigation" className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Hauptnavigation"><Link to="/" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Startseite</Link><Link to="/new" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Neu</Link><Link to="/popular" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Beliebt</Link><Link to="/" onClick={() => setMenuOpen(false)}>Kategorien</Link><Link to="/" onClick={() => setMenuOpen(false)}>Community</Link></nav>
+    <nav id="main-navigation" className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Hauptnavigation"><Link to="/" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Startseite</Link><Link to="/new" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Neu</Link><Link to="/popular" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Beliebt</Link><Link to="/today" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Heute</Link><Link to="/commented" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Meist kommentiert</Link></nav>
     <div className="site-body">
       <aside id="site-sidebar" className="site-sidebar">
         <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category.name} className={`category-link${category.name === selectedCategory ? ' is-selected' : ''}`} to="/" search={category.name === 'Alle Memes' ? {} : { category: category.name }}><CategoryIcon name={category.icon} /><span>{category.name}</span></Link>)}</div>
@@ -154,7 +154,7 @@ export function Layout() {
   </div>
 }
 
-export function MemeList({ top = false, category }: MemeListProps) {
+export function MemeList({ sortMode = 'latest', category }: MemeListProps) {
   const [search, setSearch] = useState('')
   const [memes, setMemes] = useState<Meme[] | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -209,10 +209,13 @@ export function MemeList({ top = false, category }: MemeListProps) {
       setUpdatingLikeId('')
     }
   }
-  const visibleMemes = memes ? [...memes].sort((a, b) => top ? b.likeCount - a.likeCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase())) : []
+  const today = new Date().toDateString()
+  const visibleMemes = memes ? [...memes].filter((meme) => sortMode !== 'today' || new Date(meme.createdAt).toDateString() === today).sort((a, b) => sortMode === 'popular' ? b.likeCount - a.likeCount : sortMode === 'comments' ? b.commentCount - a.commentCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase())) : []
+  const pageTitle = sortMode === 'popular' ? 'Beliebte Memes' : sortMode === 'today' ? 'Memes von heute' : sortMode === 'comments' ? 'Meist kommentierte Memes' : 'Finde dein nächstes Lieblingsmeme'
+  const sectionTitle = sortMode === 'popular' ? 'Beliebt' : sortMode === 'today' ? 'Heute' : sortMode === 'comments' ? 'Meist kommentiert' : 'Neue Memes'
   return <>
-    <section className="hero-section"><p className="eyebrow">Deine tägliche Meme-Auszeit</p><h1>{top ? 'Die meist gelikten Memes' : 'Finde dein nächstes Lieblingsmeme'}</h1><p className="intro">Entdecke lustige Memes und teile sie mit der Community.</p><div className="hero-actions"><label className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><span className="sr-only">Memes durchsuchen</span><input type="search" placeholder="Memes durchsuchen ..." value={search} onChange={(event) => setSearch(event.target.value)} /></label><Link className="upload-link" to="/upload">Meme hochladen</Link></div></section>
-    <section className="meme-section" aria-labelledby="meme-heading"><div className="section-heading"><div><p className="eyebrow">{top ? 'Community-Favoriten' : 'Für dich ausgewählt'}</p><h2 id="meme-heading">{top ? 'Meist geliked' : 'Neue Memes'}</h2></div><span className="meme-count">{visibleMemes.length} Memes</span></div><nav className="feed-filters" aria-label="Meme-Filter"><Link className="filter-new" to="/">Neueste</Link><Link className="filter-popular" to="/popular">Beliebt</Link><Link className="filter-today" to="/new">Heute</Link></nav>
+    <section className="hero-section"><p className="eyebrow">Deine tägliche Meme-Auszeit</p><h1>{pageTitle}</h1><p className="intro">Entdecke lustige Memes und teile sie mit der Community.</p><div className="hero-actions"><label className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><span className="sr-only">Memes durchsuchen</span><input type="search" placeholder="Memes durchsuchen ..." value={search} onChange={(event) => setSearch(event.target.value)} /></label><Link className="upload-link" to="/upload">Meme hochladen</Link></div></section>
+    <section className="meme-section" aria-labelledby="meme-heading"><div className="section-heading"><div><p className="eyebrow">Für dich ausgewählt</p><h2 id="meme-heading">{sectionTitle}</h2></div><span className="meme-count">{visibleMemes.length} Memes</span></div>
       {likeError && <p className="like-error" role="alert">{likeError}</p>}{loadError ? <MemeState type="error" onRetry={loadMemeList} /> : !memes ? <MemeState type="loading" /> : visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme) => <MemeCard key={meme.id} meme={meme} onToggleLike={handleToggleLike} isUpdating={updatingLikeId === meme.id} />)}</div> : <MemeState type="empty" />}
     </section>
   </>
@@ -220,7 +223,7 @@ export function MemeList({ top = false, category }: MemeListProps) {
 
 export function HomePage() {
   const search = useSearch({ from: '/' })
-  return <MemeList category={search.category} />
+  return <MemeList sortMode="latest" category={search.category} />
 }
 
 export function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
