@@ -18,6 +18,25 @@ type MemeCardProps = {
   isUpdating: boolean
 }
 
+type CategoryIconName = 'grid' | 'briefcase' | 'code' | 'coffee' | 'paw' | 'food' | 'book' | 'gamepad' | 'home' | 'calendar'
+
+function CategoryIcon({ name }: { name: CategoryIconName }) {
+  const commonProps = { className: 'category-icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
+
+  switch (name) {
+    case 'grid': return <svg {...commonProps}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
+    case 'briefcase': return <svg {...commonProps}><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2" /></svg>
+    case 'code': return <svg {...commonProps}><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 4l-4 16" /></svg>
+    case 'coffee': return <svg {...commonProps}><path d="M5 8h11v6a5 5 0 0 1-5 5H5zM16 10h2a3 3 0 0 1 0 6h-2M8 4v2M12 4v2M5 22h12" /></svg>
+    case 'paw': return <svg {...commonProps}><circle cx="8" cy="7" r="2" /><circle cx="16" cy="7" r="2" /><circle cx="5" cy="12" r="2" /><circle cx="19" cy="12" r="2" /><path d="M12 11c-3.5 0-5 3-5 5.2C7 18.5 9 20 12 20s5-1.5 5-3.8C17 14 15.5 11 12 11Z" /></svg>
+    case 'food': return <svg {...commonProps}><path d="M7 3v7M4 3v4a3 3 0 0 0 6 0V3M7 10v11M17 3v18M17 3c2 1.5 3 3.5 3 6v2h-3" /></svg>
+    case 'book': return <svg {...commonProps}><path d="M4 5a3 3 0 0 1 3-2h13v17H7a3 3 0 0 0-3 2zM4 5v15M7 3v17" /></svg>
+    case 'gamepad': return <svg {...commonProps}><path d="M7 8h10a5 5 0 0 1 4.8 6.4l-1 3.5a2.5 2.5 0 0 1-4.4.8L15 17H9l-1.4 1.7a2.5 2.5 0 0 1-4.4-.8l-1-3.5A5 5 0 0 1 7 8Z" /><path d="M7 11v4M5 13h4M16 12h.01M19 14h.01" /></svg>
+    case 'home': return <svg {...commonProps}><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6" /></svg>
+    case 'calendar': return <svg {...commonProps}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" /></svg>
+  }
+}
+
 function MemeCard({ meme, onToggleLike, isUpdating }: MemeCardProps) {
   return <article className="meme-card">
     <Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} loading="lazy" decoding="async" width="600" height="400" /> : <span aria-hidden="true">{meme.emoji}</span>}</div></Link>
@@ -36,16 +55,16 @@ export function Layout() {
   const { getToken, isSignedIn } = useAuth()
   const { user } = useUser()
   const categories = [
-    { name: 'Alle Memes', icon: '▦' },
-    { name: 'Arbeit', icon: '▣' },
-    { name: 'Programmieren', icon: '</>' },
-    { name: 'Kaffee', icon: '☕' },
-    { name: 'Tiere', icon: '♧' },
-    { name: 'Essen', icon: '♜' },
-    { name: 'Lernen', icon: '▤' },
-    { name: 'Gaming', icon: '⌁' },
-    { name: 'Zuhause', icon: '⌂' },
-    { name: 'Wochenende', icon: '◫' },
+    { name: 'Alle Memes', icon: 'grid' as const },
+    { name: 'Arbeit', icon: 'briefcase' as const },
+    { name: 'Programmieren', icon: 'code' as const },
+    { name: 'Kaffee', icon: 'coffee' as const },
+    { name: 'Tiere', icon: 'paw' as const },
+    { name: 'Essen', icon: 'food' as const },
+    { name: 'Lernen', icon: 'book' as const },
+    { name: 'Gaming', icon: 'gamepad' as const },
+    { name: 'Zuhause', icon: 'home' as const },
+    { name: 'Wochenende', icon: 'calendar' as const },
   ]
 
   useEffect(() => {
@@ -108,10 +127,10 @@ export function Layout() {
       <button className="menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="main-navigation"><span aria-hidden="true">☰</span><span className="sr-only">{menuOpen ? 'Menü schließen' : 'Menü öffnen'}</span></button>
       <div className="account-link"><Show when="signed-out"><div className="account-actions"><Link className="sign-in-link" to="/account">Anmelden</Link><Link className="register-link" to="/account">Registrieren</Link></div></Show><Show when="signed-in"><UserButton /></Show></div>
     </header>
-    <nav id="main-navigation" className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Hauptnavigation"><Link to="/" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Startseite</Link><Link to="/new" onClick={() => setMenuOpen(false)}>Neu</Link><Link to="/popular" onClick={() => setMenuOpen(false)}>Beliebt</Link><Link to="/" onClick={() => setMenuOpen(false)}>Kategorien</Link><Link to="/" onClick={() => setMenuOpen(false)}>Community</Link></nav>
+    <nav id="main-navigation" className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Hauptnavigation"><Link to="/" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Startseite</Link><Link to="/new" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Neu</Link><Link to="/popular" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Beliebt</Link><Link to="/" onClick={() => setMenuOpen(false)}>Kategorien</Link><Link to="/" onClick={() => setMenuOpen(false)}>Community</Link></nav>
     <div className="site-body">
       <aside id="site-sidebar" className="site-sidebar">
-        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category.name} className={`category-link${category.name === 'Alle Memes' ? ' is-selected' : ''}`} to="/" search={category.name === 'Alle Memes' ? {} : { category: category.name }}><span className="category-icon" aria-hidden="true">{category.icon}</span><span>{category.name}</span></Link>)}</div>
+        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category.name} className={`category-link${category.name === 'Alle Memes' ? ' is-selected' : ''}`} to="/" search={category.name === 'Alle Memes' ? {} : { category: category.name }}><CategoryIcon name={category.icon} /><span>{category.name}</span></Link>)}</div>
         <div className="sidebar-divider" />
         <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p>{isSignedIn ? <button className="add-folder" type="button" aria-label="Ordner anlegen" aria-expanded={isFolderFormOpen} onClick={() => { setIsFolderFormOpen((open) => !open); setCreateFolderError('') }}>＋</button> : <Link className="add-folder" to="/account" aria-label="Anmelden und Ordner anlegen">＋</Link>}</div>
           {isSignedIn && isFolderFormOpen && <form className="folder-form" onSubmit={handleCreateFolder}><label htmlFor="folder-name">Neuer Ordner</label><input id="folder-name" type="text" value={folderName} onChange={(event) => { setFolderName(event.target.value); setCreateFolderError('') }} maxLength={100} placeholder="Ordnername" autoFocus required /><div className="folder-form-actions"><button type="submit" disabled={isCreatingFolder}>{isCreatingFolder ? 'Speichern …' : 'Speichern'}</button><button type="button" onClick={() => { setIsFolderFormOpen(false); setFolderName(''); setCreateFolderError('') }}>Abbrechen</button></div>{createFolderError && <p className="sidebar-note" role="alert">{createFolderError}</p>}</form>}

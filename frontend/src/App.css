@@ -18,6 +18,7 @@ a { color: inherit; text-decoration: none; } button, input { font: inherit; }
 .main-nav { display: flex; gap: 8px; justify-content: center; margin: 24px auto 38px; }
 .main-nav a { align-items: center; border-radius: 10px; border-bottom: 2px solid transparent; color: var(--muted); display: flex; font-size: .9rem; font-weight: 700; justify-content: center; padding: 10px 20px; transition: background-color .15s ease, color .15s ease, transform .15s ease; }
 .main-nav a:hover, .main-nav a:focus-visible, .main-nav a.is-active { background: #dfe8d4; border-color: #b8c9a8; color: var(--ink); }
+.main-nav:has(a:hover) a.is-active:not(:hover), .main-nav:has(a:focus-visible) a.is-active:not(:focus-visible) { background: transparent; border-color: transparent; color: var(--muted); transform: none; }
 .main-nav a:hover, .main-nav a:focus-visible { transform: translateY(-1px); }
 .site-body { display: flex; gap: clamp(28px, 5vw, 62px); margin: 0 auto; max-width: 1280px; padding: 0 28px 52px; }
 .site-sidebar { background: var(--green); border-radius: 8px; flex: 0 0 184px; min-height: 552px; padding: 30px 20px; }
@@ -25,7 +26,7 @@ a { color: inherit; text-decoration: none; } button, input { font: inherit; }
 .sidebar-section a { color: white; font-size: .93rem; }
 .category-link { align-items: center; display: flex; gap: 10px; min-height: 30px; padding: 4px 8px; }
 .category-link:hover, .category-link:focus-visible, .category-link.is-selected { background: rgb(255 255 255 / 16%); border-radius: 7px; text-decoration: none !important; }
-.category-icon { align-items: center; display: inline-flex; font-size: 1.15rem; justify-content: center; min-width: 22px; }
+.category-icon { flex: 0 0 20px; height: 20px; width: 20px; }
 .sidebar-title { color: white; font-size: .78rem; font-weight: 800; letter-spacing: .1em; margin: 0; text-transform: uppercase; }
 .sidebar-divider { border-top: 1px solid rgb(255 255 255 / 55%); margin: 28px 0; }
 .sidebar-heading { align-items: center; display: flex; justify-content: space-between; }
