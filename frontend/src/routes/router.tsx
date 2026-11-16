@@ -1,9 +1,9 @@
 import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router'
-import { AccountPage, FolderPage, Layout, MemeDetailPage, MemeList, UploadPage } from '../App'
+import { AccountPage, FolderPage, HomePage, Layout, MemeDetailPage, MemeList, UploadPage } from '../App'
 
 const rootRoute = createRootRoute({ component: Layout })
 type CategorySearch = { category?: string }
-const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', validateSearch: (search: Record<string, unknown>): CategorySearch => ({ category: typeof search.category === 'string' ? search.category : undefined }), component: () => <MemeList /> })
+const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', validateSearch: (search: Record<string, unknown>): CategorySearch => ({ category: typeof search.category === 'string' ? search.category : undefined }), component: HomePage })
 const popularRoute = createRoute({ getParentRoute: () => rootRoute, path: '/popular', component: () => <MemeList top /> })
 const newRoute = createRoute({ getParentRoute: () => rootRoute, path: '/new', component: () => <MemeList /> })
 const topRoute = createRoute({ getParentRoute: () => rootRoute, path: '/top', component: () => <MemeList top /> })
