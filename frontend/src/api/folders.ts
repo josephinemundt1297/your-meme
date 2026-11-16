@@ -93,3 +93,14 @@ export async function addMemeToFolder(folderId: string, memeId: string, token: s
     throw new Error(response.status === 401 ? 'Bitte melde dich an, um Memes zu speichern.' : response.status === 403 ? 'Du darfst diesen Ordner nicht bearbeiten.' : response.status === 404 ? 'Der Ordner oder das Meme wurde nicht gefunden.' : `Das Meme konnte nicht gespeichert werden (${response.status}).`)
   }
 }
+
+export async function removeMemeFromFolder(folderId: string, memeId: string, token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/folders/${encodeURIComponent(folderId)}/memes/${encodeURIComponent(memeId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um Memes zu entfernen.' : response.status === 403 ? 'Du darfst diesen Ordner nicht bearbeiten.' : response.status === 404 ? 'Der Ordner oder die Meme-Zuordnung wurde nicht gefunden.' : `Das Meme konnte nicht aus dem Ordner entfernt werden (${response.status}).`)
+  }
+}

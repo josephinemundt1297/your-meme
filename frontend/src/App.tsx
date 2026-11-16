@@ -5,7 +5,7 @@ import type { Meme, MemeComment } from './types/meme'
 import type { MemeFolder, MemeFolderDetail } from './types/folder'
 import { MemeState } from './components/ui/MemeState'
 import { createMemeComment, createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, setMemeLike, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
-import { addMemeToFolder, createFolder, fetchFolderById, fetchFolders } from './api/folders'
+import { addMemeToFolder, createFolder, fetchFolderById, fetchFolders, removeMemeFromFolder } from './api/folders'
 import './App.css'
 
 type MemeListProps = {
@@ -183,8 +183,8 @@ export function MemeList({ top = false }: MemeListProps) {
 
 export function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
 
-function FolderMemeCard({ meme }: { meme: Meme }) {
-  return <article className="meme-card"><Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} loading="lazy" decoding="async" width="600" height="400" /> : <span aria-hidden="true">{meme.emoji}</span>}</div><div className="meme-card-content"><span className="category">{meme.category}</span><span className="meme-author">Von {meme.author.username}</span><h3>{meme.title}</h3></div></Link></article>
+function FolderMemeCard({ meme, onRemove, isRemoving }: { meme: Meme; onRemove: (memeId: string) => void; isRemoving: boolean }) {
+  return <article className="meme-card"><Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} loading="lazy" decoding="async" width="600" height="400" /> : <span aria-hidden="true">{meme.emoji}</span>}</div><div className="meme-card-content"><span className="category">{meme.category}</span><span className="meme-author">Von {meme.author.username}</span><h3>{meme.title}</h3></div></Link><button className="remove-folder-meme" type="button" onClick={() => onRemove(meme.id)} disabled={isRemoving}>{isRemoving ? 'Wird entfernt …' : 'Aus Ordner entfernen'}</button></article>
 }
 
 export function FolderPage() {
@@ -196,6 +196,8 @@ export function FolderPage() {
   const [selectedMemeId, setSelectedMemeId] = useState('')
   const [addMemeError, setAddMemeError] = useState('')
   const [isAddingMeme, setIsAddingMeme] = useState(false)
+  const [removeMemeError, setRemoveMemeError] = useState('')
+  const [removingMemeId, setRemovingMemeId] = useState('')
 
   useEffect(() => {
     if (!isLoaded) return
@@ -246,6 +248,21 @@ export function FolderPage() {
     }
   }
 
+  const handleRemoveMeme = async (memeId: string) => {
+    setRemoveMemeError('')
+    setRemovingMemeId(memeId)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Bitte melde dich an, um ein Meme zu entfernen.')
+      await removeMemeFromFolder(folderId, memeId, token)
+      setState((current) => current.folder ? { ...current, folder: { ...current.folder, memes: current.folder.memes.filter((meme) => meme.id !== memeId) } } : current)
+    } catch (error: unknown) {
+      setRemoveMemeError(error instanceof Error ? error.message : 'Das Meme konnte nicht aus dem Ordner entfernt werden.')
+    } finally {
+      setRemovingMemeId('')
+    }
+  }
+
   const currentState = !isLoaded ? { id: folderId, status: 'loading' as const } : !isSignedIn ? { id: folderId, status: 'error' as const } : state.id === folderId ? state : { id: folderId, status: 'loading' as const }
   if (currentState.status === 'loading') return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><MemeState type="loading" /></section>
   if (currentState.status === 'error') return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><MemeState type="error" onRetry={() => window.location.reload()} /></section>
@@ -256,7 +273,7 @@ export function FolderPage() {
   const selectableMemes = availableMemes.filter((meme) => !savedMemeIds.has(meme.id))
   return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><div className="section-heading"><div><p className="eyebrow">Meine Sammlung</p><h1>{folder.name}</h1></div><span className="meme-count">{folder.memes.length} Memes</span></div>
     <form className="folder-add-meme" onSubmit={handleAddMeme}><label htmlFor="folder-meme">Meme zu diesem Ordner hinzufügen</label><div className="folder-add-meme-row"><select id="folder-meme" value={selectedMemeId} onChange={(event) => { setSelectedMemeId(event.target.value); setAddMemeError('') }} disabled={isAddingMeme || selectableMemes.length === 0}><option value="">Meme auswählen …</option>{selectableMemes.map((meme) => <option key={meme.id} value={meme.id}>{meme.title}</option>)}</select><button className="primary-link" type="submit" disabled={isAddingMeme || selectableMemes.length === 0}>{isAddingMeme ? 'Wird gespeichert …' : 'Hinzufügen'}</button></div>{selectableMemes.length === 0 && <p className="folder-form-note">Alle verfügbaren Memes sind bereits in diesem Ordner.</p>}{addMemeError && <p className="folder-form-error" role="alert">{addMemeError}</p>}</form>
-    {folder.memes.length === 0 ? <MemeState type="empty" /> : <div className="meme-grid">{folder.memes.map((meme) => <FolderMemeCard key={meme.id} meme={meme} />)}</div>}</section>
+    {removeMemeError && <p className="folder-form-error" role="alert">{removeMemeError}</p>}{folder.memes.length === 0 ? <MemeState type="empty" /> : <div className="meme-grid">{folder.memes.map((meme) => <FolderMemeCard key={meme.id} meme={meme} onRemove={handleRemoveMeme} isRemoving={removingMemeId === meme.id} />)}</div>}</section>
 }
 
 export function AccountPage() {

@@ -58,6 +58,9 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .folder-add-meme button:disabled { cursor: wait; opacity: .65; }
 .folder-form-note, .folder-form-error { color: var(--muted); font-size: .85rem; margin: 0; }
 .folder-form-error { color: #a52f2f; }
+.remove-folder-meme { background: transparent; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); cursor: pointer; font-size: .78rem; margin: 0 2px 12px; padding: 8px 10px; }
+.remove-folder-meme:hover, .remove-folder-meme:focus-visible { border-color: var(--purple); color: var(--purple); }
+.remove-folder-meme:disabled { cursor: wait; opacity: .65; }
 .back-link { color: #d8d8d8; display: inline-block; font-size: .9rem; margin-bottom: 18px; }
 .back-link:hover, .back-link:focus-visible { color: white; text-decoration: underline; }
 .detail-card { background: var(--surface); display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); }
