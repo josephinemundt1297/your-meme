@@ -5,7 +5,7 @@ import type { Meme, MemeComment } from './types/meme'
 import type { MemeFolder, MemeFolderDetail } from './types/folder'
 import { MemeState } from './components/ui/MemeState'
 import { createMemeComment, createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, setMemeLike, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
-import { createFolder, fetchFolderById, fetchFolders } from './api/folders'
+import { addMemeToFolder, createFolder, fetchFolderById, fetchFolders } from './api/folders'
 import './App.css'
 
 type MemeListProps = {
@@ -192,6 +192,10 @@ export function FolderPage() {
   const { getToken, isLoaded, isSignedIn } = useAuth()
   const { user } = useUser()
   const [state, setState] = useState<{ id: string; status: 'loading' | 'loaded' | 'not-found' | 'error'; folder?: MemeFolderDetail }>({ id: '', status: 'loading' })
+  const [availableMemes, setAvailableMemes] = useState<Meme[]>([])
+  const [selectedMemeId, setSelectedMemeId] = useState('')
+  const [addMemeError, setAddMemeError] = useState('')
+  const [isAddingMeme, setIsAddingMeme] = useState(false)
 
   useEffect(() => {
     if (!isLoaded) return
@@ -202,9 +206,14 @@ export function FolderPage() {
       .then((token) => {
         if (!token) throw new Error('Bitte melde dich an, um den Ordner zu sehen.')
         setState({ id: folderId, status: 'loading' })
-        return fetchFolderById(folderId, token, controller.signal)
+        return Promise.all([fetchFolderById(folderId, token, controller.signal), fetchMemes(token, controller.signal)])
       })
-      .then((folder) => setState(folder ? { id: folderId, status: 'loaded', folder } : { id: folderId, status: 'not-found' }))
+      .then(([folder, memes]) => {
+        setState(folder ? { id: folderId, status: 'loaded', folder } : { id: folderId, status: 'not-found' })
+        setAvailableMemes(memes)
+        setSelectedMemeId('')
+        setAddMemeError('')
+      })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') return
         setState({ id: folderId, status: 'error' })
@@ -213,13 +222,41 @@ export function FolderPage() {
     return () => controller.abort()
   }, [folderId, getToken, isLoaded, isSignedIn, user?.id])
 
+  const handleAddMeme = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedMemeId) {
+      setAddMemeError('Bitte wähle ein Meme aus.')
+      return
+    }
+
+    setAddMemeError('')
+    setIsAddingMeme(true)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Bitte melde dich an, um ein Meme zu speichern.')
+      await addMemeToFolder(folderId, selectedMemeId, token)
+      const updatedFolder = await fetchFolderById(folderId, token)
+      if (!updatedFolder) throw new Error('Der Ordner wurde nicht gefunden.')
+      setState({ id: folderId, status: 'loaded', folder: updatedFolder })
+      setSelectedMemeId('')
+    } catch (error: unknown) {
+      setAddMemeError(error instanceof Error ? error.message : 'Das Meme konnte nicht gespeichert werden.')
+    } finally {
+      setIsAddingMeme(false)
+    }
+  }
+
   const currentState = !isLoaded ? { id: folderId, status: 'loading' as const } : !isSignedIn ? { id: folderId, status: 'error' as const } : state.id === folderId ? state : { id: folderId, status: 'loading' as const }
   if (currentState.status === 'loading') return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><MemeState type="loading" /></section>
   if (currentState.status === 'error') return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><MemeState type="error" onRetry={() => window.location.reload()} /></section>
   if (currentState.status === 'not-found' || !currentState.folder) return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><div className="meme-state"><div className="state-icon" aria-hidden="true">?</div><h3>Dieser Ordner wurde nicht gefunden.</h3><p>Er ist möglicherweise nicht vorhanden oder gehört einem anderen Nutzer.</p><Link className="primary-link" to="/">Zur Übersicht</Link></div></section>
 
   const folder = currentState.folder
-  return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><div className="section-heading"><div><p className="eyebrow">Meine Sammlung</p><h1>{folder.name}</h1></div><span className="meme-count">{folder.memes.length} Memes</span></div>{folder.memes.length === 0 ? <MemeState type="empty" /> : <div className="meme-grid">{folder.memes.map((meme) => <FolderMemeCard key={meme.id} meme={meme} />)}</div>}</section>
+  const savedMemeIds = new Set(folder.memes.map((meme) => meme.id))
+  const selectableMemes = availableMemes.filter((meme) => !savedMemeIds.has(meme.id))
+  return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><div className="section-heading"><div><p className="eyebrow">Meine Sammlung</p><h1>{folder.name}</h1></div><span className="meme-count">{folder.memes.length} Memes</span></div>
+    <form className="folder-add-meme" onSubmit={handleAddMeme}><label htmlFor="folder-meme">Meme zu diesem Ordner hinzufügen</label><div className="folder-add-meme-row"><select id="folder-meme" value={selectedMemeId} onChange={(event) => { setSelectedMemeId(event.target.value); setAddMemeError('') }} disabled={isAddingMeme || selectableMemes.length === 0}><option value="">Meme auswählen …</option>{selectableMemes.map((meme) => <option key={meme.id} value={meme.id}>{meme.title}</option>)}</select><button className="primary-link" type="submit" disabled={isAddingMeme || selectableMemes.length === 0}>{isAddingMeme ? 'Wird gespeichert …' : 'Hinzufügen'}</button></div>{selectableMemes.length === 0 && <p className="folder-form-note">Alle verfügbaren Memes sind bereits in diesem Ordner.</p>}{addMemeError && <p className="folder-form-error" role="alert">{addMemeError}</p>}</form>
+    {folder.memes.length === 0 ? <MemeState type="empty" /> : <div className="meme-grid">{folder.memes.map((meme) => <FolderMemeCard key={meme.id} meme={meme} />)}</div>}</section>
 }
 
 export function AccountPage() {

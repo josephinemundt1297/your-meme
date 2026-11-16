@@ -51,6 +51,13 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .account-page { align-items: center; display: flex; flex-direction: column; margin: 0 auto; max-width: 460px; padding: 48px 0 72px; } .auth-switcher { background: #fff; border-radius: 10px; display: flex; gap: 4px; margin-bottom: 18px; padding: 4px; width: 100%; } .auth-switcher button { background: transparent; border: 0; border-radius: 7px; color: var(--muted); cursor: pointer; flex: 1; font-weight: 700; padding: 11px; } .auth-switcher button.active, .auth-switcher button:hover, .auth-switcher button:focus-visible { background: var(--purple); color: #fff; } .account-signed-in { text-align: center; }
 .detail-page { margin: 0 auto; max-width: 900px; padding: 28px 0 72px; }
 .folder-page { margin: 0 auto; max-width: 1100px; padding: 28px 0 72px; }
+.folder-add-meme { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 10px; margin: 0 0 28px; padding: 18px; }
+.folder-add-meme label { font-weight: 700; }
+.folder-add-meme-row { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
+.folder-add-meme select { background: white; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); flex: 1 1 260px; min-width: 0; padding: 11px 12px; }
+.folder-add-meme button:disabled { cursor: wait; opacity: .65; }
+.folder-form-note, .folder-form-error { color: var(--muted); font-size: .85rem; margin: 0; }
+.folder-form-error { color: #a52f2f; }
 .back-link { color: #d8d8d8; display: inline-block; font-size: .9rem; margin-bottom: 18px; }
 .back-link:hover, .back-link:focus-visible { color: white; text-decoration: underline; }
 .detail-card { background: var(--surface); display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); }

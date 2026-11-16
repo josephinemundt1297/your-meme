@@ -81,3 +81,15 @@ export async function fetchFolderById(id: string, token: string, signal?: AbortS
 
   return { ...data, memes: data.memes }
 }
+
+export async function addMemeToFolder(folderId: string, memeId: string, token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/folders/${encodeURIComponent(folderId)}/memes`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ memeId }),
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um Memes zu speichern.' : response.status === 403 ? 'Du darfst diesen Ordner nicht bearbeiten.' : response.status === 404 ? 'Der Ordner oder das Meme wurde nicht gefunden.' : `Das Meme konnte nicht gespeichert werden (${response.status}).`)
+  }
+}
