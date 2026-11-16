@@ -5,7 +5,7 @@ import type { Meme, MemeComment } from './types/meme'
 import type { MemeFolder, MemeFolderDetail } from './types/folder'
 import { MemeState } from './components/ui/MemeState'
 import { createMemeComment, createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, setMemeLike, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
-import { addMemeToFolder, createFolder, fetchFolderById, fetchFolders, removeMemeFromFolder } from './api/folders'
+import { addMemeToFolder, createFolder, deleteFolder, fetchFolderById, fetchFolders, removeMemeFromFolder, renameFolder } from './api/folders'
 import './App.css'
 
 type MemeListProps = {
@@ -92,6 +92,16 @@ export function Layout() {
 
     return () => { active = false }
   }, [getToken, isSignedIn, user?.id])
+
+  useEffect(() => {
+    const handleFolderChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ type: 'rename' | 'delete'; folderId: string; name?: string }>).detail
+      if (!detail || !folders) return
+      setFolders((current) => current ? detail.type === 'delete' ? current.filter((folder) => folder.id !== detail.folderId) : current.map((folder) => folder.id === detail.folderId && detail.name ? { ...folder, name: detail.name } : folder) : current)
+    }
+    window.addEventListener('folder-changed', handleFolderChange)
+    return () => window.removeEventListener('folder-changed', handleFolderChange)
+  }, [folders])
 
   const handleCreateFolder = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -219,6 +229,7 @@ function FolderMemeCard({ meme, onRemove, isRemoving }: { meme: Meme; onRemove: 
 
 export function FolderPage() {
   const { folderId } = useParams({ from: '/folders/$folderId' })
+  const navigate = useNavigate()
   const { getToken, isLoaded, isSignedIn } = useAuth()
   const { user } = useUser()
   const [state, setState] = useState<{ id: string; status: 'loading' | 'loaded' | 'not-found' | 'error'; folder?: MemeFolderDetail }>({ id: '', status: 'loading' })
@@ -228,6 +239,12 @@ export function FolderPage() {
   const [isAddingMeme, setIsAddingMeme] = useState(false)
   const [removeMemeError, setRemoveMemeError] = useState('')
   const [removingMemeId, setRemovingMemeId] = useState('')
+  const [isRenameFormOpen, setIsRenameFormOpen] = useState(false)
+  const [renameValue, setRenameValue] = useState('')
+  const [renameError, setRenameError] = useState('')
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (!isLoaded) return
@@ -293,6 +310,46 @@ export function FolderPage() {
     }
   }
 
+  const handleRenameFolder = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const name = renameValue.trim()
+    if (!name || name.length > 100) {
+      setRenameError('Der Ordnername muss zwischen 1 und 100 Zeichen enthalten.')
+      return
+    }
+    setRenameError('')
+    setIsRenaming(true)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Bitte melde dich an, um den Ordner umzubenennen.')
+      const updatedFolder = await renameFolder(folderId, name, token)
+      setState((current) => current.folder ? { ...current, folder: { ...current.folder, name: updatedFolder.name } } : current)
+      window.dispatchEvent(new CustomEvent('folder-changed', { detail: { type: 'rename', folderId, name: updatedFolder.name } }))
+      setIsRenameFormOpen(false)
+    } catch (error: unknown) {
+      setRenameError(error instanceof Error ? error.message : 'Der Ordner konnte nicht umbenannt werden.')
+    } finally {
+      setIsRenaming(false)
+    }
+  }
+
+  const handleDeleteFolder = async () => {
+    if (!window.confirm(`Möchtest du den Ordner „${folder?.name ?? ''}“ wirklich löschen? Die gespeicherten Memes bleiben erhalten.`)) return
+    setDeleteError('')
+    setIsDeleting(true)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Bitte melde dich an, um den Ordner zu löschen.')
+      await deleteFolder(folderId, token)
+      window.dispatchEvent(new CustomEvent('folder-changed', { detail: { type: 'delete', folderId } }))
+      await navigate({ to: '/' })
+    } catch (error: unknown) {
+      setDeleteError(error instanceof Error ? error.message : 'Der Ordner konnte nicht gelöscht werden.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const currentState = !isLoaded ? { id: folderId, status: 'loading' as const } : !isSignedIn ? { id: folderId, status: 'error' as const } : state.id === folderId ? state : { id: folderId, status: 'loading' as const }
   if (currentState.status === 'loading') return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><MemeState type="loading" /></section>
   if (currentState.status === 'error') return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><MemeState type="error" onRetry={() => window.location.reload()} /></section>
@@ -301,9 +358,9 @@ export function FolderPage() {
   const folder = currentState.folder
   const savedMemeIds = new Set(folder.memes.map((meme) => meme.id))
   const selectableMemes = availableMemes.filter((meme) => !savedMemeIds.has(meme.id))
-  return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><div className="section-heading"><div><p className="eyebrow">Meine Sammlung</p><h1>{folder.name}</h1></div><span className="meme-count">{folder.memes.length} Memes</span></div>
+  return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><div className="section-heading"><div><p className="eyebrow">Meine Sammlung</p><h1>{folder.name}</h1>{isRenameFormOpen && <form className="folder-rename-form" onSubmit={handleRenameFolder}><label htmlFor="folder-rename">Neuer Ordnername</label><div><input id="folder-rename" type="text" value={renameValue} onChange={(event) => { setRenameValue(event.target.value); setRenameError('') }} maxLength={100} autoFocus required /><button type="submit" disabled={isRenaming}>{isRenaming ? 'Speichern …' : 'Speichern'}</button><button type="button" onClick={() => { setIsRenameFormOpen(false); setRenameError('') }}>Abbrechen</button></div>{renameError && <p className="folder-form-error" role="alert">{renameError}</p>}</form>}</div><div className="folder-actions"><span className="meme-count">{folder.memes.length} Memes</span><button type="button" onClick={() => { setRenameValue(folder.name); setRenameError(''); setIsRenameFormOpen(true) }} disabled={isDeleting}>Umbenennen</button><button className="delete-folder-button" type="button" onClick={() => void handleDeleteFolder()} disabled={isDeleting}>{isDeleting ? 'Wird gelöscht …' : 'Ordner löschen'}</button></div></div>
     <form className="folder-add-meme" onSubmit={handleAddMeme}><label htmlFor="folder-meme">Meme zu diesem Ordner hinzufügen</label><div className="folder-add-meme-row"><select id="folder-meme" value={selectedMemeId} onChange={(event) => { setSelectedMemeId(event.target.value); setAddMemeError('') }} disabled={isAddingMeme || selectableMemes.length === 0}><option value="">Meme auswählen …</option>{selectableMemes.map((meme) => <option key={meme.id} value={meme.id}>{meme.title}</option>)}</select><button className="primary-link" type="submit" disabled={isAddingMeme || selectableMemes.length === 0}>{isAddingMeme ? 'Wird gespeichert …' : 'Hinzufügen'}</button></div>{selectableMemes.length === 0 && <p className="folder-form-note">Alle verfügbaren Memes sind bereits in diesem Ordner.</p>}{addMemeError && <p className="folder-form-error" role="alert">{addMemeError}</p>}</form>
-    {removeMemeError && <p className="folder-form-error" role="alert">{removeMemeError}</p>}{folder.memes.length === 0 ? <MemeState type="empty" /> : <div className="meme-grid">{folder.memes.map((meme) => <FolderMemeCard key={meme.id} meme={meme} onRemove={handleRemoveMeme} isRemoving={removingMemeId === meme.id} />)}</div>}</section>
+    {removeMemeError && <p className="folder-form-error" role="alert">{removeMemeError}</p>}{deleteError && <p className="folder-form-error" role="alert">{deleteError}</p>}{folder.memes.length === 0 ? <MemeState type="empty" /> : <div className="meme-grid">{folder.memes.map((meme) => <FolderMemeCard key={meme.id} meme={meme} onRemove={handleRemoveMeme} isRemoving={removingMemeId === meme.id} />)}</div>}</section>
 }
 
 export function AccountPage() {
