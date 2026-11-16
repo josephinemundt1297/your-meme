@@ -81,3 +81,53 @@ export async function fetchFolderById(id: string, token: string, signal?: AbortS
 
   return { ...data, memes: data.memes }
 }
+
+export async function addMemeToFolder(folderId: string, memeId: string, token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/folders/${encodeURIComponent(folderId)}/memes`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ memeId }),
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um Memes zu speichern.' : response.status === 403 ? 'Du darfst diesen Ordner nicht bearbeiten.' : response.status === 404 ? 'Der Ordner oder das Meme wurde nicht gefunden.' : `Das Meme konnte nicht gespeichert werden (${response.status}).`)
+  }
+}
+
+export async function removeMemeFromFolder(folderId: string, memeId: string, token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/folders/${encodeURIComponent(folderId)}/memes/${encodeURIComponent(memeId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um Memes zu entfernen.' : response.status === 403 ? 'Du darfst diesen Ordner nicht bearbeiten.' : response.status === 404 ? 'Der Ordner oder die Meme-Zuordnung wurde nicht gefunden.' : `Das Meme konnte nicht aus dem Ordner entfernt werden (${response.status}).`)
+  }
+}
+
+export async function renameFolder(folderId: string, name: string, token: string): Promise<MemeFolder> {
+  const response = await fetch(`${apiBaseUrl}/api/folders/${encodeURIComponent(folderId)}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name.trim() }),
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 400 ? 'Bitte gib einen Ordnernamen mit 1 bis 100 Zeichen an.' : response.status === 401 ? 'Bitte melde dich an, um den Ordner umzubenennen.' : response.status === 403 ? 'Du darfst diesen Ordner nicht umbenennen.' : `Ordner konnte nicht umbenannt werden (${response.status}).`)
+  }
+
+  const data: unknown = await response.json()
+  if (!isFolder(data)) throw new Error('Die Antwort des Servers enthält keinen gültigen Ordner.')
+  return data
+}
+
+export async function deleteFolder(folderId: string, token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/folders/${encodeURIComponent(folderId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um den Ordner zu löschen.' : response.status === 403 ? 'Du darfst diesen Ordner nicht löschen.' : response.status === 404 ? 'Der Ordner wurde nicht gefunden.' : `Ordner konnte nicht gelöscht werden (${response.status}).`)
+  }
+}
