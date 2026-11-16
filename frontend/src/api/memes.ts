@@ -2,10 +2,11 @@ import type { Meme, MemeComment } from '../types/meme'
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
-export function createMemeFormData(title: string, image: File): FormData {
+export function createMemeFormData(title: string, image: File, category: string): FormData {
   const formData = new FormData()
   formData.append('title', title.trim())
   formData.append('image', image)
+  formData.append('category', category)
   return formData
 }
 
@@ -129,9 +130,10 @@ function normalizeMeme(item: MemeApiResponse): Meme {
   }
 }
 
-export async function fetchMemes(token?: string, signal?: AbortSignal): Promise<Meme[]> {
+export async function fetchMemes(token?: string, signal?: AbortSignal, category?: string): Promise<Meme[]> {
   const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
-  const response = await fetch(`${apiBaseUrl}/api/memes`, { headers, signal })
+  const params = category ? `?category=${encodeURIComponent(category)}` : ''
+  const response = await fetch(`${apiBaseUrl}/api/memes${params}`, { headers, signal })
 
   if (!response.ok) {
     throw new Error(`Memes konnten nicht geladen werden (${response.status}).`)

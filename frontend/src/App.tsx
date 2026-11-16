@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate, useParams } from '@tanstack/react-router'
+import { Link, Outlet, useNavigate, useParams, useRouterState, useSearch } from '@tanstack/react-router'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Show, SignIn, SignUp, UserButton, useAuth, useUser } from '@clerk/react'
 import type { Meme, MemeComment } from './types/meme'
@@ -10,6 +10,7 @@ import './App.css'
 
 type MemeListProps = {
   top?: boolean
+  category?: string
 }
 
 type MemeCardProps = {
@@ -19,6 +20,11 @@ type MemeCardProps = {
 }
 
 type CategoryIconName = 'grid' | 'briefcase' | 'code' | 'coffee' | 'paw' | 'food' | 'book' | 'gamepad' | 'home' | 'calendar'
+
+const categoryOptions = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
+const categoryIcons: Record<string, CategoryIconName> = {
+  Programmieren: 'code', Alltag: 'calendar', Arbeit: 'briefcase', Sport: 'gamepad', Gaming: 'gamepad', Tech: 'code', Animal: 'paw', Movies: 'calendar', Outdoor: 'home', Study: 'book', Drinks: 'coffee', Food: 'food', Holiday: 'calendar', Book: 'book', Meeting: 'briefcase',
+}
 
 function CategoryIcon({ name }: { name: CategoryIconName }) {
   const commonProps = { className: 'category-icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
@@ -54,18 +60,9 @@ export function Layout() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const { getToken, isSignedIn } = useAuth()
   const { user } = useUser()
-  const categories = [
-    { name: 'Alle Memes', icon: 'grid' as const },
-    { name: 'Arbeit', icon: 'briefcase' as const },
-    { name: 'Programmieren', icon: 'code' as const },
-    { name: 'Kaffee', icon: 'coffee' as const },
-    { name: 'Tiere', icon: 'paw' as const },
-    { name: 'Essen', icon: 'food' as const },
-    { name: 'Lernen', icon: 'book' as const },
-    { name: 'Gaming', icon: 'gamepad' as const },
-    { name: 'Zuhause', icon: 'home' as const },
-    { name: 'Wochenende', icon: 'calendar' as const },
-  ]
+  const categories = [{ name: 'Alle Memes', icon: 'grid' as const }, ...categoryOptions.map((name) => ({ name, icon: categoryIcons[name] }))]
+  const currentSearch = useRouterState({ select: (state) => state.location.search as { category?: string } })
+  const selectedCategory = currentSearch.category ?? 'Alle Memes'
 
   useEffect(() => {
     if (!isSignedIn) return
@@ -140,7 +137,7 @@ export function Layout() {
     <nav id="main-navigation" className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Hauptnavigation"><Link to="/" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Startseite</Link><Link to="/new" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Neu</Link><Link to="/popular" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Beliebt</Link><Link to="/" onClick={() => setMenuOpen(false)}>Kategorien</Link><Link to="/" onClick={() => setMenuOpen(false)}>Community</Link></nav>
     <div className="site-body">
       <aside id="site-sidebar" className="site-sidebar">
-        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category.name} className={`category-link${category.name === 'Alle Memes' ? ' is-selected' : ''}`} to="/" search={category.name === 'Alle Memes' ? {} : { category: category.name }}><CategoryIcon name={category.icon} /><span>{category.name}</span></Link>)}</div>
+        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category.name} className={`category-link${category.name === selectedCategory ? ' is-selected' : ''}`} to="/" search={category.name === 'Alle Memes' ? {} : { category: category.name }}><CategoryIcon name={category.icon} /><span>{category.name}</span></Link>)}</div>
         <div className="sidebar-divider" />
         <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p>{isSignedIn ? <button className="add-folder" type="button" aria-label="Ordner anlegen" aria-expanded={isFolderFormOpen} onClick={() => { setIsFolderFormOpen((open) => !open); setCreateFolderError('') }}>＋</button> : <Link className="add-folder" to="/account" aria-label="Anmelden und Ordner anlegen">＋</Link>}</div>
           {isSignedIn && isFolderFormOpen && <form className="folder-form" onSubmit={handleCreateFolder}><label htmlFor="folder-name">Neuer Ordner</label><input id="folder-name" type="text" value={folderName} onChange={(event) => { setFolderName(event.target.value); setCreateFolderError('') }} maxLength={100} placeholder="Ordnername" autoFocus required /><div className="folder-form-actions"><button type="submit" disabled={isCreatingFolder}>{isCreatingFolder ? 'Speichern …' : 'Speichern'}</button><button type="button" onClick={() => { setIsFolderFormOpen(false); setFolderName(''); setCreateFolderError('') }}>Abbrechen</button></div>{createFolderError && <p className="sidebar-note" role="alert">{createFolderError}</p>}</form>}
@@ -157,7 +154,7 @@ export function Layout() {
   </div>
 }
 
-export function MemeList({ top = false }: MemeListProps) {
+export function MemeList({ top = false, category }: MemeListProps) {
   const [search, setSearch] = useState('')
   const [memes, setMemes] = useState<Meme[] | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -169,7 +166,7 @@ export function MemeList({ top = false }: MemeListProps) {
     setLoadError(false)
     setMemes(null)
     void getToken()
-      .then((token) => fetchMemes(token ?? undefined))
+      .then((token) => fetchMemes(token ?? undefined, undefined, category))
       .then(setMemes)
       .catch(() => setLoadError(true))
   }
@@ -185,7 +182,7 @@ export function MemeList({ top = false }: MemeListProps) {
           setLikeError('')
           setMemes(null)
         }
-        return fetchMemes(token ?? undefined, controller.signal)
+        return fetchMemes(token ?? undefined, controller.signal, category)
       })
       .then((data) => { if (active) setMemes(data) })
       .catch((error: unknown) => {
@@ -193,7 +190,7 @@ export function MemeList({ top = false }: MemeListProps) {
         if (active) setLoadError(true)
       })
     return () => { active = false; controller.abort() }
-  }, [getToken, isLoaded, isSignedIn, user?.id])
+  }, [category, getToken, isLoaded, isSignedIn, user?.id])
   const handleToggleLike = async (memeId: string, liked: boolean) => {
     if (!isSignedIn) {
       setLikeError('Bitte melde dich an, um Memes zu liken.')
@@ -219,6 +216,11 @@ export function MemeList({ top = false }: MemeListProps) {
       {likeError && <p className="like-error" role="alert">{likeError}</p>}{loadError ? <MemeState type="error" onRetry={loadMemeList} /> : !memes ? <MemeState type="loading" /> : visibleMemes.length > 0 ? <div className="meme-grid">{visibleMemes.map((meme) => <MemeCard key={meme.id} meme={meme} onToggleLike={handleToggleLike} isUpdating={updatingLikeId === meme.id} />)}</div> : <MemeState type="empty" />}
     </section>
   </>
+}
+
+export function HomePage() {
+  const search = useSearch({ from: '/' })
+  return <MemeList category={search.category} />
 }
 
 export function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
@@ -372,6 +374,7 @@ export function UploadPage() {
   const { getToken } = useAuth()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
+  const [category, setCategory] = useState('')
   const [fileError, setFileError] = useState('')
   const [uploadError, setUploadError] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -383,13 +386,17 @@ export function UploadPage() {
     const validationError = selectedFile ? validateMemeImage(selectedFile) : 'Bitte wähle eine PNG-Datei aus.'
     setFileError(validationError ?? '')
     if (validationError || !selectedFile || !title.trim()) return
+    if (!category) {
+      setUploadError('Bitte wähle eine Kategorie aus.')
+      return
+    }
 
     setIsUploading(true)
     try {
       const token = await getToken()
       if (!token) throw new Error('Bitte melde dich an, um ein Meme hochzuladen.')
       await syncCurrentUser(token)
-      const { id } = await uploadMeme(createMemeFormData(title, selectedFile), token)
+      const { id } = await uploadMeme(createMemeFormData(title, selectedFile, category), token)
       await navigate({ to: '/memes/$memeId', params: { memeId: id } })
     } catch (error: unknown) {
       setUploadError(error instanceof Error ? error.message : 'Das Meme konnte nicht hochgeladen werden.')
@@ -404,6 +411,7 @@ export function UploadPage() {
     <form className="upload-form" onSubmit={handleSubmit}>
       <label className="upload-field"><span>Meme-Bild</span><input type="file" accept="image/png" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSelectedFile(file); setFileError(file ? validateMemeImage(file) ?? '' : '') }} required />{previewUrl && <img className="upload-preview" src={previewUrl} alt="Vorschau des ausgewählten Memes" loading="lazy" decoding="async" />}{fileError && <span className="upload-error" role="alert">{fileError}</span>}</label>
       <label className="upload-field"><span>Titel</span><input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Gib deinem Meme einen Titel" maxLength={100} required /></label>
+      <label className="upload-field"><span>Kategorie</span><select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Kategorie auswählen …</option>{categoryOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
       <p className="upload-hint">Erlaubt ist eine PNG-Datei mit maximal 5 MiB.</p>
       {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
       <button className="primary-link upload-submit" type="submit" disabled={isUploading}>{isUploading ? 'Wird hochgeladen …' : 'Meme hochladen'}</button>
