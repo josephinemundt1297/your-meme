@@ -11,6 +11,7 @@ export function createTestDependencies(options = {}) {
   const calls = [];
   const links = new Set(options.folderMemeIds ?? []);
   const deletedModels = new Set();
+  const deletionJobs = new Map();
   let name = "Meine Memes";
   let title = "Test-Meme";
   const defaultCategory = options.category ?? "Ohne Kategorie";
@@ -87,6 +88,42 @@ export function createTestDependencies(options = {}) {
   });
   const database = {
     meme: contentModel("meme"), comment: contentModel("comment"), folder: contentModel("folder"),
+    memeImageDeletion: {
+      async findUnique(args) { trace("memeImageDeletion.findUnique", args); return deletionJobs.get(args.where.memeId) ?? null; },
+      async upsert(args) {
+        trace("memeImageDeletion.upsert", args);
+        if (!deletionJobs.has(args.where.memeId)) deletionJobs.set(args.where.memeId, { ...args.create, createdAt: new Date(), nextAttemptAt: new Date() });
+        return deletionJobs.get(args.where.memeId);
+      },
+      async deleteMany(args) {
+        trace("memeImageDeletion.deleteMany", args);
+        if (options.cleanupDeleteFailure) throw new Error("Simulierter Bereinigungs-DB-Fehler");
+        return { count: Number(deletionJobs.delete(args.where.memeId)) };
+      },
+      async findMany(args) {
+        trace("memeImageDeletion.findMany", args);
+        return [...deletionJobs.values()].filter(job => job.nextAttemptAt <= args.where.nextAttemptAt.lte)
+          .sort((a, b) => a.nextAttemptAt - b.nextAttemptAt || a.memeId.localeCompare(b.memeId)).slice(0, args.take);
+      },
+      async updateMany(args) {
+        trace("memeImageDeletion.updateMany", args);
+        const job = deletionJobs.get(args.where.memeId);
+        if (job) Object.assign(job, args.data);
+        return { count: Number(Boolean(job)) };
+      },
+    },
+    async $transaction(callback) {
+      const previousJobs = structuredClone(deletionJobs);
+      const previousDeleted = new Set(deletedModels);
+      const previousLinks = new Set(links);
+      try { return await callback(database); }
+      catch (error) {
+        deletionJobs.clear(); for (const [key, value] of previousJobs) deletionJobs.set(key, value);
+        deletedModels.clear(); for (const name of previousDeleted) deletedModels.add(name);
+        links.clear(); for (const id of previousLinks) links.add(id);
+        throw error;
+      }
+    },
     user: {
       async findUnique(args) {
         trace("user.findUnique", args);
@@ -138,7 +175,7 @@ export function createTestDependencies(options = {}) {
       },
     },
   };
-  return { dependencies, calls, links };
+  return { dependencies, calls, links, deletionJobs };
 }
 
 export async function serveTestApp(app) {

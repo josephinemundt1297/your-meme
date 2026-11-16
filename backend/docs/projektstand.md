@@ -1,6 +1,20 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-## Aktueller Nachtrag vom 16.11.2026 – vorhandene Memes zugeordnet
+## Aktueller Nachtrag vom 16.11.2026 – freigegebene Review-Korrekturen
+
+Josephine hat die vier Befunde ausdrücklich zur Behebung freigegeben, mit besonderem Augenmerk auf Datenschutz. Ausschließlich Backend, Backend-Tests, Migration und Backend-Dokumentation geändert. Keine Frontend-Dateien, neuen Pakete, Commits, Pushes oder Merges.
+
+- Cloudinary Admin API ausschließlich lesend zur Bestätigung exakter public_ids verwendet. `study_2` → `study` beim ersten Lern-Meme, `study_02` → `study_2`, `sport_02` → `sport_2`, `holiday` → `Holiday`. Fixtures und lokale DB korrigiert. Alle Kategorien, Titel und Bildadressen unverändert; 30 zu diesem Prüfzeitpunkt vorhandene Memes blieben erhalten. Keine echten Cloudinary-Dateien geändert/gelöscht.
+- Neue Uploads liefern direkt likedByMe false. Eine nachträgliche Like-Abfrage kann einen erfolgreichen Upload nicht mehr als 500 darstellen.
+- Meme-DELETE: Transaktion für minimalen Auftrag und Inhaltslöschung; dann Cloudinary und Auftragsentfernung. Bei Ausfall 503 mit ehrlicher Meldung und persistentem Auftrag, statt öffentlich sichtbarem Meme ohne Bild. Besitzer/ADMIN dürfen wiederholen; automatischer Dienst startet mit Server und prüft jede Minute maximal 25 fällige Aufträge.
+- Nur fünf Auftragsfelder, keine Inhalts-/Kontaktdatenkopien und keine rohen externen Fehlerobjekte in den Fachcontroller-Logs. Aufträge nach Erfolg entfernt; ab 24 Stunden ungelöstem Fehler betrieblicher Hinweis zur manuellen Prüfung, keine automatische Aufgabe der externen Löschung. CDN-/Backup-Fristen und volle Kontolöschung bleiben offen.
+- Echte Prisma-P2025 → 404, P2003/P2002 → 409; sichere Fehlermeldungen für gleichzeitige Änderungen.
+- Neue Migration `20261116160000_add_image_deletion_jobs` lokal auf `your_meme_db` angewendet; Migrationsstatus aktuell. Schema validiert, Client erzeugt, Typprüfung und Build erfolgreich.
+- `RUN_DATABASE_TESTS=1 npm test`: **112 Tests erfolgreich**, einschließlich PostgreSQL-Test für Transaktions-Rollback, befüllte Kaskaden und Wiederholung mit neuer Service-Instanz. Eigene temporäre Testdaten danach vollständig entfernt, keine Testnutzer/Bereinigungsaufträge zurückgelassen. Ohne Opt-in läuft der DB-Test nicht (111 Tests erfolgreich, einer übersprungen). Clerk/Cloudinary dabei simuliert; keine echte Browser-/Clerk-/Cloudinary-Löschabnahme.
+
+[Ablauf, Datenschutzquellen und Grenzen](bildloeschung.md). Vollständige Kontolöschung ist weiterhin ein eigener offener Auftrag. Nachfolgende Tagesstände sind historische Momentaufnahmen.
+
+## Vorheriger Nachtrag vom 16.11.2026 – vorhandene Memes zugeordnet
 
 Josephine hat die Zuordnung vorhandener Daten ausdrücklich beauftragt und `imageStorageId` als Grundlage festgelegt (Beispiel `food_2` → `Food`). Auf der lokalen Datenbank `your_meme_db` wurden 29 bisher nicht zugeordnete Meme-Einträge innerhalb einer Transaktion aktualisiert. Nummernsuffixe wie `_2`, `_02` und `_3` gehören zum Bildnamen; der Grundname bestimmt die Kategorie. `movie` wird zu `Movies`, `drink`/`drinks` zu `Drinks` und `books` zu `Book`. Die bestehenden Kategorienamen mit Großschreibung bleiben erhalten.
 

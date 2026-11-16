@@ -64,10 +64,12 @@ for (const resource of ["memes", "comments"]) {
   });
 }
 
-test("Cloudinary failure prevents database deletion", async (context) => {
+test("Cloudinary failure retains a minimal cleanup job after content deletion", async (context) => {
   const routeTest = await createRouteTest(context, { cloudFailure: true });
-  assert.equal((await routeTest.request("DELETE", `/api/memes/${resourceId}`, { user: "clerk-admin" })).status, 500);
-  assert.equal(routeTest.calls.filter((call) => call.operation === "meme.delete").length, 0);
+  assert.equal((await routeTest.request("DELETE", `/api/memes/${resourceId}`, { user: "clerk-admin" })).status, 503);
+  assert.equal(routeTest.calls.filter((call) => call.operation === "meme.delete").length, 1);
+  assert.equal(routeTest.deletionJobs.size, 1);
+  assert.equal((await routeTest.request("GET", `/api/memes/${resourceId}`)).status, 404);
 });
 
 test("already absent Cloudinary image permits deletion retry", async (context) => {

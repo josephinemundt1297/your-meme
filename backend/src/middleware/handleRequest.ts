@@ -1,4 +1,5 @@
 import type { ApiHandler } from "../types/dependencies.js";
+import { Prisma } from "../generated/prisma/client.js";
 import { HttpError } from "../utils/HttpError.js";
 
 export function handleRequest(
@@ -16,7 +17,16 @@ export function handleRequest(
         return res.status(error.status).json({ error: error.message });
       }
 
-      console.error(logMessage, error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res.status(404).json({ error: "Der Eintrag ist nicht mehr vorhanden." });
+        }
+        if (error.code === "P2003" || error.code === "P2002") {
+          return res.status(409).json({ error: "Die Daten wurden inzwischen geändert. Bitte neu laden." });
+        }
+      }
+      // Keine Request-Inhalte, SQL-Details, Tokens oder externen Fehlermeldungen loggen.
+      console.error(logMessage, "UNEXPECTED_ERROR");
       return res.status(500).json({ error: errorMessage });
     }
   };
