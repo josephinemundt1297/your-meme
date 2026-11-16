@@ -1,6 +1,75 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-## Aktueller Nachtrag vom 13.11.2026 – Backend-Bereinigung und Begrenzung
+## Aktueller Nachtrag vom 16.11.2026 – freigegebene Review-Korrekturen
+
+Josephine hat die vier Befunde ausdrücklich zur Behebung freigegeben, mit besonderem Augenmerk auf Datenschutz. Ausschließlich Backend, Backend-Tests, Migration und Backend-Dokumentation geändert. Keine Frontend-Dateien, neuen Pakete, Commits, Pushes oder Merges.
+
+- Cloudinary Admin API ausschließlich lesend zur Bestätigung exakter public_ids verwendet. `study_2` → `study` beim ersten Lern-Meme, `study_02` → `study_2`, `sport_02` → `sport_2`, `holiday` → `Holiday`. Fixtures und lokale DB korrigiert. Alle Kategorien, Titel und Bildadressen unverändert; 30 zu diesem Prüfzeitpunkt vorhandene Memes blieben erhalten. Keine echten Cloudinary-Dateien geändert/gelöscht.
+- Neue Uploads liefern direkt likedByMe false. Eine nachträgliche Like-Abfrage kann einen erfolgreichen Upload nicht mehr als 500 darstellen.
+- Meme-DELETE: Transaktion für minimalen Auftrag und Inhaltslöschung; dann Cloudinary und Auftragsentfernung. Bei Ausfall 503 mit ehrlicher Meldung und persistentem Auftrag, statt öffentlich sichtbarem Meme ohne Bild. Besitzer/ADMIN dürfen wiederholen; automatischer Dienst startet mit Server und prüft jede Minute maximal 25 fällige Aufträge.
+- Nur fünf Auftragsfelder, keine Inhalts-/Kontaktdatenkopien und keine rohen externen Fehlerobjekte in den Fachcontroller-Logs. Aufträge nach Erfolg entfernt; ab 24 Stunden ungelöstem Fehler betrieblicher Hinweis zur manuellen Prüfung, keine automatische Aufgabe der externen Löschung. CDN-/Backup-Fristen und volle Kontolöschung bleiben offen.
+- Echte Prisma-P2025 → 404, P2003/P2002 → 409; sichere Fehlermeldungen für gleichzeitige Änderungen.
+- Neue Migration `20261116160000_add_image_deletion_jobs` lokal auf `your_meme_db` angewendet; Migrationsstatus aktuell. Schema validiert, Client erzeugt, Typprüfung und Build erfolgreich.
+- `RUN_DATABASE_TESTS=1 npm test`: **112 Tests erfolgreich**, einschließlich PostgreSQL-Test für Transaktions-Rollback, befüllte Kaskaden und Wiederholung mit neuer Service-Instanz. Eigene temporäre Testdaten danach vollständig entfernt, keine Testnutzer/Bereinigungsaufträge zurückgelassen. Ohne Opt-in läuft der DB-Test nicht (111 Tests erfolgreich, einer übersprungen). Clerk/Cloudinary dabei simuliert; keine echte Browser-/Clerk-/Cloudinary-Löschabnahme.
+
+[Ablauf, Datenschutzquellen und Grenzen](bildloeschung.md). Vollständige Kontolöschung ist weiterhin ein eigener offener Auftrag. Nachfolgende Tagesstände sind historische Momentaufnahmen.
+
+## Vorheriger Nachtrag vom 16.11.2026 – vorhandene Memes zugeordnet
+
+Josephine hat die Zuordnung vorhandener Daten ausdrücklich beauftragt und `imageStorageId` als Grundlage festgelegt (Beispiel `food_2` → `Food`). Auf der lokalen Datenbank `your_meme_db` wurden 29 bisher nicht zugeordnete Meme-Einträge innerhalb einer Transaktion aktualisiert. Nummernsuffixe wie `_2`, `_02` und `_3` gehören zum Bildnamen; der Grundname bestimmt die Kategorie. `movie` wird zu `Movies`, `drink`/`drinks` zu `Drinks` und `books` zu `Book`. Die bestehenden Kategorienamen mit Großschreibung bleiben erhalten.
+
+| Kategorie | Anzahl |
+| --- | ---: |
+| Ohne Kategorie | 4 |
+| Programmieren | 3 |
+| Alltag | 1 |
+| Arbeit | 1 |
+| Sport | 2 |
+| Gaming | 2 |
+| Tech | 3 |
+| Animal | 2 |
+| Movies | 2 |
+| Outdoor | 2 |
+| Study | 2 |
+| Drinks | 3 |
+| Food | 2 |
+| Holiday | 1 |
+| Book | 1 |
+| Meeting | 2 |
+
+Die vier zufälligen `your-meme/...`-Kennungen (`test3`, `test2`, `TestRick` und `Dieser Titel darf nicht gespeichert werden`) erlauben keine Zuordnung anhand von `imageStorageId` und bleiben ausdrücklich `Ohne Kategorie`. Keine Zuordnung nach Titel oder Bildinhalt vorgenommen.
+
+Prüfung: alle 33 Meme-Einträge vor/nach der Änderung verglichen. Fachlich nur `category` geändert; Prisma aktualisiert dabei auch `updatedAt`. Titel, Bildadresse, `imageStorageId`, Ersteller, IDs und Erstellungszeitpunkte unverändert. Anzahl weiterhin 33. Alle 16 Kategorie-Abfragen einschließlich `Ohne Kategorie` über den tatsächlichen Meme-Service gegen PostgreSQL geprüft: erwartete Anzahl, ausschließlich passende Kategorien und korrektes Seitenende. Keine neue Browser-/Clerk-Abnahme. Cloudinary nicht verändert. Ausgangsstand vor dem Schreiben lokal unter `/tmp/your-meme-categories-before-1794830021344.json` gesichert.
+
+Dies ist eine lokale Datenpflege, keine neue Migration und keine automatische Kategorieerkennung für spätere Uploads. Dileks getrennte Datenbank und die versionierten Import-Fixtures wurden nicht verändert; Git überträgt diese lokale Zuordnung nicht. Die Frontend-Übergabe des vorhandenen Kategorie-Parameters bleibt erforderlich. Kein Commit, Push oder Merge.
+
+## Vorheriger Nachtrag vom 16.11.2026 – Kategorien im Backend
+
+Auf Josephines ausdrückliche Freigabe nach Prüfung des vorhandenen Menüs ausschließlich Backend, Migration, Tests und Backend-Unterlagen auf Branch `Backend` bearbeitet. Ausgangscommit `d7a6cb4` enthält den Frontend-Merge #50. Keine Frontend-Dateien, Abhängigkeiten oder externen Konten geändert; kein Commit, Push oder Merge ausgeführt.
+
+Umgesetzt:
+
+- Eine Kategorie je Meme als Pflichtfeld mit Standard `Ohne Kategorie`. Feste Werte entsprechen den 15 vorhandenen Menüpunkten plus neutralem Standard. Zod-Validierung und Datenbank-CHECK statt zusätzlicher Tabelle.
+- Bestehendes `GET /api/memes` um optionales `category` ergänzt: exakte Namen wie `Alltag`, Filter in PostgreSQL vor Pagination. Array und Seiten-Header unverändert, unbekannte/leere/mehrfache Kategorien 400.
+- Multipart-Upload nimmt `category` entgegen; ohne Feld bleibt der bisherige Client mit Standardwert nutzbar. Keine automatische Erkennung aus Bildern oder Titeln.
+- Bestehendes PATCH erlaubt dem Besitzer `title` und/oder `category`, mindestens eines; Titeländerung setzt die Kategorie nicht zurück. Fremde Inhalte bleiben auch für ADMIN gegen Bearbeitung geschützt.
+- Alle Meme-Antworten einschließlich Ordnerinhalten enthalten `category`.
+- Migration `20261116093000_add_meme_category` auf der geprüften lokalen Datenbank `your_meme_db` angewendet. Migrationsstatus anschließend aktuell. Alle 33 vorgefundenen Memes erhielten `Ohne Kategorie`; keine fachliche Nachsortierung vorgenommen.
+
+Prüfung: Prisma-Client erzeugt, Schema validiert, Backend-Typprüfung und Build erfolgreich. 79 HTTP-Tests bestanden (72 bisherige plus 7 neue Kategorie-Tests) mit simulierten Diensten. Zusätzlich echter PostgreSQL-/HTTP-Test mit neuen Testdatensätzen innerhalb zurückgerollter Transaktionen: Filter vor Pagination, Kategorieänderung durch Besitzer, Titel-only-Erhalt, DB-Standardwert und SQL-CHECK erfolgreich. Testserver beendet; Meme-Anzahl anschließend unverändert 33. Clerk/Cloudinary dabei nicht aufgerufen, Authentifizierung simuliert; keine authentifizierte Browser-Abnahme behauptet.
+
+Ergänzender Auftrag am 16.11.: alle 15 Menükategorien nochmals mit dem bestehenden Frontend abgeglichen (nur lesend). Die vorhandene Backend-Liste und die SQL-Migration enthalten bereits alle Werte. Für jede Kategorie und `Ohne Kategorie` einen eigenen HTTP-Test für öffentlichen Filter, Pagination und nachträgliche Zuordnung ergänzt. Gesamtergebnis nun 95 bestandene Tests; Upload für alle Kategorien ebenfalls abgedeckt. Keine zusätzliche Datenbankänderung notwendig. Ausschließlich Dateien unter `backend/` geändert.
+
+Review-Korrekturen am 16.11. (ausdrücklich freigegeben):
+
+- Unabhängige erwartete Liste der 15 Menükategorien plus `Ohne Kategorie` in den Tests ergänzt. API-Liste und SQL-CHECK der Kategorie-Migration werden jeweils mit diesem Vertrag verglichen. Die einzelnen HTTP-Tests und Upload-Prüfungen verwenden die erwartete Liste; das versehentliche Entfernen einer Kategorie aus dem Anwendungscode entfernt damit keinen Testfall mehr.
+- Die simulierte Datenbank hält Kategorie-Werte pro Meme-ID. PATCH, Detail und Listen lesen dadurch dieselben Werte; andere Memes behalten ihre Zuordnung.
+- Neuer Regressionstest: zwei Alltag-Memes und ein Sport-Meme; ein Alltag-Meme nach Gaming verschieben. Es verschwindet aus Alltag, erscheint in Gaming und lässt die anderen beiden Einträge unverändert. Dieser Test scheiterte vor der Korrektur am beschriebenen Fehler und besteht danach.
+- Gesamte Backend-Suite einschließlich Build: **98 Tests bestanden**. Dienste simuliert; keine neue PostgreSQL-, Clerk-, Cloudinary- oder Browser-Abnahme. Diese Korrektur betrifft ausschließlich Backend-Tests und Backend-Dokumentation; Anwendungscode und Migration bleiben unverändert. Kein Commit, Push oder Merge.
+
+Frontend bleibt offen: vorhandenen Parameter `/?category=Alltag` an die API weiterreichen, bei Kategorienwechsel Seite 1 laden, „Alle“ ohne Filter und Upload-Auswahl ergänzen. Die Menüroute existiert bereits und wurde nicht neu angelegt. Dileks lokale DB benötigt ebenfalls die neue Migration. Kategorien sind eine zusätzlich freigegebene Erweiterung; Kontolöschung und bestehende Abnahmepunkte bleiben offen.
+
+## Vorheriger Nachtrag vom 13.11.2026 – Backend-Bereinigung und Begrenzung
 
 Part 1 wurde vor Umsetzung vorgeschlagen und von Josephine ausdrücklich freigegeben. Part 2 war für Backend-Punkte freigegeben. Ausschließlich auf Branch Backend gearbeitet; keine Frontend-Dateien, Migrationen oder Abhängigkeiten geändert. Kein Commit, Push oder Merge ausgeführt.
 

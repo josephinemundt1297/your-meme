@@ -11,8 +11,15 @@ export function createTestDependencies(options = {}) {
   const calls = [];
   const links = new Set(options.folderMemeIds ?? []);
   const deletedModels = new Set();
+  const deletionJobs = new Map();
   let name = "Meine Memes";
   let title = "Test-Meme";
+  const defaultCategory = options.category ?? "Ohne Kategorie";
+  const memeIdAt = (index) => index === 0 ? resourceId : `${String(index + 1).padStart(8, "0")}-1111-4111-8111-111111111111`;
+  // Kategorie je Datensatz speichern, damit PATCH und Listen dieselben Werte lesen.
+  const memeCategories = new Map(Array.from({
+    length: options.memeCategories?.length ?? options.memeCount ?? 1,
+  }, (_, index) => [memeIdAt(index), options.memeCategories?.[index] ?? defaultCategory]));
   const createdAt = new Date("2026-11-13T09:00:00.000Z");
   const userFor = (clerkId) => ({
     id: clerkId === "clerk-owner" ? ownerId : "33333333-3333-4333-8333-333333333333",
@@ -21,13 +28,13 @@ export function createTestDependencies(options = {}) {
     role: clerkId === "clerk-admin" ? "ADMIN" : options.role ?? "USER",
   });
   const record = () => ({
-    id: resourceId, title, name, content: "Testkommentar", userId: ownerId,
+    id: resourceId, title, category: memeCategories.get(resourceId) ?? defaultCategory, name, content: "Testkommentar", userId: ownerId,
     imageStorageId: "test-only/image", imageUrl: "https://images.example/test.png",
     createdAt, user: userFor("clerk-owner"), _count: { likes: options.liked ? 1 : 0, comments: 1 },
     folderMemes: [...links].map((memeId) => ({ meme: { ...recordWithoutFolders(), id: memeId } })),
   });
   function recordWithoutFolders() {
-    return { id: resourceId, title, imageUrl: "https://images.example/test.png", userId: ownerId,
+    return { id: resourceId, title, category: memeCategories.get(resourceId) ?? defaultCategory, imageUrl: "https://images.example/test.png", userId: ownerId,
       createdAt, user: { id: ownerId, username: "Besitzer" }, _count: { likes: options.liked ? 1 : 0, comments: 1 } };
   }
   const trace = (operation, args) => { calls.push({ operation, args }); };
@@ -46,13 +53,15 @@ export function createTestDependencies(options = {}) {
     async findMany(args) {
       trace(`${modelName}.findMany`, args);
       if (deletedModels.has(modelName)) return [];
-      const rows = Array.from({ length: modelName === "meme" ? options.memeCount ?? 1 : 1 }, (_, index) => ({
+      const rows = Array.from({ length: modelName === "meme" ? options.memeCategories?.length ?? options.memeCount ?? 1 : 1 }, (_, index) => ({
         ...record(),
-        id: index === 0 ? resourceId : `${String(index + 1).padStart(8, "0")}-1111-4111-8111-111111111111`,
+        category: memeCategories.get(memeIdAt(index)) ?? defaultCategory,
+        id: memeIdAt(index),
         createdAt: new Date(createdAt.getTime() - index * 1000),
       }));
       const start = args.skip ?? 0;
-      return rows.slice(start, args.take === undefined ? undefined : start + args.take)
+      const filtered = args.where?.category ? rows.filter((row) => row.category === args.where.category) : rows;
+      return filtered.slice(start, args.take === undefined ? undefined : start + args.take)
         .map((row) => selectFields(row, args.select));
     },
     async create(args) {
@@ -64,6 +73,9 @@ export function createTestDependencies(options = {}) {
       trace(`${modelName}.update`, args);
       if (args.data.name) name = args.data.name;
       if (args.data.title) title = args.data.title;
+      if (modelName === "meme" && args.data.category !== undefined) {
+        memeCategories.set(args.where.id, args.data.category);
+      }
       return selectFields({ ...record(), ...args.data }, args.select);
     },
     async delete(args) {
@@ -76,6 +88,42 @@ export function createTestDependencies(options = {}) {
   });
   const database = {
     meme: contentModel("meme"), comment: contentModel("comment"), folder: contentModel("folder"),
+    memeImageDeletion: {
+      async findUnique(args) { trace("memeImageDeletion.findUnique", args); return deletionJobs.get(args.where.memeId) ?? null; },
+      async upsert(args) {
+        trace("memeImageDeletion.upsert", args);
+        if (!deletionJobs.has(args.where.memeId)) deletionJobs.set(args.where.memeId, { ...args.create, createdAt: new Date(), nextAttemptAt: new Date() });
+        return deletionJobs.get(args.where.memeId);
+      },
+      async deleteMany(args) {
+        trace("memeImageDeletion.deleteMany", args);
+        if (options.cleanupDeleteFailure) throw new Error("Simulierter Bereinigungs-DB-Fehler");
+        return { count: Number(deletionJobs.delete(args.where.memeId)) };
+      },
+      async findMany(args) {
+        trace("memeImageDeletion.findMany", args);
+        return [...deletionJobs.values()].filter(job => job.nextAttemptAt <= args.where.nextAttemptAt.lte)
+          .sort((a, b) => a.nextAttemptAt - b.nextAttemptAt || a.memeId.localeCompare(b.memeId)).slice(0, args.take);
+      },
+      async updateMany(args) {
+        trace("memeImageDeletion.updateMany", args);
+        const job = deletionJobs.get(args.where.memeId);
+        if (job) Object.assign(job, args.data);
+        return { count: Number(Boolean(job)) };
+      },
+    },
+    async $transaction(callback) {
+      const previousJobs = structuredClone(deletionJobs);
+      const previousDeleted = new Set(deletedModels);
+      const previousLinks = new Set(links);
+      try { return await callback(database); }
+      catch (error) {
+        deletionJobs.clear(); for (const [key, value] of previousJobs) deletionJobs.set(key, value);
+        deletedModels.clear(); for (const name of previousDeleted) deletedModels.add(name);
+        links.clear(); for (const id of previousLinks) links.add(id);
+        throw error;
+      }
+    },
     user: {
       async findUnique(args) {
         trace("user.findUnique", args);
@@ -127,7 +175,7 @@ export function createTestDependencies(options = {}) {
       },
     },
   };
-  return { dependencies, calls, links };
+  return { dependencies, calls, links, deletionJobs };
 }
 
 export async function serveTestApp(app) {

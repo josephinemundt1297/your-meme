@@ -99,7 +99,7 @@
     "id": "57b98699-d94d-442f-a94c-e067e2ec5bb1",
     "title": "Dieses Jahr reise ich günstig . . .",
     "imageUrl": "https://res.cloudinary.com/ysdssajq/image/upload/v1794309230/Holiday.png",
-    "imageStorageId": "holiday",
+    "imageStorageId": "Holiday",
     "createdAt": "2026-11-10T16:40:26.169Z",
     "updatedAt": "2026-11-09T23:00:00.000Z"
   },
@@ -187,7 +187,7 @@
     "id": "6e870e1a-d55d-4485-b635-e2196879b78e",
     "title": "Wenn du deinen persönlichen Rekord übertriffst aber am nächsten Tag nicht mehr laufen kannst",
     "imageUrl": "https://res.cloudinary.com/ysdssajq/image/upload/v1794309244/sport_2.png",
-    "imageStorageId": "sport_02",
+    "imageStorageId": "sport_2",
     "createdAt": "2026-11-10T14:20:41.646Z",
     "updatedAt": "2026-11-09T23:00:00.000Z"
   },
@@ -195,7 +195,7 @@
     "id": "f94bb413-87be-4c4d-a0f1-626ec245e969",
     "title": "Wenn du früher lernen wolltest",
     "imageUrl": "https://res.cloudinary.com/ysdssajq/image/upload/v1794309245/study.png",
-    "imageStorageId": "study_2",
+    "imageStorageId": "study",
     "createdAt": "2026-11-10T14:12:35.259Z",
     "updatedAt": "1969-12-31T23:00:00.000Z"
   },
@@ -203,7 +203,7 @@
     "id": "4e8c935e-abc4-42dc-99db-e932183576e2",
     "title": "Waschbär motiviert sich zum lernen einer programmiersprache",
     "imageUrl": "https://res.cloudinary.com/ysdssajq/image/upload/v1794309246/study_2.png",
-    "imageStorageId": "study_02",
+    "imageStorageId": "study_2",
     "createdAt": "2026-11-10T12:03:57.081Z",
     "updatedAt": "2026-11-10T14:00:00.000Z"
   },

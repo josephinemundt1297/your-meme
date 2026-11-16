@@ -6,7 +6,7 @@ Stand: 13.11.2026. Freigegebene Aufteilung auf Branch `Backend`; keine zusätzli
 
 | Bereich | Aufgabe |
 | --- | --- |
-| `src/server.ts` | Konkrete Prisma-, Clerk- und Cloudinary-Anbindung bereitstellen, Port prüfen, Server starten |
+| `src/server.ts` | Dienstanbindungen bereitstellen, Port prüfen, Server und Bildbereinigungs-Wiederholungen starten |
 | `src/app.ts` | Express-App erstellen, CORS/Anfragebegrenzung/JSON/Clerk einhängen, Router verbinden; zuletzt 404 und Fehlerbehandlung |
 | `*.routes.ts` | Methode und URL dem passenden Controller zuordnen |
 | `*.controller.ts` | Verifizierte Identität aus der Auth-Middleware verwenden, Parameter und Body validieren, Service aufrufen, Status und JSON senden |
@@ -54,3 +54,7 @@ Vor der anschließenden Bereinigung wurde die gesicherte alte Serverdatei einmal
 Diese Prüfung belegt keine erneute Live-Abnahme von Clerk, PostgreSQL, Cloudinary oder der Frontend-Oberfläche. Echte Zugangsdaten, Konten und Bilder wurden in den Regressionstests nicht verwendet. Dienstübergreifende Teilausfälle bleiben offen. Die nachfolgende freigegebene Bereinigung ergänzt inzwischen likedByMe in allen Meme-Antworten und behebt den Validator-Beispielcode sowie die PNG-Meldung. Persönliche Likes für mehrere Memes werden über getLikedMemeIds gemeinsam geladen.
 
 Nach den Regressionstests wurde der gebaute Server zusätzlich mit der vorhandenen lokalen Konfiguration auf einem freien Testport gestartet. Ausschließlich lesend geprüft: Health 200, PostgreSQL-Health 200/connected und Meme-Liste 200 mit 32 Memes sowie CORS für localhost:5173. Danach wurde nur dieser zusätzliche Testserver beendet. Angemeldete Schreibaktionen und Cloudinary-Übertragungen wurden dabei nicht erneut ausgeführt.
+
+## Ergänzung vom 16.11.2026 – Bildbereinigung
+
+`modules/memes/image-deletion.service.ts` verarbeitet minimale persistierte Aufträge. Der Meme-Service legt den Auftrag und die Inhaltslöschung gemeinsam über Prisma `$transaction` an; erst danach wird Cloudinary angesprochen. `server.ts` startet die Wiederholung; `createApp` bleibt ohne Timer oder Portöffnung. `handleRequest` behandelt echte Prisma-Konflikte ohne Ausgabe von SQL- oder Request-Inhalten. [Daten und Grenzen](bildloeschung.md).

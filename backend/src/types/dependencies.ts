@@ -15,7 +15,7 @@ export type ReadUserId = (
 
 export type Database = Pick<
   PrismaClient,
-  "user" | "meme" | "comment" | "like" | "folder" | "folderMeme" | "$queryRaw"
+  "user" | "meme" | "comment" | "like" | "folder" | "folderMeme" | "memeImageDeletion" | "$transaction" | "$queryRaw"
 >;
 
 export type ImageStorage = {

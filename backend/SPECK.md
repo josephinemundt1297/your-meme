@@ -71,6 +71,10 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 - Anfrage- und Antwortformate einschließlich Fehlerfällen vor der Frontend-Anbindung dokumentieren.
 - Teilen erfolgt über einen Link; ein zusätzlicher Backend-Endpunkt ist dafür zunächst nicht vorgesehen.
 
+## Bildlöschung nach Review vom 16.11.2026
+
+Freigegeben und umgesetzt: technische Bildkennungen berichtigen, Like-Zusatzabfrage nach Upload entfernen, Meme-DELETE über minimale persistente Aufträge wiederholbar machen und erwartete Prisma-Konflikte als 404/409 behandeln. Kategorien bleiben in PostgreSQL. Siehe [Bildlöschung und Datenschutzgrenzen](docs/bildloeschung.md). Diese Freigabe umfasst nicht die weiterhin offene Kontolöschung.
+
 ## Kontolöschung
 
 - Eigene Memes einschließlich Bilddateien löschen.
@@ -111,13 +115,13 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 - Vollständige Kontolöschung einschließlich Bestätigung, Schutz vor parallelen Änderungen und wiederholbarer Bereinigung.
 - Reale angemeldete Schreibaktionen nach der Backend-Aufteilung erneut abnehmen; vollständige Zwei-Konten- und Kaskadentests bleiben gesonderte Abnahmen.
 - Meme-Pagination und lokale Anfragebegrenzung sind vorhanden; Frontend-Seitennavigation, Limits unter realen Einsatzbedingungen und vollständige Integration bleiben zu prüfen. Persönlicher Like-Status wird inzwischen in Übersicht und Detail mit Token geladen.
-- Dauerhafte Behandlung von Cloudinary-/Datenbank-Teilausfällen.
+- Meme-DELETE hat seit 16.11. eine persistente, datensparsame Bildbereinigung mit Wiederholung. Offen bleiben vollständige Kontolöschung, CDN-/Backup-Aufbewahrung und Upload-Bereinigung bei gleichzeitigem DB-/Cloudinary-Ausfall.
 - Ob beim Bearbeiten eines Memes neben dem Titel auch das Bild ersetzt werden kann.
 - Upload wartet bereits auf Sync; weitere Erstlogin-/Fehlerfälle der Kommentar-/Like-Aktionen und des Layout-Sync prüfen.
 - Technische Einzelheiten der Kontolöschung über Datenbank, Clerk und Bildspeicher.
 - Vollständige API-Verträge und Testfälle.
 - Optionales Hosting; keine Voraussetzung für die Abgabe.
-- Weitere Funktionen wie Suche, Kategorien oder Meme-Editor sind nicht Bestandteil der ersten Version.
+- Kategorien wurden am 16.11.2026 ausdrücklich als Erweiterung beauftragt: eine feste Kategorie je Meme, Zuordnung beim Upload/nachträglich durch den Besitzer und Filter über die bestehende Meme-Liste. Backend umgesetzt; Frontend-Anbindung offen. Suche und Meme-Editor bleiben außerhalb des vereinbarten Umfangs.
 
 ## Nächster Arbeitsschritt
 
@@ -127,4 +131,4 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 4. Mit Testdoubles Erfolgs-, Rechte-, Bestätigungs-, Ausfall- und Wiederholungsfälle prüfen; anschließend ausschließlich mit einem entbehrlichen Testkonto real abnehmen. Gemeinsame Cloudinary-Fixtures nicht für Löschtests verwenden.
 5. Danach verbleibende Absicherung und vollständige Integration abarbeiten. Die Backend-Meme-Pagination ist vorhanden; die Frontend-Navigation dafür fehlt noch. Frontend-Aufgaben richten sich nach dem tatsächlich vorhandenen Stand; keine bereits erledigten Funktionen erneut bauen.
 
-[Projektstand](docs/projektstand.md) dokumentiert Belege und Grenzen. Kategorien/Suche/Editor bleiben außerhalb des Pflichtumfangs.
+[Projektstand](docs/projektstand.md) dokumentiert Belege und Grenzen. Kategorien sind seit 16.11. als Erweiterung beauftragt; Suche und Editor bleiben außerhalb des Pflichtumfangs.
