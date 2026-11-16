@@ -71,6 +71,12 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 - Anfrage- und Antwortformate einschließlich Fehlerfällen vor der Frontend-Anbindung dokumentieren.
 - Teilen erfolgt über einen Link; ein zusätzlicher Backend-Endpunkt ist dafür zunächst nicht vorgesehen.
 
+## Gemeinsame Datenbank und deutsche Kategorien – 16.11.2026
+
+Zusätzlich freigegeben und eingerichtet: gemeinsame PostgreSQL-Datenbank bei Neon Free in Frankfurt. Beide lokalen Backends verwenden getrennte ausdrücklich freigegebene CRUD-Zugänge; Schema-Migrationen erfolgen abgestimmt über den getrennten Migrationszugang. Lokale Integrationstests bleiben lokal.
+
+Verbindliche Kategorien: Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause und Wochenende; zusätzlich Ohne Kategorie. Nur bestätigte eindeutige Zuordnungen übernommen; keine Gleichsetzung von Drinks und Kaffee. [Datenmodell](docs/datenmodell.md) und [Anschluss](docs/gemeinsame-datenbank.md).
+
 ## Bildlöschung nach Review vom 16.11.2026
 
 Freigegeben und umgesetzt: technische Bildkennungen berichtigen, Like-Zusatzabfrage nach Upload entfernen, Meme-DELETE über minimale persistente Aufträge wiederholbar machen und erwartete Prisma-Konflikte als 404/409 behandeln. Kategorien bleiben in PostgreSQL. Siehe [Bildlöschung und Datenschutzgrenzen](docs/bildloeschung.md). Diese Freigabe umfasst nicht die weiterhin offene Kontolöschung.

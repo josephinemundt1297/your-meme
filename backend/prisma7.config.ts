@@ -9,6 +9,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Backend nutzt DATABASE_URL; Schema-Migrationen optional den getrennten Eigentümerzugang.
+    url: process.env.DIRECT_DATABASE_URL || env("DATABASE_URL"),
   },
 });

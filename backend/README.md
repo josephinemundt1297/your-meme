@@ -2,6 +2,12 @@
 
 Stand: 16.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und Cloudinary für Meme-Upload und -Löschung. Kommentar-Schreibaktionen, Titeländerung, Likes, persönliche Like-GETs, zentrale JSON-Fehlerbehandlung, Ordner einschließlich Umbenennen/Löschen und ADMIN-Löschrechte sind implementiert. Die API ist in fachliche Module mit getrennten Routen, Controllern und Services aufgeteilt.
 
+## Gemeinsame Datenbank – aktiv
+
+Der vollständige freigegebene Projektstand liegt jetzt in Neon Free, Frankfurt, PostgreSQL 18. Josephines Backend verwendet dieses Ziel bereits. Daten und 4 Migrationen wurden vollständig abgeglichen; Health, DB-Health und Kategorie-GETs erfolgreich geprüft. Die lokale Quelle bleibt vorerst als Rückfallmöglichkeit erhalten. Beide ausdrücklich freigegebenen eingeschränkten Backend-Zugänge sind eingerichtet. Dileks Zugang liegt nur in der geschützten, Git-ignorierten lokalen Datei `.env.dilek.local` für private Weitergabe. Josephines Schema-Migrationen nutzen die optionale DIRECT_DATABASE_URL; normale Backend-Zugriffe DATABASE_URL. [Anschluss und Umzugsbelege](docs/gemeinsame-datenbank.md).
+
+Aktuelle Kategorien: **Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause und Wochenende**, zusätzlich Ohne Kategorie. Neue Migration `20261116180000_german_categories`; nur bestätigte Zuordnungen übernommen, sonst Ohne Kategorie. Die älteren Kategorienabschnitte unten sind durch diese neue Liste überholt. Frontend-Anpassung bleibt Dileks Aufgabe.
+
 ## Review-Korrekturen und Bildbereinigung – 16.11.2026
 
 Neue Migration `20261116160000_add_image_deletion_jobs` lokal angewendet. Andere lokale Datenbanken benötigen nach Kontrolle der Verbindung ebenfalls `npx prisma migrate deploy`, danach `npx prisma generate` und Backend-Neustart. Die neue Tabelle speichert minimale ausstehende Bildlöschaufträge. Meme-DELETE kann nun 503 melden, obwohl der Inhalt bereits entfernt wurde; die Bildbereinigung wird automatisch und durch erneutes DELETE wiederholt. 204 bedeutet abgeschlossene Verarbeitung. Der Hintergrunddienst arbeitet nach Serverstart und jede Minute, maximal 25 Aufträge pro Durchlauf.

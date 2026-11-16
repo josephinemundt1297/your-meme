@@ -1,5 +1,17 @@
 # Your Meme – API: Implementierung und Planung
 
+## Aktuell: neun deutsche Kategorien und gemeinsame Datenbank – 16.11.2026
+
+Verbindliche API-Werte: `Arbeit`, `Programmieren`, `Kaffee`, `Tiere`, `Essen`, `Lernen`, `Spiele`, `Zuhause`, `Wochenende`; zusätzlich `Ohne Kategorie` als neutraler Standard. `Alle Memes` ist kein gespeicherter Wert: dafür `category` weglassen. Beispiel: `GET /api/memes?category=Tiere`. Englische und gestrichene alte Werte werden mit 400 abgewiesen; insbesondere `Gaming` heißt jetzt `Spiele`.
+
+Migration `20261116180000_german_categories` ersetzt den CHECK und übernimmt ausschließlich bestätigte Zuordnungen: Animal→Tiere, Food→Essen, Study→Lernen, Gaming→Spiele, Meeting→Arbeit. Arbeit und Programmieren bleiben erhalten. Alte Kategorien ohne eindeutigen Nachfolger werden `Ohne Kategorie`; insbesondere keine automatische Zuordnung von Drinks zu Kaffee oder von Holiday/Outdoor zu Wochenende. Bereits gültige neue Werte bleiben erhalten. Migration lokal und auf dem gemeinsamen Neon-Ziel enthalten.
+
+Backend-Filter, Upload und PATCH verwenden dieselbe neue Liste. Aktueller Testlauf: 107 erfolgreiche Tests einschließlich zweier ausdrücklich aktivierter PostgreSQL-Tests. Die frühere höhere Anzahl enthielt sechs zusätzliche Kategorien-Einzelfälle; die Liste wurde auf ausdrücklichen Auftrag verkürzt.
+
+Gemeinsames Neon-Projekt `your-meme`, Frankfurt, PostgreSQL 18, Free-Tarif: vollständiger freigegebener Datenstand importiert und abgeglichen. Josephines Backend nutzt dieses Ziel bereits. [Dileks Anschluss und Zugangsvoraussetzungen](gemeinsame-datenbank.md). Frontend bleibt Dileks Zuständigkeit; vorhandene Menü-/Upload-Werte müssen genau diese Liste senden.
+
+Die folgenden Kategorienabschnitte beschreiben den vorherigen Stand; die obige Liste ist maßgeblich.
+
 ## Zuverlässigkeit und Bildlöschung – 16.11.2026
 
 Die vier freigegebenen Review-Befunde sind bearbeitet. Exakte Cloudinary-public_ids in Fixtures und lokaler DB korrigiert; Kategorien bleiben ausschließlich in PostgreSQL. Neue Uploads liefern `likedByMe: false` ohne nachträgliche Like-Abfrage. Meme-DELETE verwendet jetzt eine atomare Inhaltslöschung mit minimalem persistentem Bildauftrag; vollständiger Ablauf, Datenschutzgrenzen und Tests: [Bildlöschung](bildloeschung.md).
@@ -78,7 +90,7 @@ Meme (Liste als Array, GET-Detail und Meme-POST/PATCH als einzelnes Objekt):
 {
   "id": "11111111-1111-4111-8111-111111111111",
   "title": "Beispiel-Meme",
-  "category": "Alltag",
+  "category": "Arbeit",
   "imageUrl": "https://bilder.example/meme.png",
   "userId": "22222222-2222-4222-8222-222222222222",
   "createdAt": "2026-11-11T09:00:00.000Z",

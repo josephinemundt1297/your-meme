@@ -85,7 +85,13 @@ erDiagram
 
 `MemeImageDeletion` enthält nur Meme-ID (Primärschlüssel), lokale Besitzer-ID, exakte Cloudinary-public_id sowie Erstellungs-/nächsten Versuchszeitpunkt. Auftrag und Inhaltslöschung werden gemeinsam in einer Transaktion gespeichert. Nach erfolgreicher Dateibereinigung wird der Auftrag entfernt. Keine Inhaltskopien, keine zusätzlichen Clerk-/Kontaktdaten; keine Fremdschlüsselkaskade, die bei späterer Kontolöschung noch offene Aufträge verwerfen könnte. Verarbeitet über einen Index auf `nextAttemptAt`. [Ablauf, Aufbewahrung und Grenzen](bildloeschung.md).
 
-## Kategorien (Erweiterung vom 16.11.2026)
+## Aktuelle Kategorien – deutsche verkürzte Liste
+
+Seit Migration `20261116180000_german_categories`: Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause und Wochenende; zusätzlich Ohne Kategorie. Das Textfeld und der Standardwert bleiben bestehen. Die neue Migration ersetzt den SQL-CHECK atomar und überführt nur bestätigte Zuordnungen (Animal→Tiere, Food→Essen, Study→Lernen, Gaming→Spiele, Meeting→Arbeit). Übrige gestrichene Werte werden Ohne Kategorie. Keine Bilddatei oder Bildkennung wird dafür geändert.
+
+Aktuelle Verteilung der 30 übertragenen Memes: Arbeit 3, Essen 2, Lernen 2, Programmieren 3, Spiele 2, Tiere 2, Ohne Kategorie 16. Kaffee, Zuhause und Wochenende sind zunächst leer. Die Daten liegen jetzt gemeinsam in Neon Frankfurt; beide lokalen Backends sollen auf dasselbe Ziel zeigen. [Anschluss](gemeinsame-datenbank.md).
+
+## Vorherige Kategorien-Erweiterung vom 16.11.2026
 
 `Meme.category` ist ein verpflichtendes Textfeld mit Standardwert `Ohne Kategorie`. Es bleibt bei einer Kategorie pro Meme; eine eigene Kategorien-Tabelle ist dafür nicht nötig. Bestehende Datensätze erhalten diesen neutralen Wert. Neue Uploads dürfen eine Kategorie angeben; ohne Angabe gilt derselbe Standard. Besitzer können die Zuordnung über die bestehende PATCH-Route ändern.
 

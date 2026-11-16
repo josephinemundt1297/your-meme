@@ -1,6 +1,26 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-## Aktueller Nachtrag vom 16.11.2026 – freigegebene Review-Korrekturen
+## Aktueller Nachtrag vom 16.11.2026 – Neon aktiv und Kategorien vollständig deutsch
+
+Josephine hat die vollständige Übertragung von 3 Profilen einschließlich Clerk-IDs, 30 Meme-Einträgen, 1 Kommentar, 1 Like und 2 Ordnern nach Neon Frankfurt freigegeben. Projekt `your-meme` (`ancient-scene-53479819`) im bestehenden Konto neu angelegt: Free-Tarif, Frankfurt, PostgreSQL 18.7. Keine anderen Projekte verändert.
+
+Zusätzlich ausdrücklich freigegeben: Dileks verkürzte Liste vollständig eindeutschen. Gültig sind Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause, Wochenende plus Ohne Kategorie. Nur Animal→Tiere, Food→Essen, Study→Lernen, Gaming→Spiele und Meeting→Arbeit übernommen; Arbeit/Programmieren erhalten. Alle übrigen gestrichenen Kategorien wurden gemäß Rückmeldung Ohne Kategorie. Neue atomare Migration `20261116180000_german_categories`, Backend-Validator und unabhängige Kategorie-Tests angepasst. Kein Frontend geändert. 107 Tests einschließlich zweier lokaler PostgreSQL-Tests erfolgreich; die Anzahl sinkt wegen der ausdrücklich verkürzten Kategorienliste.
+
+Lokales Backend kurz gestoppt, Projekt-Tabellen während frischem Export und Abgleich gegen Schreiben gesperrt. Dump atomar auf leeres Neon-Ziel übernommen. Alle Daten und die Historie von 4 Migrationen vollständig verglichen. Verbindung TLS 1.3 mit gültigem Zertifikat geprüft; DATABASE_URL nur in lokaler geschützter Backend-Konfiguration geändert. Backend wieder gestartet. Live-Abnahme: Health und DB-Health 200; Meme-Liste 30; Arbeit 3, Tiere 2, Spiele 2, Kaffee 0; Animal erwartungsgemäß 400. Migrationsstatus aktuell, keine offenen Bildaufträge. Keine echte neue Bildübertragung/Löschung als Teil dieses Umzugs. Lokale Quelle und geschütztes finales Rückfallarchiv bleiben vorerst erhalten.
+
+Aktuelle Kategorienverteilung: Arbeit 3, Essen 2, Lernen 2, Programmieren 3, Spiele 2, Tiere 2, Ohne Kategorie 16. Kaffee/Zuhause/Wochenende noch leer; keine inhaltliche Vermutung bei der Umklassifizierung.
+
+Josephine hat danach die zwei konkreten dauerhaften Backend-Zugänge ausdrücklich freigegeben. Rolle a für ihr Backend und Rolle b für Dilek angelegt: CRUD auf Projekttabellen, SELECT auf Migrationshistorie, keine Schema-Erstellung. Beide Verbindungen zertifikatsgeprüft; Josephines Backend neu mit Rolle a gestartet. Migrationszugang separat in DIRECT_DATABASE_URL, Prisma-Konfiguration mit abwärtskompatiblem Fallback angepasst. Dileks Verbindung nur in lokaler Git-ignorierter `.env.dilek.local` (600), keine Geheimnisse in versionierter Dokumentation. Gemeinsames Schreiben/Lesen zwischen Rolle b und HTTP-API von Rolle a mit eigenem temporärem Datensatz tatsächlich geprüft; Testdaten vollständig entfernt, wieder 30 Memes. Keine Nachricht an Dilek versendet. [Anschluss und offene Abnahme](gemeinsame-datenbank.md). Kein Commit, Push oder Merge; Backend-Codeänderungen müssen nach Prüfung regulär geteilt werden.
+
+## Vorheriger Nachtrag vom 16.11.2026 – gemeinsames Datenbankziel vorbereitet
+
+Josephine hat den Umzug auf eine gemeinsam gehostete PostgreSQL-Datenbank beauftragt. Vorgeschlagen: Neon Free, Frankfurt, PostgreSQL 18. Anbieter-Verbindung und Bestätigung, welche personenbezogenen Daten übertragen werden dürfen, stehen noch aus. Noch kein Cloud-Projekt erstellt, keine Daten übertragen und keine Backend-Konfiguration umgestellt.
+
+Lokale Quelle lesend geprüft: PostgreSQL 18.6, ungefähr 8,5 MB; 3 Profile, 30 Memes, 1 Kommentar, 1 Like, 2 Ordner, keine FolderMeme-Zuordnungen und keine offenen Bildlöschaufträge. Geschützten lokalen pg_dump-Snapshot erstellt (Custom-Archiv, 17.321 Bytes), Inhaltsliste mit pg_restore geprüft. Das ist noch kein Wiederherstellungstest. Vor finalem Import Schreibpause und frischer Abzug nötig; lokale Quelle bleibt vorerst erhalten.
+
+[Konkreter Ablauf, Datenumfang und Prüfgrenzen](gemeinsame-datenbank.md). Nur Backend-Dokumentation ergänzt; kein Anwendungscode, keine Abhängigkeiten oder Frontend-Dateien geändert. Kein Commit, Push oder Merge.
+
+## Vorheriger Nachtrag vom 16.11.2026 – freigegebene Review-Korrekturen
 
 Josephine hat die vier Befunde ausdrücklich zur Behebung freigegeben, mit besonderem Augenmerk auf Datenschutz. Ausschließlich Backend, Backend-Tests, Migration und Backend-Dokumentation geändert. Keine Frontend-Dateien, neuen Pakete, Commits, Pushes oder Merges.
 

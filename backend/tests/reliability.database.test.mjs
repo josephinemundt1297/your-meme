@@ -51,3 +51,37 @@ try {
 }
 
 });
+
+test("PostgreSQL: German category migration preserves explicit mappings only", {
+  skip: process.env.RUN_DATABASE_TESTS !== "1",
+}, async () => {
+  await import("dotenv/config");
+  const { readFile } = await import("node:fs/promises");
+  const { Client } = await import("pg");
+  const target = new URL(process.env.DATABASE_URL);
+  assert.ok(["localhost", "127.0.0.1", "[::1]"].includes(target.hostname));
+  assert.equal(target.pathname, "/your_meme_db");
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const unchanged = ["Ohne Kategorie", "Arbeit", "Programmieren", "Kaffee", "Tiere", "Essen", "Lernen", "Spiele", "Zuhause", "Wochenende"];
+  const translated = { Animal: "Tiere", Food: "Essen", Study: "Lernen", Gaming: "Spiele", Meeting: "Arbeit" };
+  const unassigned = ["Alltag", "Sport", "Tech", "Movies", "Outdoor", "Drinks", "Holiday", "Book"];
+  const source = [...unchanged, ...Object.keys(translated), ...unassigned];
+  try {
+    await client.connect();
+    await client.query("BEGIN");
+    await client.query("SET LOCAL search_path = pg_temp");
+    // Die echte Meme-Tabelle wird niemals angefasst: ausschließlich eine temporäre Tabelle.
+    await client.query('CREATE TEMP TABLE "Meme" ("id" INTEGER PRIMARY KEY, "category" TEXT NOT NULL, "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "Meme_category_check" CHECK (true)) ON COMMIT DROP');
+    for (const [id, category] of source.entries()) {
+      await client.query('INSERT INTO "Meme" ("id", "category") VALUES ($1, $2)', [id, category]);
+    }
+    const migration = await readFile(new URL("../prisma/migrations/20261116180000_german_categories/migration.sql", import.meta.url), "utf8");
+    await client.query(migration.replace(/^BEGIN;\s*/, "").replace(/COMMIT;\s*$/, ""));
+    const result = await client.query('SELECT "category" FROM "Meme" ORDER BY "id"');
+    assert.deepEqual(result.rows.map(row => row.category), source.map(category => unchanged.includes(category) ? category : translated[category] ?? "Ohne Kategorie"));
+    await assert.rejects(client.query('INSERT INTO "Meme" ("id", "category") VALUES (999, $1)', ["Gaming"]), error => error.code === "23514");
+  } finally {
+    await client.query("ROLLBACK").catch(() => {});
+    await client.end();
+  }
+});

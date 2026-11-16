@@ -1,23 +1,17 @@
 import { z } from "zod";
 
-// Dieselben Namen wie im bestehenden Frontend-Menü.
+// Vereinbarte deutsche Kategorien; Dileks Frontend verwendet dieselben API-Werte.
 export const categories = [
   "Ohne Kategorie",
-  "Programmieren",
-  "Alltag",
   "Arbeit",
-  "Sport",
-  "Gaming",
-  "Tech",
-  "Animal",
-  "Movies",
-  "Outdoor",
-  "Study",
-  "Drinks",
-  "Food",
-  "Holiday",
-  "Book",
-  "Meeting",
+  "Programmieren",
+  "Kaffee",
+  "Tiere",
+  "Essen",
+  "Lernen",
+  "Spiele",
+  "Zuhause",
+  "Wochenende",
 ] as const;
 
 // z ist der importierte Zod-Zugriff. enum (Enumeration = Aufzählung) ist ein
