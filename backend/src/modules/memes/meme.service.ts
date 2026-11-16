@@ -3,7 +3,9 @@ import { HttpError } from "../../utils/HttpError.js";
 import { memeSelect } from "../../lib/memeSelect.js";
 import { getLikedMemeIds } from "../../lib/getLikedMemeIds.js";
 import { formatMeme } from "../../utils/formatMeme.js";
-import type { Pagination } from "../../validators/pagination.js";
+import type { MemeListQuery } from "../../validators/pagination.js";
+import type { Category } from "../../validators/category.js";
+import type { MemeChanges } from "../../validators/meme.js";
 
 export function createMemeService(
   dependencies: Pick<AppDependencies, "database" | "imageStorage">,
@@ -13,9 +15,10 @@ export function createMemeService(
 
   async function listMemes(
     clerkUserId: string | null | undefined,
-    pagination: Pagination,
+    pagination: MemeListQuery,
   ) {
     const rows = await prisma.meme.findMany({
+      ...(pagination.category ? { where: { category: pagination.category } } : {}),
       select: memeSelect,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: (pagination.page - 1) * pagination.limit,
@@ -63,7 +66,7 @@ export function createMemeService(
     return formatMeme(meme, ownLike !== null);
   }
 
-  async function updateMeme(id: string, clerkUserId: string, title: string) {
+  async function updateMeme(id: string, clerkUserId: string, changes: MemeChanges) {
     const meme = await prisma.meme.findUnique({
       where: { id },
       select: {
@@ -84,9 +87,7 @@ export function createMemeService(
 
     const updatedMeme = await prisma.meme.update({
       where: { id, userId: meme.userId },
-      data: {
-        title,
-      },
+      data: changes,
       select: memeSelect,
     });
 
@@ -213,7 +214,9 @@ export function createMemeService(
     };
   }
 
-  async function createMeme(clerkUserId: string, title: string, buffer: Buffer) {
+  async function createMeme(
+    clerkUserId: string, title: string, buffer: Buffer, category: Category,
+  ) {
     const user = await prisma.user.findUnique({
       where: { clerkId: clerkUserId },
       select: { id: true },
@@ -229,6 +232,7 @@ export function createMemeService(
       .create({
         data: {
           title,
+          category,
           imageUrl: image.imageUrl,
           imageStorageId: image.imageStorageId,
           userId: user.id,

@@ -1,6 +1,22 @@
 # Your Meme – Backend starten
 
-Stand: 13.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und Cloudinary für Meme-Upload und -Löschung. Kommentar-Schreibaktionen, Titeländerung, Likes, persönliche Like-GETs, zentrale JSON-Fehlerbehandlung, Ordner einschließlich Umbenennen/Löschen und ADMIN-Löschrechte sind implementiert. Die API ist in fachliche Module mit getrennten Routen, Controllern und Services aufgeteilt.
+Stand: 16.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und Cloudinary für Meme-Upload und -Löschung. Kommentar-Schreibaktionen, Titeländerung, Likes, persönliche Like-GETs, zentrale JSON-Fehlerbehandlung, Ordner einschließlich Umbenennen/Löschen und ADMIN-Löschrechte sind implementiert. Die API ist in fachliche Module mit getrennten Routen, Controllern und Services aufgeteilt.
+
+## Kategorien: lokale Datenbank aktualisieren
+
+Die bestehende Meme-API unterstützt jetzt Kategorien. Im Ordner `backend/` nach Kontrolle der lokalen Datenbankverbindung:
+
+```bash
+npx prisma migrate status
+npx prisma migrate deploy
+npx prisma generate
+```
+
+Danach Backend neu starten. Die neue Migration `20261116093000_add_meme_category` ergänzt ein Kategorie-Feld mit Standard `Ohne Kategorie` und einer festen Werteliste. Auf Josephines lokaler Datenbank wurde sie am 16.11. erfolgreich angewendet. Auf Dileks Rechner muss sie ebenfalls angewendet werden; Git überträgt diese Datenbankänderung nicht automatisch. Vorhandene Bilder werden nicht automatisch einer fachlichen Kategorie zugeordnet.
+
+Beispiel: `GET http://localhost:3000/api/memes?category=Alltag`. Ohne Kategorie-Parameter bleiben alle Memes sichtbar, jeweils begrenzt durch die Pagination. Alle 15 Kategorien des bestehenden Menüs werden unterstützt und sind einzeln für Filter, Seitenwechsel und Zuordnung getestet; zusätzlich gibt es `Ohne Kategorie`. Die Namen und Groß-/Kleinschreibung stimmen mit dem Menü überein. Upload nimmt ein zusätzliches Textfeld `category` an; fehlt es, Standard `Ohne Kategorie`. Besitzer können über PATCH Kategorie und/oder Titel ändern. [Vollständiger Vertrag und Frontend-Schritte](docs/api-plan.md).
+
+Die vorhandene Website-Adresse `http://localhost:5173/?category=Alltag` bleibt erhalten. Dilek muss den Parameter noch an die API übergeben und die Upload-Auswahl ergänzen. Die Backend-Änderung allein verbindet das Menü noch nicht.
 
 ## Voraussetzungen und Installation
 
