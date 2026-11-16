@@ -1,5 +1,11 @@
 # Your Meme – Projektstand und Arbeitsweise
 
+## Feierabend-Nachtrag – Merge und Präsentationsplanung am 16.11.2026
+
+Remote-main 5c2da88 (Merge #57, Frontend 302f576) gelesen. Oberes Menü und Routen Heute/meist kommentiert ergänzt; Tagesfilter sowie Sortierung laufen aktuell im Frontend nur über die erste API-Seite. Dieser Teil der früheren Fehlstellen ist damit überholt. Alte Kategorien, fehlende eigene Detailaktionen und verworfene lokale Sync-ID bleiben bestehen. Grobe gerundete Schätzung weiterhin Backend ca. 80 %, Frontend ca. 60 %, insgesamt ca. 70 %; kein neuer Build-/Browser-Test dieses Merges heute. Lokaler Checkout nicht mit dem Remote-Stand zusammengeführt.
+
+Von Josi bestätigt: Heute Feierabend. Morgen, Dienstag 17.11., Schwerpunkt gemeinsame PowerPoint. Donnerstag 19.11. gegebenenfalls nur Feinschliff und Probe. Damit das realistisch bleibt, müssen offene Pflichtfunktionen und Demo-Probleme vorher geklärt sein; keine neue Fertigstellungszusage. Trello-Menüpunkt nach Codeprüfung abgehakt, Feed-Abhängigkeit separat offen; Zeitplan entsprechend angepasst. Keine Implementierung, Datenänderung oder Präsentationserstellung heute begonnen.
+
 ## Aktueller Review vom 16.11.2026 – Backend, Frontend und Trello
 
 Auf Josephines Auftrag Backend kritisch geprüft, mit aktuellem Frontend und Trello abgeglichen und ihre sieben zusätzlichen Frontend-Wünsche aufgenommen. Repository 8cebba0; Remote-Frontend-Stand 04312a5 enthalten. Backend ca. 80 %, Frontend ca. 60 %, Gesamt ca. 70 % als grobe gewichtete Schätzung einschließlich der neuen Wünsche, Unsicherheit etwa ±5–10 Prozentpunkte. Keine Abnahmequote.
