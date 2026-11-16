@@ -1,6 +1,18 @@
 # Your Meme – Projektstand und Arbeitsweise
 
-## Aktueller Nachtrag vom 16.11.2026 – Neon aktiv und Kategorien vollständig deutsch
+## Aktueller Nachtrag vom 16.11.2026 – Backend bereinigt
+
+Auf Josephines ausdrücklichen Auftrag ausschließlich das Backend bereinigt, ohne neue Pakete oder zusätzliche Architekturschichten:
+
+- Upload-Schema prüft nur die tatsächlichen Formularfelder Titel/Kategorie. Bildadresse und Speicher-ID werden weiterhin ausschließlich vom Cloudinary-Ergebnis übernommen; API-Verhalten bleibt erhalten.
+- Ungenutzten Pagination-Typ und unnötigen Schema-Export entfernt. Die lokale Variable `listQuery` bezeichnet nun passend Kategorie und Seiteneinstellungen. Unbenutzte Request-Parameter markiert; Bildbereinigung, Meme-Service und Serverstart lesbarer formatiert. Gewünschte Erklärungen zu Zod/enum/infer beibehalten.
+- Node-Anforderung in package.json und Lockdatei auf die bereits verwendete Version ab 24 angeglichen; keine Abhängigkeiten aktualisiert. Generierten Installationskommentar aus der Prisma-Konfiguration entfernt.
+- Datenbank-Healthcheck protokolliert keine rohen Fehlerobjekte mehr. Bestehenden Datenschutz-Regressionstest um einen Datenbankausfall mit vertraulichem Fehlerinhalt erweitert; HTTP-Status und Antwortformat bleiben erhalten.
+- README, API-Vertrag, Architektur und Datenmodell auf den aktuellen Stand zusammengeführt. Widersprüchliche alte Kategorienlisten, lokale Einrichtungsanweisungen und überholte Testzahlen aus den aktuellen Anleitungen entfernt. Historische Nachträge unten bleiben als Prüfbelege erhalten. SPECK nur an diesen belegten Dokumentationsstand angepasst; keine neuen Anforderungen ergänzt.
+
+Prüfung: Typprüfung einschließlich `--noUnusedLocals --noUnusedParameters`, Prisma-Schemavalidierung und `git diff --check` erfolgreich. `npm test`: **105 erfolgreich, 2 lokale PostgreSQL-Tests bewusst übersprungen, 0 fehlgeschlagen**. HTTP-Tests benötigten lokale Serverports außerhalb der Sandbox; externe Dienste wurden simuliert. Kein erneuter Datenbank-Integrationstest und keine Live-Schreib-/Löschabnahme. Keine Migration ausgeführt, keine gemeinsamen Daten oder Zugangsdaten geändert, keine Frontend-Dateien geändert. Kein Commit, Push oder Merge.
+
+## Vorheriger Nachtrag vom 16.11.2026 – Neon aktiv und Kategorien vollständig deutsch
 
 Josephine hat die vollständige Übertragung von 3 Profilen einschließlich Clerk-IDs, 30 Meme-Einträgen, 1 Kommentar, 1 Like und 2 Ordnern nach Neon Frankfurt freigegeben. Projekt `your-meme` (`ancient-scene-53479819`) im bestehenden Konto neu angelegt: Free-Tarif, Frankfurt, PostgreSQL 18.7. Keine anderen Projekte verändert.
 

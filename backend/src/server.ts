@@ -1,6 +1,9 @@
 import { clerkClient, clerkMiddleware, getAuth } from "@clerk/express";
 import type { AppDependencies } from "./types/dependencies.js";
-import { createImageDeletionService, startImageDeletionRetries } from "./modules/memes/image-deletion.service.js";
+import {
+  createImageDeletionService,
+  startImageDeletionRetries,
+} from "./modules/memes/image-deletion.service.js";
 import { createApp } from "./app.js";
 import { prisma } from "./lib/prisma.js";
 import { cloudinary } from "./lib/cloudinary.js";
@@ -24,7 +27,9 @@ const dependencies: AppDependencies = {
 const app = createApp(dependencies);
 
 const server = app.listen(port, () => {
-  const stopRetries = startImageDeletionRetries(createImageDeletionService(dependencies));
+  const stopRetries = startImageDeletionRetries(
+    createImageDeletionService(dependencies),
+  );
   server.once("close", stopRetries);
   console.log(`Your-Meme-Backend läuft auf http://localhost:${port}`);
 });

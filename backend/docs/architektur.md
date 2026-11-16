@@ -1,6 +1,6 @@
 # Backend-Architektur
 
-Stand: 13.11.2026. Freigegebene Aufteilung auf Branch `Backend`; keine zusätzlichen Funktionen oder Pakete.
+Stand: 16.11.2026. Fachliche Module mit getrennten Routen, Controllern und Services; keine zusätzliche Repository- oder Framework-Schicht.
 
 ## Zuständigkeiten
 
@@ -45,15 +45,11 @@ Die Clerk-Benutzerkennung heißt in Services `clerkUserId`; das Datenbankfeld `u
 
 ## Tests und Grenzen
 
-`npm test` baut TypeScript und führt 72 Tests mit dem Node-Testläufer aus. Die Tests starten die tatsächliche Express-App auf einem freien lokalen Port. Dadurch werden Router, Middleware, Controller und Services gemeinsam geprüft. Simuliert werden ausschließlich Authentifizierung sowie Datenbank-, Clerk-Nutzer- und Bildspeicherdienste. Die Test-Datenbank berücksichtigt die angeforderte Feldauswahl.
+`npm test` baut TypeScript und prüft die tatsächliche Express-App über lokale HTTP-Anfragen. Authentifizierung, Datenbank, Clerk-Nutzerdienst und Bildspeicher sind dabei simuliert. Zwei PostgreSQL-Tests laufen nur mit ausdrücklichem `RUN_DATABASE_TESTS=1` und erlauben ausschließlich eine lokale Projektdatenbank; niemals die gemeinsame Datenbank als Testziel verwenden.
 
-Abgedeckt sind unter anderem Anmeldung, Besitzer-/ADMIN-Rechte, private Ordner, Validierung, JSON-Parserfehler, CORS, persönliche Likes, Ordner-Zuordnungen und PNG-Uploads einschließlich Bereinigung nach Datenbankfehlern. Die bisherigen 21 Moderationstests verwenden jetzt diese HTTP-Testumgebung, statt Handler aus dem Text der Serverdatei auszulesen.
+Abgedeckt sind unter anderem Anmeldung, Besitzer-/ADMIN-Rechte, private Ordner, Validierung, JSON-Parserfehler, CORS, persönliche Likes, Kategorien, Pagination, Anfragebegrenzung und PNG-Uploads einschließlich Fehlerbereinigung. Die PostgreSQL-Tests prüfen Transaktionen, Kaskaden, persistierte Bildaufträge und Kategorienmigration.
 
-Vor der anschließenden Bereinigung wurde die gesicherte alte Serverdatei einmalig mit der aufgeteilten App in 99 Fällen verglichen: Status, JSON-Antwort, Content-Type, CORS sowie Argumente und Reihenfolge externer Dienstaufrufe stimmten überein. Dieser Vergleich ist ein lokaler Refactoring-Nachweis; die alte Monolith-Datei und das Vergleichsskript gehören nicht zum Anwendungscode.
-
-Diese Prüfung belegt keine erneute Live-Abnahme von Clerk, PostgreSQL, Cloudinary oder der Frontend-Oberfläche. Echte Zugangsdaten, Konten und Bilder wurden in den Regressionstests nicht verwendet. Dienstübergreifende Teilausfälle bleiben offen. Die nachfolgende freigegebene Bereinigung ergänzt inzwischen likedByMe in allen Meme-Antworten und behebt den Validator-Beispielcode sowie die PNG-Meldung. Persönliche Likes für mehrere Memes werden über getLikedMemeIds gemeinsam geladen.
-
-Nach den Regressionstests wurde der gebaute Server zusätzlich mit der vorhandenen lokalen Konfiguration auf einem freien Testport gestartet. Ausschließlich lesend geprüft: Health 200, PostgreSQL-Health 200/connected und Meme-Liste 200 mit 32 Memes sowie CORS für localhost:5173. Danach wurde nur dieser zusätzliche Testserver beendet. Angemeldete Schreibaktionen und Cloudinary-Übertragungen wurden dabei nicht erneut ausgeführt.
+Diese Tests ersetzen keine authentifizierte Browser-Abnahme mit echten Clerk-/Cloudinary-Diensten. Historische Refactoring-Vergleiche, frühere Testzahlen und Live-Prüfungen stehen im [Projektstand](projektstand.md).
 
 ## Ergänzung vom 16.11.2026 – Bildbereinigung
 

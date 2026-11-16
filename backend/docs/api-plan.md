@@ -1,4 +1,4 @@
-# Your Meme – API: Implementierung und Planung
+# Your Meme – API-Vertrag
 
 ## Aktuell: neun deutsche Kategorien und gemeinsame Datenbank – 16.11.2026
 
@@ -6,11 +6,9 @@ Verbindliche API-Werte: `Arbeit`, `Programmieren`, `Kaffee`, `Tiere`, `Essen`, `
 
 Migration `20261116180000_german_categories` ersetzt den CHECK und übernimmt ausschließlich bestätigte Zuordnungen: Animal→Tiere, Food→Essen, Study→Lernen, Gaming→Spiele, Meeting→Arbeit. Arbeit und Programmieren bleiben erhalten. Alte Kategorien ohne eindeutigen Nachfolger werden `Ohne Kategorie`; insbesondere keine automatische Zuordnung von Drinks zu Kaffee oder von Holiday/Outdoor zu Wochenende. Bereits gültige neue Werte bleiben erhalten. Migration lokal und auf dem gemeinsamen Neon-Ziel enthalten.
 
-Backend-Filter, Upload und PATCH verwenden dieselbe neue Liste. Aktueller Testlauf: 107 erfolgreiche Tests einschließlich zweier ausdrücklich aktivierter PostgreSQL-Tests. Die frühere höhere Anzahl enthielt sechs zusätzliche Kategorien-Einzelfälle; die Liste wurde auf ausdrücklichen Auftrag verkürzt.
+Backend-Filter, Upload und PATCH verwenden dieselbe Liste. Alle Meme-Antworten einschließlich Ordnerinhalten enthalten `category`. Der Filter wird vor Offset/Limit in PostgreSQL angewendet. Ein reines Titel-Update lässt die Kategorie unverändert.
 
 Gemeinsames Neon-Projekt `your-meme`, Frankfurt, PostgreSQL 18, Free-Tarif: vollständiger freigegebener Datenstand importiert und abgeglichen. Josephines Backend nutzt dieses Ziel bereits. [Dileks Anschluss und Zugangsvoraussetzungen](gemeinsame-datenbank.md). Frontend bleibt Dileks Zuständigkeit; vorhandene Menü-/Upload-Werte müssen genau diese Liste senden.
-
-Die folgenden Kategorienabschnitte beschreiben den vorherigen Stand; die obige Liste ist maßgeblich.
 
 ## Zuverlässigkeit und Bildlöschung – 16.11.2026
 
@@ -18,28 +16,13 @@ Die vier freigegebenen Review-Befunde sind bearbeitet. Exakte Cloudinary-public_
 
 Meme-DELETE: 204 erst nach abgeschlossener Dateibereinigung und Auftragsentfernung; bei offenem Bildauftrag 503 mit verständlicher Meldung. Inhalt ist dann bereits nicht mehr sichtbar. Besitzer/ADMIN können denselben DELETE erneut senden; der Server wiederholt fällige Aufträge auch automatisch. Keine neue öffentliche Route. Echte Prisma-Konflikte P2025 → 404, P2003/P2002 → 409; keine Datenbankdetails in Antworten oder Logs. Vollständige Kontolöschung bleibt offen.
 
-## Kategorien-Erweiterung vom 16.11.2026
+## Kategorien und Frontend-Anbindung
 
-Auf Josephines Auftrag ergänzt: eine feste Kategorie je Meme, ohne neue Route und ohne neue Tabelle. Die bestehende Frontend-Adresse `/?category=Alltag` bleibt erhalten. Die Website-Adresse auf Port 5173 ist von der API-Anfrage auf Port 3000 zu unterscheiden. Die Frontend-Anbindung bleibt Dileks Aufgabe.
+`GET /api/memes?category=Tiere&page=1&limit=50` liefert nur Treffer der exakten Kategorie. Ohne `category` erscheinen alle Kategorien; eine leere Treffermenge liefert 200 und `[]`. Für Leerzeichen URL-Kodierung verwenden, etwa `category=Ohne%20Kategorie`.
 
-- `GET /api/memes?category=Alltag&page=1&limit=50`: exakter Kategoriename, Filter in PostgreSQL vor Offset/Limit. Ohne `category` alle Memes, leere Treffer 200 mit `[]`. Unbekannte/leere/mehrfache Kategorien ergeben 400. Kein neuer Kategorien-Endpunkt.
-- Erlaubte Werte (Groß-/Kleinschreibung beachten): `Ohne Kategorie`, `Programmieren`, `Alltag`, `Arbeit`, `Sport`, `Gaming`, `Tech`, `Animal`, `Movies`, `Outdoor`, `Study`, `Drinks`, `Food`, `Holiday`, `Book`, `Meeting`. Für Leerzeichen URL-Kodierung verwenden, z. B. `category=Ohne%20Kategorie`.
-- `POST /api/memes`: zusätzliches Multipart-Textfeld `category`. Fehlt es, wird zur Kompatibilität mit dem bestehenden Upload `Ohne Kategorie` gespeichert; ein ausdrücklich ungültiger Wert wird vor Cloudinary-/DB-Zugriff mit 400 abgewiesen.
-- `PATCH /api/memes/:id`: `title` und/oder `category`, mindestens eines. Beispiel: `{ "category": "Alltag" }`. Nur Ersteller, auch ADMIN darf fremde Memes weiterhin nicht bearbeiten. Ein reines Titel-Update lässt die Kategorie unverändert. Fehlendes/ungültiges Feld ergibt 400.
-- Alle Meme-Antworten (Liste, Detail, POST/PATCH, Ordnerinhalte) enthalten `category` als String. `likedByMe`, Antwort-Arrays und Seiten-Header bleiben bestehen.
-- Neue Migration `20261116093000_add_meme_category`: Pflichtfeld mit Standardwert `Ohne Kategorie` und SQL-CHECK für die erlaubten Werte. Lokal angewendet und geprüft. Alte Memes werden nicht anhand von Bild oder Titel automatisch eingeordnet.
+Upload akzeptiert das Multipart-Textfeld `category`, PATCH JSON mit `title` und/oder `category`. Ungültige Kategorien werden mit 400 vor dem Upload abgewiesen. Ein Kategorien-Endpunkt ist nicht erforderlich. Frontend-Menü und Upload müssen die oben genannten Werte senden; bei Auswahlwechsel Seite 1 laden und bei „Alle“ den Parameter weglassen. Die Website-Adresse auf Port 5173 allein filtert die API auf Port 3000 noch nicht.
 
-Alle 15 bestehenden Menükategorien sind unterstützt: Programmieren, Alltag, Arbeit, Sport, Gaming, Tech, Animal, Movies, Outdoor, Study, Drinks, Food, Holiday, Book und Meeting. Für jeden dieser Werte sowie `Ohne Kategorie` sind öffentlicher Filter, Seitenwechsel und nachträgliche Besitzer-Zuordnung einzeln über HTTP getestet; Upload-Tests decken ebenfalls alle Werte ab.
-
-Zusätzliche Absicherung nach Code-Review: Die vollständige vereinbarte Kategorienliste wird unabhängig vom Anwendungscode als Testvertrag geprüft, einschließlich Abgleich mit dem SQL-CHECK. Ein HTTP-Regressionstest prüft nach PATCH das Verschwinden aus dem alten und das Erscheinen im neuen Kategorie-Filter; andere Memes bleiben unverändert. Gesamte Backend-Suite: 98 erfolgreiche Tests mit simulierten Diensten. Diese Tests ersetzen keine authentifizierte Browser-Abnahme.
-
-Dilek: vorhandenen URL-Parameter lesen und als gleichnamigen API-Parameter senden, bei Auswahlwechsel Seite 1 laden und bei „Alle“ den Parameter weglassen. Upload um Kategorie-Auswahl ergänzen. Diese UI-Schritte sind hier nicht umgesetzt. Grenzwerte und Authentifizierung gelten weiter.
-
-## Vorheriger Abgleich vom 13.11.2026
-
-Mit den Routern und Controllern unter `src/modules/` abgeglichen: 22 Methoden-/Pfad-Kombinationen. Aufteilung und letzte Testnachweise: [Architektur](architektur.md), [Projektstand](projektstand.md). Die 72 HTTP-Tests verwenden simulierte externe Dienste; die früheren 21 Moderationstests sind darin enthalten. Eine neue Live-Abnahme angemeldeter Schreibaktionen ist noch offen.
-
-Vollständige Kontolöschung ist die nächste große offene Pflichtfunktion. Eine konkrete Route und ihr Fehler-/Wiederholungsvertrag werden vor Umsetzung vorgeschlagen; es gibt aktuell keinen implementierten Kontolösch-Endpunkt. Die folgende Übersicht beschreibt bestehende Endpunkte.
+Die folgenden Endpunkte beschreiben den implementierten Backend-Vertrag. Historische Testläufe und frühere Kategorienlisten stehen im [Projektstand](projektstand.md).
 
 ## Administrator-Löschung
 
@@ -103,7 +86,7 @@ Meme (Liste als Array, GET-Detail und Meme-POST/PATCH als einzelnes Objekt):
 }
 ```
 
-Alle Meme-Antworten einschließlich Liste, Detail, POST/PATCH und Ordner-Memes enthalten `likedByMe` als Boolean: bei erkanntem Benutzer dessen gespeicherter Like, sonst false. Dafür auch GET-Anfragen mit Bearer-Token senden. Ordner-Memes beziehen den Like-Status auf den angemeldeten Ordnerbesitzer; die Likes werden gemeinsam geladen. Kein `altText`, `emoji` oder `imageStorageId` in öffentlichen Meme-Antworten. `userId` und `author.id` sind lokale UUIDs; `GET /api/me` liefert dagegen die Clerk-ID. Für eigene Schaltflächen die lokale ID aus `/api/me/sync` verwenden. Das Backend prüft Rechte unabhängig von der Oberfläche. Der aktuelle Frontend-Client übernimmt `author`; Community dient nur als Ersatz bei fehlendem Autor.
+Alle Meme-Antworten einschließlich Liste, Detail, POST/PATCH und Ordner-Memes enthalten `likedByMe` als Boolean: bei erkanntem Benutzer dessen gespeicherter Like, sonst false. Dafür auch GET-Anfragen mit Bearer-Token senden. Ordner-Memes beziehen den Like-Status auf den angemeldeten Ordnerbesitzer; die Likes werden gemeinsam geladen. Kein `altText`, `emoji` oder `imageStorageId` in öffentlichen Meme-Antworten. `userId` und `author.id` sind lokale UUIDs; `GET /api/me` liefert dagegen die Clerk-ID. Für eigene Schaltflächen die lokale ID aus `/api/me/sync` verwenden. Das Backend prüft Rechte unabhängig von der Oberfläche. Der Client kann `author.username` als Anzeigenamen verwenden.
 
 Kommentar (GET-Liste als Array, POST/PATCH als einzelnes Objekt):
 
@@ -132,7 +115,7 @@ Nach Clerk-Anmeldung `POST /api/me/sync` mit Token und ohne Body. Route lädt Cl
 }
 ```
 
-Automatischer Frontend-Aufruf ist implementiert; der Upload wartet seit dem aktuellen Frontend-Stand ausdrücklich auf erfolgreichen Sync und zeigt dessen Fehler. Layout unterdrückt Sync-Fehler weiterhin; Kommentar-/Like-Erstlogin ohne vorherigen Upload getrennt testen. Ohne lokales Profil liefern Upload, Kommentar-POST und Like-Aktionen 409. Ersteller und Rollen werden nicht aus Formularangaben übernommen.
+Der Client muss vor Schreibaktionen einen erfolgreichen Sync sicherstellen. Ohne lokales Profil liefern Upload, Kommentar-POST und Like-Aktionen 409. Ersteller und Rollen werden nicht aus Formularangaben übernommen.
 
 ## Upload und Titeländerung
 
@@ -160,7 +143,7 @@ POST und DELETE /api/memes/:id/like brauchen keinen Body. POST verwendet `create
 }
 ```
 
-Nach DELETE ist `liked` false; `likeCount` enthält weiterhin Likes anderer Nutzer. Mutation und anschließende Zählung sind getrennte DB-Abfragen. GET-Liste/-Detail liefern inzwischen likedByMe anhand des erkannten Benutzers. Der Client muss bei angemeldeten GETs einen Bearer-Token senden und bei Anmeldewechsel neu laden. Im aktuell gelesenen Frontend-Code senden Übersicht und Detail einen Token und laden bei Anmelde-/Benutzerwechsel neu. Dieser Codebefund ersetzt keinen Browser-Abnahmetest. Das Frontend darf einen bereits gespeicherten Zähler nicht zusätzlich lokal erhöhen.
+Nach DELETE ist `liked` false; `likeCount` enthält weiterhin Likes anderer Nutzer. Mutation und anschließende Zählung sind getrennte DB-Abfragen. GET-Liste/-Detail liefern inzwischen likedByMe anhand des erkannten Benutzers. Der Client muss bei angemeldeten GETs einen Bearer-Token senden und bei Anmeldewechsel neu laden. Das Frontend darf einen bereits gespeicherten Zähler nicht zusätzlich lokal erhöhen.
 
 ## Persönliche Ordner
 
@@ -182,7 +165,7 @@ Ordner umbenennen (PATCH /api/folders/:id) und ganzen Ordner löschen (DELETE /a
 
 `GET /api/memes?page=1&limit=50`: unverändertes Array-Format, standardmäßig page 1 und limit 50. Erlaubt: page 1–10000, limit 1–100, jeweils einzelne positive ganze Zahlen. Zusätzlich ist `category` aus der festen Liste erlaubt. Unbekannte Query-Felder, leere Werte, Mehrfachwerte oder Überschreitungen ergeben 400. Eine Seite ohne Treffer liefert 200 und `[]`.
 
-Antwort-Header: `X-Page`, `X-Limit`, `X-Has-More` (true/false), über CORS freigegeben. Die DB-Abfrage lädt höchstens limit + 1 Einträge, um eine Folgeseite zu erkennen; im Body stehen höchstens limit Einträge. Sortierung createdAt desc, id desc. Es gibt keine Gesamtzahl. Bei gleichzeitigen Einfügungen kann Offset-Pagination Einträge zwischen Seiten verschieben. Frontend-Seitennavigation fehlt noch; Kommentar-/Ordnerlisten sind weiterhin nicht paginiert.
+Antwort-Header: `X-Page`, `X-Limit`, `X-Has-More` (true/false), über CORS freigegeben. Die DB-Abfrage lädt höchstens limit + 1 Einträge, um eine Folgeseite zu erkennen; im Body stehen höchstens limit Einträge. Sortierung createdAt desc, id desc. Es gibt keine Gesamtzahl. Bei gleichzeitigen Einfügungen kann Offset-Pagination Einträge zwischen Seiten verschieben. Seitennavigation ist Aufgabe des Frontends; Kommentar-/Ordnerlisten sind weiterhin nicht paginiert.
 
 ## Anfragebegrenzung
 
@@ -196,6 +179,6 @@ Prozesslokaler Speicher, kein gemeinsamer Zähler über mehrere Prozesse; Neusta
 
 Anwendungsfehler sind `{ "error": "Meldung" }`. Zentraler Handler nach Routen und 404 behandelt kaputtes JSON mit 400, zu große JSON-Bodies mit 413 und sonstige unbehandelte Fehler mit generischem 500. Parserfälle live als JSON ohne interne Details geprüft. Bereits begonnene Antworten werden über next(error) weitergereicht. Nicht alle denkbaren Clerk-/Middlewarefälle wurden einzeln geprüft; erwartete 4xx außerhalb der ausdrücklich behandelten Fälle können derzeit in 500 münden. Vorhandene fachliche Route-Fehler bleiben bestehen.
 
-ADMIN-Löschrechte sind in den bestehenden Meme-/Kommentar-DELETE-Routen enthalten. Kontolöschung bleibt offen. Pagination der Meme-Liste und lokale Rate-Limits sind implementiert; ihre Grenzen stehen unten. Zwei-Konten-Ordner-/Kommentarrechte, befüllte Kaskaden und externe Teilausfälle abschließend testen. Detail-Links benötigen keinen eigenen Teilen-Endpunkt. Kategorien wurden am 16.11. ausdrücklich als Erweiterung beauftragt; Suche und Editor bleiben außerhalb des Pflichtumfangs; altText/Bildaustausch separat abstimmen.
+ADMIN-Löschrechte sind in den bestehenden Meme-/Kommentar-DELETE-Routen enthalten. Kontolöschung bleibt offen. Pagination der Meme-Liste und lokale Rate-Limits sind implementiert; ihre Grenzen stehen oben. Regressionstests decken Rechte, Kaskaden und simulierte Teilausfälle ab; eine authentifizierte Abnahme mit echten Diensten bleibt offen. Detail-Links benötigen keinen eigenen Teilen-Endpunkt. Kategorien wurden am 16.11. ausdrücklich als Erweiterung beauftragt; Suche und Editor bleiben außerhalb des Pflichtumfangs; altText/Bildaustausch separat abstimmen.
 
 [Prüfbelege und Restplan](projektstand.md) · [Backend starten](../README.md)

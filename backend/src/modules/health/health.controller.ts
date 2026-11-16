@@ -12,8 +12,8 @@ export function createHealthController(prisma: Pick<Database, "$queryRaw">) {
         status: "ok",
         database: "connected",
       });
-    } catch (error) {
-      console.error("Datenbankfehler:", error);
+    } catch {
+      console.error("Datenbank-Healthcheck fehlgeschlagen.");
 
       res.status(503).json({
         status: "error",

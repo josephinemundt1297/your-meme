@@ -17,17 +17,17 @@ export function createMemeService(
 
   async function listMemes(
     clerkUserId: string | null | undefined,
-    pagination: MemeListQuery,
+    listQuery: MemeListQuery,
   ) {
     const rows = await prisma.meme.findMany({
-      ...(pagination.category ? { where: { category: pagination.category } } : {}),
+      ...(listQuery.category ? { where: { category: listQuery.category } } : {}),
       select: memeSelect,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: (pagination.page - 1) * pagination.limit,
-      take: pagination.limit + 1,
+      skip: (listQuery.page - 1) * listQuery.limit,
+      take: listQuery.limit + 1,
     });
 
-    const memes = rows.slice(0, pagination.limit);
+    const memes = rows.slice(0, listQuery.limit);
 
     const likedMemeIds = await getLikedMemeIds(
       prisma,
@@ -37,7 +37,7 @@ export function createMemeService(
 
     return {
       memes: memes.map((meme) => formatMeme(meme, likedMemeIds.has(meme.id))),
-      hasMore: rows.length > pagination.limit,
+      hasMore: rows.length > listQuery.limit,
     };
   }
 
@@ -102,11 +102,14 @@ export function createMemeService(
       where: { id },
       select: { userId: true, imageStorageId: true },
     });
-    const pending = meme ? null : await prisma.memeImageDeletion.findUnique({ where: { memeId: id } });
+    const pending = meme
+      ? null
+      : await prisma.memeImageDeletion.findUnique({ where: { memeId: id } });
     if (!meme && !pending) throw new HttpError(404, "Meme nicht gefunden.");
 
     const user = await prisma.user.findUnique({
-      where: { clerkId: clerkUserId }, select: { id: true, role: true },
+      where: { clerkId: clerkUserId },
+      select: { id: true, role: true },
     });
     const ownerId = meme?.userId ?? pending!.ownerId;
     if (user?.id !== ownerId && user?.role !== "ADMIN") {
@@ -117,14 +120,18 @@ export function createMemeService(
       // Auftrag und Inhaltslöschung sind atomar; Cloudinary erst nach dem Commit.
       await prisma.$transaction(async (tx) => {
         await tx.memeImageDeletion.upsert({
-          where: { memeId: id }, update: {},
+          where: { memeId: id },
+          update: {},
           create: { memeId: id, ownerId, imageStorageId: meme.imageStorageId },
         });
         await tx.meme.delete({ where: { id, userId: ownerId } });
       });
     }
     if (!(await imageDeletion.finish(id))) {
-      throw new HttpError(503, "Meme entfernt; die Bildbereinigung ist noch offen und wird erneut versucht.");
+      throw new HttpError(
+        503,
+        "Meme entfernt; die Bildbereinigung ist noch offen und wird erneut versucht.",
+      );
     }
   }
 
@@ -204,7 +211,10 @@ export function createMemeService(
   }
 
   async function createMeme(
-    clerkUserId: string, title: string, buffer: Buffer, category: Category,
+    clerkUserId: string,
+    title: string,
+    buffer: Buffer,
+    category: Category,
   ) {
     const user = await prisma.user.findUnique({
       where: { clerkId: clerkUserId },
