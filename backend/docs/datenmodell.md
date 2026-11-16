@@ -1,6 +1,6 @@
 # Your Meme – Datenmodell
 
-Stand: 16.11.2026. Weiterhin sechs Modelle; Meme um `category` erweitert. Zusätzlich zur Initialmigration gibt es `20261116093000_add_meme_category`, lokal erfolgreich angewendet und geprüft. Der Migrationsstatus vom 16.11. bestätigt Initialmigration und Kategorie-Migration als angewendet. Meme-, Kommentar- und Like-Schreibaktionen nutzen jetzt diese Modelle. Eine leere oder vorhandene Tabelle allein belegt keine fertige Nutzerfunktion.
+Stand: 16.11.2026. Sieben Modelle: die sechs Fachmodelle und zusätzlich `MemeImageDeletion` für minimale Bild-Bereinigungsaufträge. Meme enthält `category`. Zusätzlich zur Initialmigration gibt es `20261116093000_add_meme_category`, lokal erfolgreich angewendet und geprüft. Der Migrationsstatus vom 16.11. bestätigt Initialmigration, Kategorie-Migration und `20261116160000_add_image_deletion_jobs` als lokal angewendet. Meme-, Kommentar- und Like-Schreibaktionen nutzen jetzt diese Modelle. Eine leere oder vorhandene Tabelle allein belegt keine fertige Nutzerfunktion.
 
 Clerk-Identität, lokale Nutzer-Synchronisation und Besitzerprüfungen für Meme-/Kommentaränderungen sind implementiert. Ordner-Anlage/-Abfragen und Meme-Zuordnungen haben jetzt Besitzerprüfungen. Ordner umbenennen/löschen und ADMIN-Löschrechte für Memes/Kommentare sind implementiert. Die dienstübergreifende Kontolöschung bleibt offen und hat die nächste fachliche Priorität.
 
@@ -81,6 +81,10 @@ erDiagram
 - **Folder:** persönlicher Ordner eines Nutzers.
 - **FolderMeme:** Zuordnung eines Memes zu einem Ordner; die Bilddatei wird nicht kopiert.
 
+## Technischer Bild-Bereinigungsauftrag
+
+`MemeImageDeletion` enthält nur Meme-ID (Primärschlüssel), lokale Besitzer-ID, exakte Cloudinary-public_id sowie Erstellungs-/nächsten Versuchszeitpunkt. Auftrag und Inhaltslöschung werden gemeinsam in einer Transaktion gespeichert. Nach erfolgreicher Dateibereinigung wird der Auftrag entfernt. Keine Inhaltskopien, keine zusätzlichen Clerk-/Kontaktdaten; keine Fremdschlüsselkaskade, die bei späterer Kontolöschung noch offene Aufträge verwerfen könnte. Verarbeitet über einen Index auf `nextAttemptAt`. [Ablauf, Aufbewahrung und Grenzen](bildloeschung.md).
+
 ## Kategorien (Erweiterung vom 16.11.2026)
 
 `Meme.category` ist ein verpflichtendes Textfeld mit Standardwert `Ohne Kategorie`. Es bleibt bei einer Kategorie pro Meme; eine eigene Kategorien-Tabelle ist dafür nicht nötig. Bestehende Datensätze erhalten diesen neutralen Wert. Neue Uploads dürfen eine Kategorie angeben; ohne Angabe gilt derselbe Standard. Besitzer können die Zuordnung über die bestehende PATCH-Route ändern.
@@ -129,7 +133,7 @@ Zielregeln für die gesamte Anwendung. Bereits vorhanden: öffentliche Abfragen,
 
 Die relationalen Löschkaskaden sind in Schema und Migration definiert (`onDelete: Cascade`).
 Für ihre Wirkung muss die Migration in der Datenbank angewendet sein.
-Meme-Bildlöschung ist implementiert: erst Cloudinary, dann PostgreSQL. Ein separater Upload-Test wurde erfolgreich gelöscht und die Entfernung in beiden Diensten geprüft. Ein befüllter Kaskadentest mit Kommentaren, Likes und Ordnereinträgen fehlt noch. Bei DB-Fehler nach Bildlöschung kann vorübergehend ein Eintrag ohne Bild bestehen; erneuter Versuch akzeptiert ein bereits fehlendes Bild. Vollständige Kontolöschung, Bestätigung und dauerhafte Wiederholungslogik sind noch nicht implementiert.
+Meme-Bildlöschung verwendet seit 16.11. einen persistenten Bereinigungsauftrag: zuerst PostgreSQL-Transaktion mit Inhaltslöschung und Auftrag, danach Cloudinary-Bereinigung und Entfernen des Auftrags. Bei Dienstfehler bleibt nur der minimale Auftrag und wird wiederholt. Befüllte Kaskaden und Transaktions-Rollback wurden mit eigenen temporären PostgreSQL-Testdaten geprüft. Cloudinary war dabei simuliert. Die vollständige Kontolöschung bleibt offen. [Details](bildloeschung.md).
 
 - Meme löschen: zugehörige Kommentare, Likes und FolderMeme-Einträge entfernen.
 - Die Bilddatei zusätzlich beim Bildspeicherdienst löschen; Datenbankregeln allein entfernen keine externen Dateien.

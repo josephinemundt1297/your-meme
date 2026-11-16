@@ -85,3 +85,14 @@ model FolderMeme {
 
   @@id([folderId, memeId])
 }
+
+// Nur bis zur erfolgreichen Bildbereinigung behalten; keine Inhalte oder Clerk-ID.
+model MemeImageDeletion {
+  memeId         String   @id @db.Uuid
+  ownerId        String   @db.Uuid
+  imageStorageId String
+  createdAt      DateTime @default(now())
+  nextAttemptAt  DateTime @default(now())
+
+  @@index([nextAttemptAt])
+}

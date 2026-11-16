@@ -57,7 +57,7 @@ for (const liked of [false, true]) {
     const updated = await routeTest.request("PATCH", `/api/memes/${resourceId}`, { body: { title: "Neu" } });
     assert.equal(created.status, 201);
     assert.equal(updated.status, 200);
-    assert.equal(created.body.likedByMe, liked);
+    assert.equal(created.body.likedByMe, false);
     assert.equal(updated.body.likedByMe, liked);
     assert.equal(created.body.imageStorageId, undefined);
     await routeTest.request("POST", `/api/folders/${resourceId}/memes`, { body: { memeId: resourceId } });

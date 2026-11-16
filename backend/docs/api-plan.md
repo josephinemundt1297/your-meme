@@ -1,5 +1,11 @@
 # Your Meme – API: Implementierung und Planung
 
+## Zuverlässigkeit und Bildlöschung – 16.11.2026
+
+Die vier freigegebenen Review-Befunde sind bearbeitet. Exakte Cloudinary-public_ids in Fixtures und lokaler DB korrigiert; Kategorien bleiben ausschließlich in PostgreSQL. Neue Uploads liefern `likedByMe: false` ohne nachträgliche Like-Abfrage. Meme-DELETE verwendet jetzt eine atomare Inhaltslöschung mit minimalem persistentem Bildauftrag; vollständiger Ablauf, Datenschutzgrenzen und Tests: [Bildlöschung](bildloeschung.md).
+
+Meme-DELETE: 204 erst nach abgeschlossener Dateibereinigung und Auftragsentfernung; bei offenem Bildauftrag 503 mit verständlicher Meldung. Inhalt ist dann bereits nicht mehr sichtbar. Besitzer/ADMIN können denselben DELETE erneut senden; der Server wiederholt fällige Aufträge auch automatisch. Keine neue öffentliche Route. Echte Prisma-Konflikte P2025 → 404, P2003/P2002 → 409; keine Datenbankdetails in Antworten oder Logs. Vollständige Kontolöschung bleibt offen.
+
 ## Kategorien-Erweiterung vom 16.11.2026
 
 Auf Josephines Auftrag ergänzt: eine feste Kategorie je Meme, ohne neue Route und ohne neue Tabelle. Die bestehende Frontend-Adresse `/?category=Alltag` bleibt erhalten. Die Website-Adresse auf Port 5173 ist von der API-Anfrage auf Port 3000 zu unterscheiden. Die Frontend-Anbindung bleibt Dileks Aufgabe.
@@ -25,7 +31,7 @@ Vollständige Kontolöschung ist die nächste große offene Pflichtfunktion. Ein
 
 ## Administrator-Löschung
 
-DELETE /api/memes/:id und DELETE /api/comments/:id erlauben jetzt den jeweiligen Besitzer **oder ADMIN**. Die Administratorrolle stammt ausschließlich aus PostgreSQL, gesucht über die verifizierte Clerk-ID. Ein fehlendes lokales Profil gewährt keine Adminrechte. Ohne Anmeldung weiterhin 401, normaler fremder Benutzer 403, fehlender Inhalt 404; Erfolg 204 ohne Body. Die vorhandene Cloudinary-/DB-Löschreihenfolge und ihre Teilausfallgrenzen bleiben bestehen.
+DELETE /api/memes/:id und DELETE /api/comments/:id erlauben jetzt den jeweiligen Besitzer **oder ADMIN**. Die Administratorrolle stammt ausschließlich aus PostgreSQL, gesucht über die verifizierte Clerk-ID. Ein fehlendes lokales Profil gewährt keine Adminrechte. Ohne Anmeldung weiterhin 401, normaler fremder Benutzer 403, fehlender Inhalt 404; Erfolg 204 ohne Body. Für Meme-Bilder gilt der neue Transaktions-/Bereinigungsablauf; Kommentare werden direkt in PostgreSQL gelöscht.
 
 PATCH auf fremde Memes/Kommentare bleibt auch für ADMIN verboten. Keine Administratorausnahme für private Ordner. Kein öffentlicher Rollenvergabe-Endpunkt. Die ADMIN-Ausnahme ist in den HTTP-Regressionstests enthalten; diese simulieren Rollen und Dienstanbindungen. Fremde Inhalte bearbeiten und fremde private Ordner verwalten bleibt verboten.
 
@@ -46,7 +52,7 @@ Basis: `http://localhost:3000`. CORS: `http://localhost:5173`. Geschützte Anfra
 | POST /api/me/sync | Angemeldet | Ohne Body; 200 lokales Profil; 401/500 |
 | POST /api/memes | Angemeldet + lokales Profil | Multipart; 201 Meme; 400/401/409/413/500 |
 | PATCH /api/memes/:id | Nur Ersteller | JSON title und/oder category; 200 Meme; 400/401/403/404/500 |
-| DELETE /api/memes/:id | Ersteller oder ADMIN | Ohne Body; 204 leer; 400/401/403/404/500 |
+| DELETE /api/memes/:id | Ersteller oder ADMIN | Ohne Body; 204 abgeschlossen; 503 Bildauftrag offen; 400/401/403/404/409/500 |
 | POST /api/memes/:id/comments | Angemeldet + lokales Profil | JSON content; 201 Kommentar; 400/401/404/409/500 |
 | PATCH /api/comments/:id | Nur Verfasser | JSON content; 200 Kommentar; 400/401/403/404/500 |
 | DELETE /api/comments/:id | Verfasser oder ADMIN | Ohne Body; 204 leer; 400/401/403/404/500 |
@@ -60,7 +66,7 @@ Basis: `http://localhost:3000`. CORS: `http://localhost:5173`. Geschützte Anfra
 | POST /api/folders/:id/memes | Nur Besitzer | JSON memeId; 200 saved true, auch bei bestehender Zuordnung; 400/401/403/404/500 |
 | DELETE /api/folders/:id/memes/:memeId | Nur Besitzer | Ohne Body; 200 saved false, auch wenn Zuordnung bereits fehlt; 400/401/403/404/500 |
 
-Unbekannte Routen: 404 `{ "error": "Route nicht gefunden." }`. Geschützte Routen prüfen zuerst Anmeldung; deshalb kann ohne Token auch bei ungültiger ID zunächst 401 kommen. `:id` durch die tatsächliche jeweilige UUID ersetzen. Kommentare verwenden bei PATCH/DELETE die Kommentar-ID, nicht die Meme-ID. Ressourcenrennen zwischen Lesen und Schreiben können derzeit in generischem 500 enden.
+Unbekannte Routen: 404 `{ "error": "Route nicht gefunden." }`. Geschützte Routen prüfen zuerst Anmeldung; deshalb kann ohne Token auch bei ungültiger ID zunächst 401 kommen. `:id` durch die tatsächliche jeweilige UUID ersetzen. Kommentare verwenden bei PATCH/DELETE die Kommentar-ID, nicht die Meme-ID. Erwartete Prisma-Fehler bei gleichzeitigen Änderungen ergeben 404 (P2025) oder 409 (P2003/P2002).
 
 ## Antwortformate
 
@@ -124,7 +130,7 @@ Fehler: 401 Anmeldung; 400 Titel/Datei/Anzahl/Format; 413 Größe; 409 Profil fe
 
 PATCH /api/memes/:id: JSON mit `title` und/oder `category`, mindestens eines; nur eigene Memes. Titel-only bleibt gültig, Kategorie-only ermöglicht nachträgliches Zuordnen. Kein Bildaustausch implementiert; Entscheidung dazu offen.
 
-DELETE /api/memes/:id: Besitzerprüfung, anschließend Cloudinary `destroy` mit resource_type image und invalidate true, dann Datenbanklöschung. `ok` und `not found` werden akzeptiert. Zugehörige Interaktionen werden durch die angewendeten FK-Kaskaden entfernt; Ordner selbst bleiben. Bei DB-Fehler nach erfolgreicher Bildlöschung bleibt vorübergehend ein Eintrag ohne Bild. Kein atomarer Ablauf über beide Dienste. Gemeinsam genutzte Cloudinary-Testoriginale nicht für Löschtests verwenden.
+DELETE /api/memes/:id: Besitzer-/ADMIN-Prüfung, dann PostgreSQL-Transaktion mit minimalem Bildauftrag und Meme-Löschung einschließlich Interaktionskaskaden. Erst danach Cloudinary destroy mit resource_type image und invalidate true. Bei ok/not found Auftrag entfernen und 204; bei offenem Auftrag 503, erneutes DELETE erlaubt. Hintergrunddienst wiederholt fällige Aufträge. Ordner selbst bleiben. CDN-/Backup-Grenzen und Rechte bei Wiederholung stehen in [bildloeschung.md](bildloeschung.md). Gemeinsam genutzte Cloudinary-Testoriginale nicht für Löschtests verwenden.
 
 ## Kommentare
 
@@ -156,7 +162,7 @@ Alle Ordner-Endpunkte erfordern Anmeldung. Lokale Nutzer-ID und Besitzer werden 
 - POST /api/folders/:id/memes erwartet `{ "memeId": "11111111-1111-4111-8111-111111111111" }`. Schema prüft UUID mit Zod; Ordner und Meme müssen existieren. Erfolg 200 mit `{ "folderId": "...", "memeId": "...", "saved": true }`. Wiederholung erzeugt dank zusammengesetztem Schlüssel und skipDuplicates keinen weiteren Eintrag.
 - DELETE /api/folders/:id/memes/:memeId braucht keinen Body. Entfernt nur die passende Zuordnung, nicht das Meme oder Cloudinary-Bild. Erfolg 200 mit folderId/memeId/saved false; bei bereits fehlender Zuordnung ebenfalls 200. Ein separates Meme-Existenzprüfen findet hier nicht statt.
 
-Fehler: ohne Anmeldung 401; bei Anlage/Liste fehlendes lokales Profil 409; ungültige Eingaben 400; Ordner fehlt 404; fremder Ordner 403; bei Hinzufügen fehlendes Meme 404. Gleichzeitige Löschungen zwischen Lesen und Schreiben können derzeit generische 500 auslösen.
+Fehler: ohne Anmeldung 401; bei Anlage/Liste fehlendes lokales Profil 409; ungültige Eingaben 400; Ordner fehlt 404; fremder Ordner 403; bei Hinzufügen fehlendes Meme 404. Erwartete Prisma-Konflikte bei gleichzeitigen Löschungen ergeben 404 oder 409.
 
 Ordner umbenennen (PATCH /api/folders/:id) und ganzen Ordner löschen (DELETE /api/folders/:id) sind implementiert. Auch ADMIN erhält keinen Zugriff auf fremde private Ordner. Ein HTTP-GET auf einen ausschließlich für POST/DELETE vorgesehenen Pfad liefert Route nicht gefunden; URL allein bestimmt nicht die Methode.
 

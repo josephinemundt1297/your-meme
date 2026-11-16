@@ -5,6 +5,7 @@ import { getLikedMemeIds } from "../../lib/getLikedMemeIds.js";
 import { formatMeme } from "../../utils/formatMeme.js";
 import type { MemeListQuery } from "../../validators/pagination.js";
 import type { Category } from "../../validators/category.js";
+import { createImageDeletionService } from "./image-deletion.service.js";
 import type { MemeChanges } from "../../validators/meme.js";
 
 export function createMemeService(
@@ -12,6 +13,7 @@ export function createMemeService(
 ) {
   const prisma = dependencies.database;
   const imageStorage = dependencies.imageStorage;
+  const imageDeletion = createImageDeletionService(dependencies);
 
   async function listMemes(
     clerkUserId: string | null | undefined,
@@ -98,45 +100,32 @@ export function createMemeService(
   async function deleteMeme(id: string, clerkUserId: string) {
     const meme = await prisma.meme.findUnique({
       where: { id },
-      select: {
-        userId: true,
-        imageStorageId: true,
-        user: {
-          select: {
-            clerkId: true,
-          },
-        },
-      },
+      select: { userId: true, imageStorageId: true },
     });
+    const pending = meme ? null : await prisma.memeImageDeletion.findUnique({ where: { memeId: id } });
+    if (!meme && !pending) throw new HttpError(404, "Meme nicht gefunden.");
 
-    if (!meme) {
-      throw new HttpError(404, "Meme nicht gefunden.");
-    }
-
-    const requestingUser = await prisma.user.findUnique({
-      where: { clerkId: clerkUserId },
-      select: { role: true },
+    const user = await prisma.user.findUnique({
+      where: { clerkId: clerkUserId }, select: { id: true, role: true },
     });
-
-    if (meme.user.clerkId !== clerkUserId && requestingUser?.role !== "ADMIN") {
+    const ownerId = meme?.userId ?? pending!.ownerId;
+    if (user?.id !== ownerId && user?.role !== "ADMIN") {
       throw new HttpError(403, "Du darfst nur eigene Memes löschen.");
     }
 
-    const imageResult = await imageStorage.destroy(meme.imageStorageId, {
-      resource_type: "image",
-      invalidate: true,
-    });
-
-    if (imageResult.result !== "ok" && imageResult.result !== "not found") {
-      throw new Error("Bild konnte nicht gelöscht werden.");
+    if (meme) {
+      // Auftrag und Inhaltslöschung sind atomar; Cloudinary erst nach dem Commit.
+      await prisma.$transaction(async (tx) => {
+        await tx.memeImageDeletion.upsert({
+          where: { memeId: id }, update: {},
+          create: { memeId: id, ownerId, imageStorageId: meme.imageStorageId },
+        });
+        await tx.meme.delete({ where: { id, userId: ownerId } });
+      });
     }
-
-    await prisma.meme.delete({
-      where: {
-        id,
-        userId: meme.userId,
-      },
-    });
+    if (!(await imageDeletion.finish(id))) {
+      throw new HttpError(503, "Meme entfernt; die Bildbereinigung ist noch offen und wird erneut versucht.");
+    }
   }
 
   async function addLike(id: string, clerkUserId: string) {
@@ -248,17 +237,13 @@ export function createMemeService(
             throw new Error("Bild konnte nicht entfernt werden.");
           }
         } catch {
-          console.error(
-            "Cloudinary-Bereinigung fehlgeschlagen. Public ID:",
-            image.imageStorageId,
-          );
+          console.error("Cloudinary-Bereinigung nach Upload fehlgeschlagen.");
         }
 
         throw databaseError;
       });
 
-    const likedMemeIds = await getLikedMemeIds(prisma, [meme.id], clerkUserId);
-    return formatMeme(meme, likedMemeIds.has(meme.id));
+    return formatMeme(meme, false);
   }
 
   return {
