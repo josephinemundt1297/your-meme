@@ -9,7 +9,8 @@ export function createImageDeletionService(
     if (!job) return true;
     try {
       const result = await imageStorage.destroy(job.imageStorageId, {
-        resource_type: "image", invalidate: true,
+        resource_type: "image",
+        invalidate: true,
       });
       if (result.result !== "ok" && result.result !== "not found") return false;
       // Auch nach paralleler Verarbeitung erfolgreich; keine Daten nach Erfolg behalten.
@@ -23,12 +24,14 @@ export function createImageDeletionService(
   async function retryPending() {
     const jobs = await database.memeImageDeletion.findMany({
       where: { nextAttemptAt: { lte: new Date() } },
-      orderBy: [{ nextAttemptAt: "asc" }, { memeId: "asc" }], take: 25,
+      orderBy: [{ nextAttemptAt: "asc" }, { memeId: "asc" }],
+      take: 25,
     });
     for (const job of jobs) {
       // Vor externem Aufruf verschieben: Fehler blockieren nicht die übrige Warteschlange.
       await database.memeImageDeletion.updateMany({
-        where: { memeId: job.memeId }, data: { nextAttemptAt: new Date(Date.now() + 60_000) },
+        where: { memeId: job.memeId },
+        data: { nextAttemptAt: new Date(Date.now() + 60_000) },
       });
       if (!(await finish(job.memeId))) {
         console.error("Bildbereinigung weiterhin offen.");
@@ -42,16 +45,24 @@ export function createImageDeletionService(
   return { finish, retryPending };
 }
 
-export function startImageDeletionRetries(service: ReturnType<typeof createImageDeletionService>) {
+export function startImageDeletionRetries(
+  service: ReturnType<typeof createImageDeletionService>,
+) {
   let running = false;
   const run = async () => {
     if (running) return;
     running = true;
-    try { await service.retryPending(); }
-    catch { console.error("Bildbereinigung konnte nicht geprüft werden."); }
-    finally { running = false; }
+    try {
+      await service.retryPending();
+    } catch {
+      console.error("Bildbereinigung konnte nicht geprüft werden.");
+    } finally {
+      running = false;
+    }
   };
-  const timer = setInterval(() => { void run(); }, 60_000);
+  const timer = setInterval(() => {
+    void run();
+  }, 60_000);
   timer.unref();
   void run();
   return () => clearInterval(timer);

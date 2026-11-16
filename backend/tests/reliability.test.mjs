@@ -118,6 +118,13 @@ test("unexpected errors do not log raw database or request details", async (cont
   const client = await createRouteTest(context);
   client.dependencies.database.meme.update = async () => { throw new Error("secret-email@example.test"); };
   assert.equal((await client.request("PATCH", `/api/memes/${resourceId}`, { body: { title: "Neu" } })).status, 500);
-  assert.ok(logs.length > 0);
+  client.dependencies.database.$queryRaw = async () => {
+    throw new Error("secret-email@example.test; postgresql://private-credentials");
+  };
+  const health = await client.request("GET", "/api/health/db", { user: null });
+  assert.equal(health.status, 503);
+  assert.deepEqual(health.body, { status: "error", database: "disconnected" });
+  assert.ok(logs.length >= 2);
   assert.ok(!JSON.stringify(logs).includes("secret-email"));
+  assert.ok(!JSON.stringify(logs).includes("private-credentials"));
 });

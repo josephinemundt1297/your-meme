@@ -12,16 +12,16 @@ export function createMemeController(
 ) {
   const listMemes: ApiHandler = handleRequest(
     async (req, res) => {
-      const pagination = memeListQuerySchema.safeParse(req.query);
-      if (!pagination.success) {
+      const listQuery = memeListQuerySchema.safeParse(req.query);
+      if (!listQuery.success) {
         return res.status(400).json({
           error: "page muss zwischen 1 und 10000, limit zwischen 1 und 100 liegen; category muss eine bekannte Kategorie sein.",
         });
       }
       const clerkUserId = readUserId(req);
-      const response = await service.listMemes(clerkUserId, pagination.data);
-      res.setHeader("X-Page", String(pagination.data.page));
-      res.setHeader("X-Limit", String(pagination.data.limit));
+      const response = await service.listMemes(clerkUserId, listQuery.data);
+      res.setHeader("X-Page", String(listQuery.data.page));
+      res.setHeader("X-Limit", String(listQuery.data.limit));
       res.setHeader("X-Has-More", String(response.hasMore));
       return res.status(200).json(response.memes);
     },
@@ -133,9 +133,7 @@ export function createMemeController(
 
   const createMeme: ApiHandler = handleRequest(
     async (req, res) => {
-      const result = createMemeSchema
-        .pick({ title: true, category: true })
-        .safeParse(req.body);
+      const result = createMemeSchema.safeParse(req.body);
 
       if (!result.success) {
         return res.status(400).json({
@@ -158,7 +156,10 @@ export function createMemeController(
       const clerkUserId = res.locals.clerkUserId;
 
       const response = await service.createMeme(
-        clerkUserId, result.data.title, req.file.buffer, result.data.category,
+        clerkUserId,
+        result.data.title,
+        req.file.buffer,
+        result.data.category,
       );
       return res.status(201).json(response);
     },

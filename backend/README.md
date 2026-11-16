@@ -1,203 +1,82 @@
-# Your Meme – Backend starten
+# Your Meme – Backend
 
-Stand: 16.11.2026. Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und Cloudinary für Meme-Upload und -Löschung. Kommentar-Schreibaktionen, Titeländerung, Likes, persönliche Like-GETs, zentrale JSON-Fehlerbehandlung, Ordner einschließlich Umbenennen/Löschen und ADMIN-Löschrechte sind implementiert. Die API ist in fachliche Module mit getrennten Routen, Controllern und Services aufgeteilt.
+Express-/TypeScript-API mit PostgreSQL/Prisma, Clerk und Cloudinary. Stand: 16.11.2026. Die API unterstützt Memes, Kategorien, Kommentare, Likes, private Ordner und ADMIN-Löschrechte. Vollständige Kontolöschung ist noch offen.
 
-## Review-Korrekturen und Bildbereinigung – 16.11.2026
+## Einrichtung
 
-Neue Migration `20261116160000_add_image_deletion_jobs` lokal angewendet. Andere lokale Datenbanken benötigen nach Kontrolle der Verbindung ebenfalls `npx prisma migrate deploy`, danach `npx prisma generate` und Backend-Neustart. Die neue Tabelle speichert minimale ausstehende Bildlöschaufträge. Meme-DELETE kann nun 503 melden, obwohl der Inhalt bereits entfernt wurde; die Bildbereinigung wird automatisch und durch erneutes DELETE wiederholt. 204 bedeutet abgeschlossene Verarbeitung. Der Hintergrunddienst arbeitet nach Serverstart und jede Minute, maximal 25 Aufträge pro Durchlauf.
-
-Kategorie bleibt in Prisma/PostgreSQL; Cloudinary-Zuordnung über die exakte public_id. Vier fehlerhafte Kennungen in Fixtures und lokaler Datenbank korrigiert. Erneuter Import überspringt vorhandene IDs und korrigiert andere Datenbanken deshalb nicht automatisch. Keine echten Cloudinary-Dateien verändert. [Ablauf, Datenschutz und Prüfgrenzen](docs/bildloeschung.md).
-
-Prüfung: `npm test` (111 Tests, ein DB-Test übersprungen) oder ausdrücklich `RUN_DATABASE_TESTS=1 npm test` (112 Tests einschließlich eigener temporärer Daten in der lokalen Projektdatenbank). Clerk/Cloudinary sind simuliert. Kein Nachweis einer vollständigen DSGVO-Abnahme.
-
-## Kategorien: lokale Datenbank aktualisieren
-
-Die bestehende Meme-API unterstützt jetzt Kategorien. Im Ordner `backend/` nach Kontrolle der lokalen Datenbankverbindung:
-
-```bash
-npx prisma migrate status
-npx prisma migrate deploy
-npx prisma generate
-```
-
-Danach Backend neu starten. Die neue Migration `20261116093000_add_meme_category` ergänzt ein Kategorie-Feld mit Standard `Ohne Kategorie` und einer festen Werteliste. Auf Josephines lokaler Datenbank wurde sie am 16.11. erfolgreich angewendet. Auf Dileks Rechner muss sie ebenfalls angewendet werden; Git überträgt diese Datenbankänderung nicht automatisch. Vorhandene Bilder werden nicht automatisch einer fachlichen Kategorie zugeordnet.
-
-Beispiel: `GET http://localhost:3000/api/memes?category=Alltag`. Ohne Kategorie-Parameter bleiben alle Memes sichtbar, jeweils begrenzt durch die Pagination. Alle 15 Kategorien des bestehenden Menüs werden unterstützt und sind einzeln für Filter, Seitenwechsel und Zuordnung getestet; zusätzlich gibt es `Ohne Kategorie`. Die Namen und Groß-/Kleinschreibung stimmen mit dem Menü überein. Upload nimmt ein zusätzliches Textfeld `category` an; fehlt es, Standard `Ohne Kategorie`. Besitzer können über PATCH Kategorie und/oder Titel ändern. [Vollständiger Vertrag und Frontend-Schritte](docs/api-plan.md).
-
-Die vorhandene Website-Adresse `http://localhost:5173/?category=Alltag` bleibt erhalten. Dilek muss den Parameter noch an die API übergeben und die Upload-Auswahl ergänzen. Die Backend-Änderung allein verbindet das Menü noch nicht.
-
-## Voraussetzungen und Installation
-
-- Node.js 24 und npm verwenden. Die Paketkonfiguration erlaubt noch `>=22.9.0`, obwohl Prisma laut Lockdatei mindestens Node 22.12 im 22er-Zweig benötigt; diese Angabe ist noch zu korrigieren.
-- PostgreSQL muss laufen; eigene Projektdatenbank und Benutzerzugang einrichten.
-- Zugriff auf dieselbe Clerk-Anwendung wie das Frontend.
-- Cloudinary-Zugangsdaten für den Cloudinary-Client und den Upload.
-
-Alle folgenden Befehle im Ordner `backend/` ausführen:
+Voraussetzungen: Node.js ab Version 24, npm sowie Zugang zur vereinbarten Clerk-Anwendung und zu Cloudinary. Alle Befehle in `backend/` ausführen:
 
 ```bash
 npm ci
+npx prisma generate
+npm run typecheck
+npm run dev
 ```
 
-## Lokale Konfiguration
+Falls noch keine `.env` vorhanden ist, `.env.example` kopieren und die Platzhalter ersetzen. Eine vorhandene Konfiguration beibehalten. Benötigte Variablen:
 
-Falls noch keine `.env` vorhanden ist, `.env.example` kopieren und ergänzen. Eine vorhandene `.env` beibehalten. Die Vorlage enthält die benötigten Variablennamen; die eigenen Werte lokal ergänzen.
+| Variable | Verwendung |
+| --- | --- |
+| `PORT` | Optional, standardmäßig 3000 |
+| `DATABASE_URL` | Datenbankzugang für das laufende Backend |
+| `DIRECT_DATABASE_URL` | Optionaler separater Eigentümerzugang für Prisma-Migrationen |
+| `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Backend-Anbindung an Clerk |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Bildspeicher für Upload und Löschung |
 
-```env
-PORT=3000
-DATABASE_URL="postgresql://USER:PASSWORT@localhost:5432/DEINE_DATENBANK?schema=public"
-CLERK_PUBLISHABLE_KEY=DEIN_PUBLISHABLE_KEY
-CLERK_SECRET_KEY=DEIN_SECRET_KEY
-CLOUDINARY_CLOUD_NAME=DEIN_CLOUD_NAME
-CLOUDINARY_API_KEY=DEIN_API_KEY
-CLOUDINARY_API_SECRET=DEIN_API_SECRET
-```
+Verbindungsdaten und Secret Keys gehören ausschließlich in lokale, von Git ausgeschlossene Dateien. Nur der öffentliche Clerk-Schlüssel darf als `VITE_CLERK_PUBLISHABLE_KEY` ins Frontend. Nach Änderungen an der `.env` den Server neu starten. Fehlende Cloudinary-Konfiguration verhindert den Serverstart.
 
-Dies sind Platzhalter, keine gültigen Zugangsdaten. `PORT` ist optional. PostgreSQL-Zugangsdaten gehören zum jeweiligen Rechner; `localhost` bezeichnet immer diesen Rechner. Sonderzeichen im Benutzer-/Passwortteil der Verbindungs-URL müssen URL-kodiert werden.
+## Gemeinsame Datenbank
 
-Express erwartet `CLERK_PUBLISHABLE_KEY`, ohne `NEXT_PUBLIC_` oder `VITE_`. Nur im Frontend heißt die Variable `VITE_CLERK_PUBLISHABLE_KEY`. API-Secret und Clerk Secret Key niemals im Frontend speichern. `.env` ist aus Git ausgeschlossen.
+Der freigegebene Projektstand liegt in Neon Free, Frankfurt, PostgreSQL 18. Josephines Backend verwendet die gemeinsame Datenbank bereits. Dilek erhält ihren eigenen eingeschränkten Zugang privat; Anschluss und Prüfbelege stehen in [Gemeinsame Datenbank](docs/gemeinsame-datenbank.md).
 
-Der Cloudinary-Client liest die drei Cloudinary-Variablen beim Import. Er wird von Upload und Löschung verwendet. Fehlende Cloudinary-Variablen verhindern deshalb den Serverstart; öffentliche Meme-Abfragen selbst lesen gespeicherte Bildadressen.
+Beide Backends greifen über `DATABASE_URL` auf dieselben Daten zu. Bilder bleiben bei Cloudinary; PostgreSQL speichert Bildadressen und exakte Cloudinary-Public-IDs. Git überträgt Code und Migrationen, keine Datenbankinhalte. Einen Fixture-Import auf dem gemeinsamen Ziel nicht erneut ausführen.
 
-## Prisma und Datenbank
+Prisma CLI verwendet `DIRECT_DATABASE_URL`, falls gesetzt, sonst `DATABASE_URL`:
 
 ```bash
-npx prisma generate
 npx prisma validate
 npx prisma migrate status
 ```
 
-- `generate`: erzeugt den nicht versionierten Client unter `src/generated/prisma/`.
-- `validate`: prüft das Schema, belegt keine Datenbankverbindung.
-- `migrate status`: vergleicht die Migrationen mit der konfigurierten Datenbank.
-- Die installierte CLI erkennt `prisma7.config.ts`; diese Datei lädt die `.env`.
+`validate` prüft das Schema und belegt keine Datenbankverbindung. `migrate status` liest den Migrationsstand. Es bestehen vier versionierte Migrationen; bereits angewendete Dateien nicht ändern. Neue Migrationen werden von Josephine abgestimmt ausgeführt. `npx prisma migrate deploy` verändert die konfigurierte Datenbank und benötigt den Migrationszugang.
 
-Für eine neue, leere Projektdatenbank nach Kontrolle von `DATABASE_URL`:
+Für eine getrennte, leere lokale Entwicklungsdatenbank können nach Anwendung der Migrationen die Demo-Daten mit `npx tsx prisma/import-test-memes.ts` importiert werden. Das Skript verwendet `DATABASE_URL`, überspringt vorhandene Meme-IDs und korrigiert deren Inhalte nicht. Fixture-Bilder sind gemeinsam genutzte Cloudinary-Originale; für Löschtests eigene Testbilder verwenden.
 
-```bash
-npx prisma migrate deploy
-```
+## API und Anmeldung
 
-Dieser Befehl verändert die ausgewählte Datenbank. Bei einer befüllten Datenbank zuerst den Migrationsstand klären. Die Migration `20261104125318_init` ist vorhanden; keine zweite Init-Migration erzeugen.
-
-Git überträgt keine Datenbankinhalte automatisch. Eine frische Datenbank liefert `[]`. Die versionierten Testdaten lassen sich nach Einrichtung der Tabellen und Client-Generierung importieren:
-
-```bash
-npx tsx prisma/import-test-memes.ts
-```
-
-Das Skript schreibt in die Datenbank aus `DATABASE_URL`: 29 Meme-Vorlagen aus `prisma/test-memes.json`, zugeordnet zum Demo-Nutzer `Meme-Testdaten`. Vorhandene IDs werden übersprungen; wiederholter Import erzeugt keine doppelten Meme-IDs. Keine echten Clerk-IDs, Kommentare, Likes oder Ordner werden übernommen. Das Demo-Profil hat keine echte Clerk-Anmeldung. Cloudinary-Bilder werden nicht neu hochgeladen; die vorhandenen öffentlichen Adressen bleiben gemeinsam genutzt. Josephine bestätigt den funktionierenden Import-/Anzeigestand bei Dilek. Alternativ können einzelne Testdatensätze mit `npx prisma studio` angelegt werden. Ein Meme braucht einen vorhandenen Ersteller, Titel, Bildadresse und Cloudinary-Public-ID als `imageStorageId`. UUIDs und `updatedAt` erzeugt der Prisma Client; die SQL-Migration enthält dafür keinen Datenbank-Standardwert. Studio kann deshalb manuelle Werte verlangen. Testdaten-Anlage ist noch keine Upload-Funktion.
-
-## Server starten und prüfen
-
-```bash
-npm run dev
-```
-
-Standardadresse: `http://localhost:3000`. Nach Env-Änderungen den Server neu starten; mit Strg+C beenden. CORS erlaubt derzeit genau `http://localhost:5173`. Das Frontend wird unter `http://localhost:5173/` geöffnet.
+Backend: `http://localhost:3000`. CORS erlaubt `http://localhost:5173`.
 
 | Anfrage | Erwartung |
 | --- | --- |
-| `GET /api/health` | 200, `{ "status": "ok" }`; nur Serverstatus |
-| `GET /api/health/db` | 200 und `database: "connected"`; bei DB-Ausfall 503 |
-| `GET /api/memes` | 200, Array; standardmäßig erste 50 Memes, page/limit möglich; ohne Daten `[]` |
-| `GET /api/memes/:id` | 200, einzelnes Meme; ungültige UUID 400; fehlendes Meme 404 |
-| `GET /api/memes/:id/comments` | 200, Kommentar-Array; ohne Kommentare `[]` |
-| `GET /api/me` | Ohne Anmeldung 401; mit gültigem Session-Token 200 und Clerk-ID |
-| `POST /api/me/sync` | Ohne Anmeldung 401; mit gültiger Anmeldung lokales Profil anlegen/aktualisieren |
-| `POST /api/memes` | PNG und Titel als multipart; 201 mit gespeichertem Meme |
-| `PATCH /api/memes/:id` | Eigenen Titel ändern, JSON title; 200 |
-| `DELETE /api/memes/:id` | Eigenes Meme und Bild löschen; 204 ohne Body |
-| `POST /api/memes/:id/comments` | JSON content, Kommentar erstellen; 201 |
-| `PATCH /api/comments/:id` | Eigenen Kommentar ändern; 200 |
-| `DELETE /api/comments/:id` | Eigenen Kommentar löschen; 204 |
-| `POST` / `DELETE /api/memes/:id/like` | Eigenen Like setzen/entfernen; 200 mit liked und likeCount |
-| `POST /api/folders` | Eigenen Ordner anlegen; JSON name, 201 |
-| `GET /api/folders` | Nur eigene Ordner; 200 Array |
-| `GET /api/folders/:id` | Nur eigener Ordner samt memes; 200 |
-| `POST /api/folders/:id/memes` | JSON memeId, im eigenen Ordner speichern; 200 saved true |
-| `DELETE /api/folders/:id/memes/:memeId` | Nur Zuordnung entfernen, Meme bleibt; 200 saved false |
+| `GET /api/health` | 200, Server erreichbar |
+| `GET /api/health/db` | 200 bei erreichbarer Datenbank, sonst 503 |
+| `GET /api/memes` | 200, Array, standardmäßig erste 50 Memes |
+| `GET /api/memes?category=Tiere` | 200, ausschließlich Treffer dieser Kategorie |
+| `POST /api/me/sync` | Mit Clerk-Token lokales Profil anlegen/aktualisieren |
 
-Unbekannte Routen liefern 404 als JSON. Vollständige Formate und Grenzen stehen im [API-Plan](docs/api-plan.md).
+Geschützte Anfragen benötigen `Authorization: Bearer <SESSION_TOKEN>`. Der Clerk Secret Key ist kein Nutzer-Token. Vor Upload, Kommentar-Erstellung und Likes muss das lokale Profil über `/api/me/sync` vorhanden sein, sonst 409. Für persönliche Likes auch bei Meme-GETs den Token mitsenden. Lokale Profil-UUID und Clerk-ID sind verschiedene Werte.
 
-## Anmeldung und lokale Nutzer
+Kategorien: **Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause, Wochenende** sowie **Ohne Kategorie**. „Alle Memes“ bedeutet: `category` weglassen. Ungültige Werte ergeben 400. Die Website-Adresse `/?category=Tiere` muss im Frontend als API-Parameter weitergegeben werden.
 
-Bei Anfragen vom Frontend an Port 3000 den Clerk-Session-Token als `Authorization: Bearer <SESSION_TOKEN>` senden. Postman übernimmt die Browser-Anmeldung nicht. Session-Token sind kurzlebig; bei Ablauf einen frischen Token verwenden. Niemals den Clerk Secret Key als Nutzer-Token einsetzen.
+Upload: `POST /api/memes` als FormData mit `title` (getrimmt 1–100 Zeichen), `image` (genau ein PNG bis 5 MiB) und optional `category` (Standard Ohne Kategorie). `imageUrl` und `imageStorageId` entstehen ausschließlich beim Upload. Besitzer ändern Titel/Kategorie per PATCH. Alle Methoden, Antwortfelder, Rechte und Statuscodes stehen im [API-Vertrag](docs/api-plan.md).
 
-`POST /api/me/sync` benötigt keinen Body. Die Route lädt das Clerk-Profil und verwendet `upsert` anhand der eindeutigen `clerkId`. Wiederholte Aufrufe verwenden dieselbe lokale UUID; neue Nutzer erhalten `USER`. Der Anzeigename kommt aus Clerk-Username, alternativ Vorname oder `MemeFan`. Es werden keine Passwörter gespeichert. Der Upload wartet im aktuellen Frontend auf erfolgreichen Sync; der Layout-Sync unterdrückt Fehler weiterhin. Erstlogin bei Kommentaren/Likes ohne vorherigen Upload separat prüfen.
+Meme-DELETE entfernt Inhalt und speichert einen Bildauftrag atomar. 204 bedeutet abgeschlossene Bildbereinigung; 503 kann bedeuten, dass der Inhalt bereits entfernt und die externe Bereinigung noch offen ist. Der Server wiederholt offene Aufträge. [Ablauf und Datenschutzgrenzen](docs/bildloeschung.md).
 
-## Cloudinary-Verbindung testen
+## Grenzen und Tests
 
-Nach Einrichtung der lokalen Variablen kann ein lesender Ping ausgeführt werden:
+Die Meme-Liste akzeptiert `page` (1–10000), `limit` (1–100) und optional `category`. Sortierung: createdAt/id absteigend. Header `X-Page`, `X-Limit`, `X-Has-More` sind über CORS lesbar. Kommentar- und Ordnerlisten sind noch nicht paginiert.
 
-```bash
-npx tsx -e 'import { cloudinary } from "./src/lib/cloudinary.ts"; cloudinary.api.ping().then(result => console.log("Cloudinary:", result.status)).catch(error => { console.error("Cloudinary-Test fehlgeschlagen", error?.http_code ?? error?.error?.http_code); process.exitCode = 1; });'
-```
-
-Erwartet: `Cloudinary: ok`. Dabei wird kein Bild hochgeladen. Bei Fehlern keine vollständigen Konfigurations- oder Fehlerobjekte mit Zugangsdaten veröffentlichen.
-
-## Typprüfung, Build und Tests
+Pro IP und Serverprozess innerhalb von 60 Sekunden: 300 API-Anfragen, 60 Schreibanfragen, 10 Uploads. Überschreitung: 429 mit `Retry-After`; ausgelasteter Limiter: 503. Die Zähler liegen im Prozessspeicher. Ein Betrieb hinter einem Reverse Proxy benötigt eine abgestimmte Konfiguration.
 
 ```bash
 npm run typecheck
-npm run build
 npm test
-npm start
 ```
 
-`build` erzeugt `dist/`; `start` startet diesen Build. Nach Änderungen erneut bauen. `npm test` baut ebenfalls und führt 72 Tests mit dem eingebauten Node-Testläufer aus. Sie senden echte HTTP-Anfragen an lokale Express-Testserver; Clerk, PostgreSQL und Cloudinary werden dabei simuliert. Echte Konten und Bilder werden nicht verändert. Jest und Supertest sind dafür nicht erforderlich. Diese Tests ersetzen keine Abnahme mit den echten Diensten und im Browser.
+`npm test` baut TypeScript und prüft die tatsächliche Express-App über lokale HTTP-Anfragen mit simulierten Datenbank-, Clerk- und Cloudinary-Diensten. Zwei zusätzliche PostgreSQL-Tests sind standardmäßig übersprungen. `RUN_DATABASE_TESTS=1 npm test` ausschließlich mit einer getrennten lokalen Projektdatenbank verwenden; die Tests verweigern externe Ziele. Die Tests ersetzen keine authentifizierte Browser-Abnahme mit den echten Diensten.
 
-## Struktur und offene Funktionen
+Für den gebauten Server: `npm run build`, danach `npm start`. Der Build liegt in `dist/`.
 
-| Datei | Aufgabe |
-| --- | --- |
-| `src/server.ts` | Echte Dienste bereitstellen, Port prüfen und Server starten |
-| `src/app.ts` | Express konfigurieren, Module und Middleware verbinden; öffnet keinen Port |
-| `src/modules/{memes,comments,folders,users}/` | Jeweils Routen, Controller und Service; Likes gehören zum Meme-Modul |
-| `src/modules/health/` | Einfache Statusrouten und Controller |
-| `src/types/dependencies.ts` | Typisierte Schnittstelle für die benötigten Dienste |
-| `src/middleware/` | Gemeinsame Anmeldung geschützter Routen, Anfragebegrenzung, Dateiannahme und Fehlerbehandlung |
-| `src/utils/HttpError.ts` | Erwartete fachliche Fehler mit Status und öffentlicher Meldung |
-| `src/lib/prisma.ts` | Prisma-Client mit PostgreSQL-Adapter |
-| `src/lib/memeSelect.ts` | Öffentliche Meme-Felder, Ersteller und Zähler auswählen |
-| `src/utils/formatMeme.ts` | `author`, `likeCount` und `commentCount` ausgeben |
-| `src/utils/isValidUuid.ts` | UUID-Grundform prüfen |
-| `src/validators/meme.ts` | Zod-Schema ohne ausführbare Beispiele beim Import |
-| `src/validators/pagination.ts` | page/limit für die Meme-Liste prüfen |
-| `src/lib/getLikedMemeIds.ts` | Persönliche Likes für mehrere Memes gemeinsam laden |
-| `src/lib/cloudinary.ts` | Cloudinary-SDK konfigurieren |
-| `src/lib/uploadImage.ts` | PNG per Upload-Stream übertragen; wird von der POST-Route verwendet |
-| `src/middleware/upload.ts` | Multer: eine Datei im Speicher, maximal 5 MiB, MIME-Vorprüfung auf PNG |
-| `src/utils/isPng.ts` | PNG-Dateisignatur mit file-type erkennen; keine vollständige Bilddekodierung |
-| `prisma/import-test-memes.ts`, `prisma/test-memes.json` | Gemeinsame lokale Bild-Testdaten importieren |
-| `prisma/` | Schema und vorhandene Migration |
-| `.agents/skills/`, `.claude/skills/`, `.windsurf/skills/` | Werkzeughilfen und Verknüpfungen, kein Anwendungscode |
+Vollständige Kontolöschung, vereinbarte Backup-/Log-Aufbewahrung und gemeinsame Browser-/Upload-Abnahme mit Dilek bleiben offen. Es liegt keine vollständige DSGVO-Abnahme vor.
 
-Die Zuständigkeiten und ein Beispielablauf stehen in [Backend-Architektur](docs/architektur.md). URL-Pfade, Antwortfelder und bestehende Berechtigungen wurden bei dieser Aufteilung beibehalten.
-
-`POST /api/memes` erwartet `FormData`: `title` als Text, `image` als Datei und Bearer-Token. Genau ein PNG bis 5 MiB, Titel getrimmt 1–100 Zeichen. Erfolg 201 liefert das gespeicherte Meme. Kommentare erwarten JSON `content` (1–1000 Zeichen), Titeländerung JSON `title`. DELETE und Like-Anfragen benötigen keinen Body. Bei 204 keine JSON-Antwort auslesen.
-
-Vor Upload, Kommentar-Erstellung und Likes muss das lokale Profil über `/api/me/sync` vorhanden sein, sonst 409. Profil-ID aus der Sync-Antwort ist eine lokale UUID; Clerk-ID ist ein anderer Wert. Vollständige Anfrage-/Antwortformate und Statuscodes: [API-Vertrag](docs/api-plan.md).
-
-## Pagination und Anfragebegrenzung
-
-`GET /api/memes?page=1&limit=50` liefert weiterhin ein Array. Standard: page 1 und limit 50; erlaubt sind page 1–10000 und limit 1–100. Nur diese beiden Query-Felder werden akzeptiert; ungültige Werte ergeben 400. Sortierung: createdAt absteigend, bei gleichem Zeitpunkt id absteigend. Header `X-Page`, `X-Limit`, `X-Has-More` sind über CORS lesbar. Das Frontend wurde nicht verändert und zeigt daher weiterhin nur die erste Seite; Seitennavigation ist dort noch anzubinden. Kommentare und Ordnerlisten wurden in diesem Auftrag nicht paginiert.
-
-Pro IP und Serverprozess gelten innerhalb von 60 Sekunden höchstens 300 API-Anfragen, davon 60 Schreibanfragen und 10 Upload-Anfragen. Auch fehlgeschlagene Versuche zählen; OPTIONS-Anfragen werden ausgenommen. Begrenzung erfolgt vor JSON-Parsing und Clerk: bei Überschreitung 429 als JSON mit `Retry-After`. Maximal 10000 IP-Einträge pro Limiter; bei ausgelasteter Tabelle bekommen neue Clients vorübergehend 503 mit `Retry-After`.
-
-Die Zähler liegen im Arbeitsspeicher, werden bei Neustart zurückgesetzt und nicht zwischen mehreren Serverprozessen geteilt. Nutzer hinter derselben IP teilen die Limits. Express vertraut derzeit keinen Forwarded-Headern; ein späterer Reverse-Proxy-Betrieb benötigt eine gezielte Konfiguration. Keine zusätzliche Bibliothek oder Infrastruktur installiert.
-
-## Nächste Priorität
-
-Nach einer kurzen angemeldeten Schreibprüfung der aufgeteilten API folgt als größte fehlende Pflichtfunktion die vollständige Kontolöschung. Zuerst werden Bestätigung, Datenumfang und der wiederholbare Ablauf über PostgreSQL, Cloudinary und Clerk vorgeschlagen. Die konkrete Implementierung und neue Persistenz sind noch nicht freigegeben. Bereits vorhandene Ordner- und ADMIN-Funktionen werden nicht erneut gebaut. [Reihenfolge und Prüfgrenzen](docs/projektstand.md).
-
-## Offene Arbeiten und bekannte Grenzen
-
-- Vollständige Kontolöschung über DB, Clerk und Cloudinary fehlt. ADMIN darf fremde Memes/Kommentare löschen, aber weder fremde Inhalte bearbeiten noch fremde private Ordner verwalten.
-- GET /api/memes und GET /api/memes/:id liefern likedByMe. Bearer-Token auch bei diesen GETs mitsenden. Auch Meme-POST/PATCH und Ordner-Memes liefern den persönlichen Like-Status.
-- Zentrale JSON-Fehlerbehandlung ist vorhanden: kaputtes JSON 400, zu großer JSON-Body 413, unerwartete Fehler 500. Parserfälle heute live als JSON ohne interne Details geprüft. Die Meme-Liste ist seitenweise begrenzt, und die API besitzt eine Anfragebegrenzung; Details unten.
-- Upload-Meldung auf PNG korrigiert; ausführbarer Validator-Beispieltest entfernt. Der verbleibende Integrations- und Fehlerfalltestbedarf ist im Projektstand dokumentiert.
-- Meme-DELETE hat einen persistenten Wiederholungsablauf für Cloudinary-/DB-Teilausfälle. CDN-Kopien, Backups und gleichzeitig fehlgeschlagene Upload-/DB-Bereinigung bleiben gesonderte Grenzen. Nur separate eigene Upload-Testbilder für Löschtests verwenden; Fixture-Originale sind gemeinsam genutzt.
-- Der aktuelle Frontend-Funktionsstand wurde bei dieser Backend-Strukturänderung nicht erneut bewertet. Historische Beobachtungen stehen mit Datum im Projektstand; Dileks Arbeitsprotokoll dokumentiert ihre Änderungen.
-
-[API-Vertrag](docs/api-plan.md) · [Projektstand und Prüfgrenzen](docs/projektstand.md)
+[Architektur](docs/architektur.md) · [Datenmodell](docs/datenmodell.md) · [Projektstand und historische Prüfbelege](docs/projektstand.md)

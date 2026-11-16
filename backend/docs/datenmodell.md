@@ -1,6 +1,6 @@
 # Your Meme – Datenmodell
 
-Stand: 16.11.2026. Sieben Modelle: die sechs Fachmodelle und zusätzlich `MemeImageDeletion` für minimale Bild-Bereinigungsaufträge. Meme enthält `category`. Zusätzlich zur Initialmigration gibt es `20261116093000_add_meme_category`, lokal erfolgreich angewendet und geprüft. Der Migrationsstatus vom 16.11. bestätigt Initialmigration, Kategorie-Migration und `20261116160000_add_image_deletion_jobs` als lokal angewendet. Meme-, Kommentar- und Like-Schreibaktionen nutzen jetzt diese Modelle. Eine leere oder vorhandene Tabelle allein belegt keine fertige Nutzerfunktion.
+Stand: 16.11.2026. Sieben Modelle: sechs Fachmodelle und `MemeImageDeletion` für minimale Bild-Bereinigungsaufträge. Meme enthält `category`. Alle vier versionierten Migrationen sind auf dem gemeinsamen Neon-Ziel angewendet; der Umzugsnachweis steht in [Gemeinsame Datenbank](gemeinsame-datenbank.md). Eine vorhandene Tabelle allein belegt keine fertige Nutzerfunktion.
 
 Clerk-Identität, lokale Nutzer-Synchronisation und Besitzerprüfungen für Meme-/Kommentaränderungen sind implementiert. Ordner-Anlage/-Abfragen und Meme-Zuordnungen haben jetzt Besitzerprüfungen. Ordner umbenennen/löschen und ADMIN-Löschrechte für Memes/Kommentare sind implementiert. Die dienstübergreifende Kontolöschung bleibt offen und hat die nächste fachliche Priorität.
 
@@ -10,7 +10,7 @@ Clerk-Identität, lokale Nutzer-Synchronisation und Besitzerprüfungen für Meme
 - PostgreSQL mit Prisma
 - Clerk für Registrierung, Anmeldung und Passwortverwaltung
 - Bildspeicher: Cloudinary; automatischer PNG-Upload und Meme-Dateilöschung implementiert, gemeinsame Fixture-Originale zusätzlich vorhanden
-- Hosting: optional; Anbieter noch offen
+- Gemeinsame Datenbank: Neon in Frankfurt; Hosting der Anwendung weiterhin optional
 
 ## Beziehungsdiagramm
 
@@ -85,13 +85,15 @@ erDiagram
 
 `MemeImageDeletion` enthält nur Meme-ID (Primärschlüssel), lokale Besitzer-ID, exakte Cloudinary-public_id sowie Erstellungs-/nächsten Versuchszeitpunkt. Auftrag und Inhaltslöschung werden gemeinsam in einer Transaktion gespeichert. Nach erfolgreicher Dateibereinigung wird der Auftrag entfernt. Keine Inhaltskopien, keine zusätzlichen Clerk-/Kontaktdaten; keine Fremdschlüsselkaskade, die bei späterer Kontolöschung noch offene Aufträge verwerfen könnte. Verarbeitet über einen Index auf `nextAttemptAt`. [Ablauf, Aufbewahrung und Grenzen](bildloeschung.md).
 
-## Kategorien (Erweiterung vom 16.11.2026)
+## Aktuelle Kategorien – deutsche verkürzte Liste
 
-`Meme.category` ist ein verpflichtendes Textfeld mit Standardwert `Ohne Kategorie`. Es bleibt bei einer Kategorie pro Meme; eine eigene Kategorien-Tabelle ist dafür nicht nötig. Bestehende Datensätze erhalten diesen neutralen Wert. Neue Uploads dürfen eine Kategorie angeben; ohne Angabe gilt derselbe Standard. Besitzer können die Zuordnung über die bestehende PATCH-Route ändern.
+Seit Migration `20261116180000_german_categories`: Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause und Wochenende; zusätzlich Ohne Kategorie. Das Textfeld und der Standardwert bleiben bestehen. Die neue Migration ersetzt den SQL-CHECK atomar und überführt nur bestätigte Zuordnungen (Animal→Tiere, Food→Essen, Study→Lernen, Gaming→Spiele, Meeting→Arbeit). Übrige gestrichene Werte werden Ohne Kategorie. Keine Bilddatei oder Bildkennung wird dafür geändert.
 
-Die erlaubten Namen entsprechen dem aktuellen Frontend-Menü plus `Ohne Kategorie`; vollständige Liste und API-Beispiele stehen im [API-Plan](api-plan.md). Zod prüft die Werte vor der Verarbeitung, die Migration ergänzt außerdem den CHECK `Meme_category_check` in PostgreSQL. Der CHECK steht in der SQL-Migration, nicht im Prisma-Schema; bei späteren Änderungen an der Kategorienliste beide Stellen gemeinsam pflegen. Bilder bleiben unverändert bei Cloudinary gespeichert.
+Aktuelle Verteilung der 30 übertragenen Memes: Arbeit 3, Essen 2, Lernen 2, Programmieren 3, Spiele 2, Tiere 2, Ohne Kategorie 16. Kaffee, Zuhause und Wochenende sind zunächst leer. Die Daten liegen jetzt gemeinsam in Neon Frankfurt; beide lokalen Backends sollen auf dasselbe Ziel zeigen. [Anschluss](gemeinsame-datenbank.md).
 
-Bei der Migration erhielten zunächst alle 33 vorhandenen Memes `Ohne Kategorie`. Anschließend hat Josephine am 16.11. die Zuordnung anhand von `imageStorageId` beauftragt: 29 lokale Meme-Einträge sind jetzt kategorisiert, vier zufällig benannte Test-Uploads bleiben `Ohne Kategorie`. Bilddateien und Bildkennungen wurden nicht verändert. Verteilung und Prüfbelege stehen im [Projektstand](projektstand.md). Die Zuordnung gilt für die lokale Datenbank; versionierte Import-Fixtures bleiben unverändert.
+## Kategorie-Feld und Validierung
+
+`Meme.category` ist ein verpflichtendes Textfeld mit Standard `Ohne Kategorie`, eine Kategorie pro Meme. Zod prüft den API-Wert; PostgreSQL schützt direkte Schreibzugriffe zusätzlich mit dem CHECK `Meme_category_check`. Der CHECK steht in den SQL-Migrationen, nicht im Prisma-Schema. Änderungen an der Liste benötigen deshalb Validator, neue Migration und passende Tests. Angewendete Migrationen bleiben unverändert. Historische Zuordnungen stehen im [Projektstand](projektstand.md).
 
 ## Eindeutigkeit und Standardwerte
 

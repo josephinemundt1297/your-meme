@@ -27,7 +27,7 @@ export function createFolderController(
   );
 
   const listFolders: ApiHandler = handleRequest(
-    async (req, res) => {
+    async (_req, res) => {
       const clerkUserId = res.locals.clerkUserId;
 
       const response = await service.listFolders(clerkUserId);

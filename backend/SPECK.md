@@ -71,6 +71,12 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 - Anfrage- und Antwortformate einschließlich Fehlerfällen vor der Frontend-Anbindung dokumentieren.
 - Teilen erfolgt über einen Link; ein zusätzlicher Backend-Endpunkt ist dafür zunächst nicht vorgesehen.
 
+## Gemeinsame Datenbank und deutsche Kategorien – 16.11.2026
+
+Zusätzlich freigegeben und eingerichtet: gemeinsame PostgreSQL-Datenbank bei Neon Free in Frankfurt. Beide lokalen Backends verwenden getrennte ausdrücklich freigegebene CRUD-Zugänge; Schema-Migrationen erfolgen abgestimmt über den getrennten Migrationszugang. Lokale Integrationstests bleiben lokal.
+
+Verbindliche Kategorien: Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause und Wochenende; zusätzlich Ohne Kategorie. Nur bestätigte eindeutige Zuordnungen übernommen; keine Gleichsetzung von Drinks und Kaffee. [Datenmodell](docs/datenmodell.md) und [Anschluss](docs/gemeinsame-datenbank.md).
+
 ## Bildlöschung nach Review vom 16.11.2026
 
 Freigegeben und umgesetzt: technische Bildkennungen berichtigen, Like-Zusatzabfrage nach Upload entfernen, Meme-DELETE über minimale persistente Aufträge wiederholbar machen und erwartete Prisma-Konflikte als 404/409 behandeln. Kategorien bleiben in PostgreSQL. Siehe [Bildlöschung und Datenschutzgrenzen](docs/bildloeschung.md). Diese Freigabe umfasst nicht die weiterhin offene Kontolöschung.
@@ -121,14 +127,14 @@ Freigegeben und umgesetzt: technische Bildkennungen berichtigen, Like-Zusatzabfr
 - Technische Einzelheiten der Kontolöschung über Datenbank, Clerk und Bildspeicher.
 - Vollständige API-Verträge und Testfälle.
 - Optionales Hosting; keine Voraussetzung für die Abgabe.
-- Kategorien wurden am 16.11.2026 ausdrücklich als Erweiterung beauftragt: eine feste Kategorie je Meme, Zuordnung beim Upload/nachträglich durch den Besitzer und Filter über die bestehende Meme-Liste. Backend umgesetzt; Frontend-Anbindung offen. Suche und Meme-Editor bleiben außerhalb des vereinbarten Umfangs.
+- Kategorien wurden am 16.11.2026 ausdrücklich als Erweiterung beauftragt: eine feste Kategorie je Meme, Zuordnung beim Upload/nachträglich durch den Besitzer und Filter über die bestehende Meme-Liste. Backend umgesetzt; gemeinsamer Frontend-/Backend-Abnahmetest noch offen. Suche und Meme-Editor bleiben außerhalb des vereinbarten Umfangs.
 
 ## Nächster Arbeitsschritt
 
-1. Kurze angemeldete Abnahme nach der Aufteilung: mit einem separaten eigenen Test-Meme Upload, Titeländerung, Like/Unlike, Kommentarverwaltung und einen Testordner prüfen. Nur eigens angelegte Testinhalte löschen. Die 72 automatisierten Tests simulieren externe Dienste; die bisherige reale Nachprüfung war lesend.
+1. Kurze angemeldete Abnahme nach der Aufteilung: mit einem separaten eigenen Test-Meme Upload, Titeländerung, Like/Unlike, Kommentarverwaltung und einen Testordner prüfen. Nur eigens angelegte Testinhalte löschen. Die regulären automatisierten HTTP-Tests simulieren externe Dienste; die bisherige reale Nachprüfung war lesend.
 2. **Höchste fachliche Priorität: vollständige Kontolöschung.** Zuerst Vertrag, Bestätigung, betroffene Daten und Verhalten bei Teilausfällen festlegen und Josephine vorlegen. Die konkrete Route, neue Persistenz und Umsetzung sind damit noch nicht freigegeben.
 3. Nach Freigabe im Nutzer-Modul umsetzen: Identität und Bestätigung im Controller, Löschablauf im Service, bestehende Dienstanbindungen verwenden. Externe Löschungen lassen sich durch eine PostgreSQL-Transaktion nicht zurückrollen. Fehlgeschlagene Schritte müssen nachvollziehbar wiederholbar bleiben; keine vollständige Löschung melden, solange Teile fehlen.
 4. Mit Testdoubles Erfolgs-, Rechte-, Bestätigungs-, Ausfall- und Wiederholungsfälle prüfen; anschließend ausschließlich mit einem entbehrlichen Testkonto real abnehmen. Gemeinsame Cloudinary-Fixtures nicht für Löschtests verwenden.
-5. Danach verbleibende Absicherung und vollständige Integration abarbeiten. Die Backend-Meme-Pagination ist vorhanden; die Frontend-Navigation dafür fehlt noch. Frontend-Aufgaben richten sich nach dem tatsächlich vorhandenen Stand; keine bereits erledigten Funktionen erneut bauen.
+5. Danach verbleibende Absicherung und vollständige Integration abarbeiten. Die Backend-Meme-Pagination ist vorhanden; die Frontend-Navigation dafür ist gesondert zu prüfen. Frontend-Aufgaben richten sich nach dem tatsächlich vorhandenen Stand; keine bereits erledigten Funktionen erneut bauen.
 
 [Projektstand](docs/projektstand.md) dokumentiert Belege und Grenzen. Kategorien sind seit 16.11. als Erweiterung beauftragt; Suche und Editor bleiben außerhalb des Pflichtumfangs.

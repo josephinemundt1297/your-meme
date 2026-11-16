@@ -14,7 +14,7 @@ export function createUserController(
   };
 
   const syncCurrentUser: ApiHandler = handleRequest(
-    async (req, res) => {
+    async (_req, res) => {
       const clerkUserId = res.locals.clerkUserId;
 
       const response = await service.syncCurrentUser(clerkUserId);
