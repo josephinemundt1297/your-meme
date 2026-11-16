@@ -34,6 +34,12 @@ Am **13.11.2026** habe ich den persönlichen Like-Status beim Laden weiter vervo
 
 Anschließend habe ich den Ersteller und den Upload-Einstieg korrigiert. Der API-Client übernimmt den tatsächlichen Ersteller aus dem Feld `author` und verwendet dessen ID und Benutzernamen für die typisierten Meme-Daten. Auf jeder Meme-Karte wird der Ersteller jetzt mit „Von ...“ angezeigt; die Detailseite verwendet den Namen ebenfalls. Zusätzlich habe ich neben dem Suchfeld einen sichtbaren Link „Meme hochladen“ ergänzt, der direkt zu `/upload` führt. Mit den laufenden lokalen Diensten habe ich die Übersicht im Browser geprüft: 29 Meme-Datensätze mit Cloudinary-Bildern, Titeln, Erstellern und Like-Buttons wurden geladen. `npm run lint` und `npm run build` liefen erfolgreich. Die Änderung wurde mit `fe627cd feat(frontend): show meme authors and upload link` auf `Frontend` gepusht und PR #45 wurde mit den beiden Aufgaben aktualisiert.
 
+Am **13.11.2026** habe ich mit der Frontend-Ordneroberfläche begonnen. Zuerst habe ich den typisierten Client für `GET /api/folders` ergänzt. Nach der Anmeldung wird der Clerk-Token mitgesendet und der Benutzer vor dem Abruf synchronisiert. Eigene Ordner werden in der linken Seitenleiste unter „Meine Ordner“ angezeigt. Für die verschiedenen Zustände gibt es die Hinweise „Ordner werden geladen …“, „Noch keine Ordner.“ und eine verständliche Fehlermeldung. Beim Abmelden wird weiterhin der Hinweis „Anmelden, um Ordner anzulegen.“ angezeigt. Die Ordnerliste wird bei einem Kontowechsel erneut geladen. Diese erste Ordnerfunktion wurde mit `97863bc feat(frontend): display personal folders in sidebar` auf `Frontend` gepusht und in PR #45 aktualisiert.
+
+Danach habe ich das Erstellen eines persönlichen Ordners umgesetzt. Der `＋`-Button öffnet jetzt ein beschriftetes Formular direkt in der Seitenleiste. Der Ordnername wird vor dem Absenden geprüft: Er darf nicht leer sein und höchstens 100 Zeichen enthalten. Das Formular sendet den Namen mit dem Clerk-Token an `POST /api/folders`, deaktiviert den Speichern-Button während der Anfrage und zeigt Fehler verständlich an. Nach erfolgreichem Speichern wird die Ordnerliste erneut geladen, der neue Ordner erscheint sofort und das Formular schließt sich. Mit „Abbrechen“ kann das Formular ohne Speichern geschlossen werden. Die Änderung wurde mit `42511c6 feat(frontend): add folder creation form` auf `Frontend` gepusht und PR #45 aktualisiert.
+
+Anschließend habe ich die Ordner-Detailseite umgesetzt. Die bisherige Platzhalterseite `/folders/$folderId` lädt nun mit `GET /api/folders/:id` den eigenen Ordner und dessen gespeicherte Memes. Der Ordnername, die Anzahl der Memes und typisierte Meme-Karten mit Bild, Titel und Ersteller werden angezeigt. Für Lade-, Fehler-, leere und nicht gefundene Ordner gibt es verständliche Zustände sowie einen Link zurück zur Übersicht. `npm run lint`, `npm run build` und `git diff --check` liefen erfolgreich. Diese Änderung ist geprüft und wartet noch auf deinen Commit und Push.
+
 ## Gemeinsamer Statusabgleich
 
 Dieser Abschnitt übernimmt die gemeinsamen Statusinformationen aus `main`, ohne die ausführlichen Tagesberichte zu ersetzen. Er beschreibt den Projektstand und offene Abstimmungen zwischen Frontend und Backend.
@@ -49,7 +55,8 @@ Als nächste gemeinsame Punkte bleiben der vollständige End-to-End-Test für An
 - Ein vollständiger Browser-Test mit angemeldetem Upload, Kommentar und Like steht noch aus.
 - Die persönliche Like-Anzeige nach einem Neuladen und bei einem Kontowechsel muss mit einem angemeldeten Testkonto geprüft werden.
 - Kategorien bleiben vorerst zurückgestellt, da das Backend aktuell kein Kategorie-Feld speichert.
-- Persönliche Ordner sind noch offen.
+- Die Ordnerliste, das Erstellen und die Detailansicht sind im Frontend eingebaut; das Hinzufügen und Entfernen von Memes in Ordnern ist noch offen.
+- Umbenennen und Löschen von Ordnern bleiben offen, bis Josis Backend-Änderungen dafür in `main` bestätigt sind.
 
 ## Zuständigkeiten
 

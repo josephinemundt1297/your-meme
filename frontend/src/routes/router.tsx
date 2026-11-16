@@ -1,5 +1,5 @@
 import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router'
-import { AccountPage, Layout, MemeDetailPage, MemeList, PlaceholderPage, UploadPage } from '../App'
+import { AccountPage, FolderPage, Layout, MemeDetailPage, MemeList, UploadPage } from '../App'
 
 const rootRoute = createRootRoute({ component: Layout })
 type CategorySearch = { category?: string }
@@ -10,7 +10,7 @@ const topRoute = createRoute({ getParentRoute: () => rootRoute, path: '/top', co
 const uploadRoute = createRoute({ getParentRoute: () => rootRoute, path: '/upload', component: UploadPage })
 const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: '/account', component: AccountPage })
 const memeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/memes/$memeId', component: MemeDetailPage })
-const folderRoute = createRoute({ getParentRoute: () => rootRoute, path: '/folders/$folderId', component: () => <PlaceholderPage title="Mein Ordner" text="Dieser persönliche Ordner wird nach der Anmeldung verfügbar." /> })
+const folderRoute = createRoute({ getParentRoute: () => rootRoute, path: '/folders/$folderId', component: FolderPage })
 const routeTree = rootRoute.addChildren([homeRoute, popularRoute, newRoute, topRoute, uploadRoute, accountRoute, memeRoute, folderRoute])
 
 export const router = createRouter({ routeTree })

@@ -2,10 +2,10 @@ import { Link, Outlet, useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Show, SignIn, SignUp, UserButton, useAuth, useUser } from '@clerk/react'
 import type { Meme, MemeComment } from './types/meme'
-import type { MemeFolder } from './types/folder'
+import type { MemeFolder, MemeFolderDetail } from './types/folder'
 import { MemeState } from './components/ui/MemeState'
 import { createMemeComment, createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, setMemeLike, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
-import { fetchFolders } from './api/folders'
+import { createFolder, fetchFolderById, fetchFolders } from './api/folders'
 import './App.css'
 
 type MemeListProps = {
@@ -29,6 +29,10 @@ export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [folders, setFolders] = useState<MemeFolder[] | null>(null)
   const [folderError, setFolderError] = useState('')
+  const [isFolderFormOpen, setIsFolderFormOpen] = useState(false)
+  const [folderName, setFolderName] = useState('')
+  const [createFolderError, setCreateFolderError] = useState('')
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const { getToken, isSignedIn } = useAuth()
   const { user } = useUser()
   const categories = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
@@ -59,6 +63,35 @@ export function Layout() {
     return () => { active = false }
   }, [getToken, isSignedIn, user?.id])
 
+  const handleCreateFolder = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const name = folderName.trim()
+    if (!name) {
+      setCreateFolderError('Bitte gib einen Ordnernamen ein.')
+      return
+    }
+    if (name.length > 100) {
+      setCreateFolderError('Der Ordnername darf höchstens 100 Zeichen enthalten.')
+      return
+    }
+
+    setCreateFolderError('')
+    setIsCreatingFolder(true)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Bitte melde dich an, um einen Ordner anzulegen.')
+      await createFolder(name, token)
+      const updatedFolders = await fetchFolders(token)
+      setFolders(updatedFolders)
+      setFolderName('')
+      setIsFolderFormOpen(false)
+    } catch (error: unknown) {
+      setCreateFolderError(error instanceof Error ? error.message : 'Ordner konnte nicht angelegt werden.')
+    } finally {
+      setIsCreatingFolder(false)
+    }
+  }
+
   return <div className="app-shell">
     <header className="site-header">
       <button className="menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="main-navigation"><span aria-hidden="true">☰</span><span className="sr-only">{menuOpen ? 'Menü schließen' : 'Menü öffnen'}</span></button>
@@ -69,7 +102,8 @@ export function Layout() {
       <aside id="site-sidebar" className="site-sidebar">
         <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category} to="/" search={{ category }}>{category}</Link>)}</div>
         <div className="sidebar-divider" />
-        <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p><Link className="add-folder" to="/account" aria-label="Ordner anlegen">＋</Link></div>
+        <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p>{isSignedIn ? <button className="add-folder" type="button" aria-label="Ordner anlegen" aria-expanded={isFolderFormOpen} onClick={() => { setIsFolderFormOpen((open) => !open); setCreateFolderError('') }}>＋</button> : <Link className="add-folder" to="/account" aria-label="Anmelden und Ordner anlegen">＋</Link>}</div>
+          {isSignedIn && isFolderFormOpen && <form className="folder-form" onSubmit={handleCreateFolder}><label htmlFor="folder-name">Neuer Ordner</label><input id="folder-name" type="text" value={folderName} onChange={(event) => { setFolderName(event.target.value); setCreateFolderError('') }} maxLength={100} placeholder="Ordnername" autoFocus required /><div className="folder-form-actions"><button type="submit" disabled={isCreatingFolder}>{isCreatingFolder ? 'Speichern …' : 'Speichern'}</button><button type="button" onClick={() => { setIsFolderFormOpen(false); setFolderName(''); setCreateFolderError('') }}>Abbrechen</button></div>{createFolderError && <p className="sidebar-note" role="alert">{createFolderError}</p>}</form>}
           {!isSignedIn && <p className="sidebar-note">Anmelden, um Ordner anzulegen.</p>}
           {isSignedIn && !folders && <p className="sidebar-note">Ordner werden geladen …</p>}
           {isSignedIn && folderError && <p className="sidebar-note" role="alert">{folderError}</p>}
@@ -148,6 +182,46 @@ export function MemeList({ top = false }: MemeListProps) {
 }
 
 export function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
+
+function FolderMemeCard({ meme }: { meme: Meme }) {
+  return <article className="meme-card"><Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} loading="lazy" decoding="async" width="600" height="400" /> : <span aria-hidden="true">{meme.emoji}</span>}</div><div className="meme-card-content"><span className="category">{meme.category}</span><span className="meme-author">Von {meme.author.username}</span><h3>{meme.title}</h3></div></Link></article>
+}
+
+export function FolderPage() {
+  const { folderId } = useParams({ from: '/folders/$folderId' })
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const { user } = useUser()
+  const [state, setState] = useState<{ id: string; status: 'loading' | 'loaded' | 'not-found' | 'error'; folder?: MemeFolderDetail }>({ id: '', status: 'loading' })
+
+  useEffect(() => {
+    if (!isLoaded) return
+    if (!isSignedIn) return
+
+    const controller = new AbortController()
+    void getToken()
+      .then((token) => {
+        if (!token) throw new Error('Bitte melde dich an, um den Ordner zu sehen.')
+        setState({ id: folderId, status: 'loading' })
+        return fetchFolderById(folderId, token, controller.signal)
+      })
+      .then((folder) => setState(folder ? { id: folderId, status: 'loaded', folder } : { id: folderId, status: 'not-found' }))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setState({ id: folderId, status: 'error' })
+      })
+
+    return () => controller.abort()
+  }, [folderId, getToken, isLoaded, isSignedIn, user?.id])
+
+  const currentState = !isLoaded ? { id: folderId, status: 'loading' as const } : !isSignedIn ? { id: folderId, status: 'error' as const } : state.id === folderId ? state : { id: folderId, status: 'loading' as const }
+  if (currentState.status === 'loading') return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><MemeState type="loading" /></section>
+  if (currentState.status === 'error') return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><MemeState type="error" onRetry={() => window.location.reload()} /></section>
+  if (currentState.status === 'not-found' || !currentState.folder) return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><div className="meme-state"><div className="state-icon" aria-hidden="true">?</div><h3>Dieser Ordner wurde nicht gefunden.</h3><p>Er ist möglicherweise nicht vorhanden oder gehört einem anderen Nutzer.</p><Link className="primary-link" to="/">Zur Übersicht</Link></div></section>
+
+  const folder = currentState.folder
+  return <section className="folder-page"><Link className="back-link" to="/">← Zurück zu den Memes</Link><div className="section-heading"><div><p className="eyebrow">Meine Sammlung</p><h1>{folder.name}</h1></div><span className="meme-count">{folder.memes.length} Memes</span></div>{folder.memes.length === 0 ? <MemeState type="empty" /> : <div className="meme-grid">{folder.memes.map((meme) => <FolderMemeCard key={meme.id} meme={meme} />)}</div>}</section>
+}
+
 export function AccountPage() {
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in')
   return <section className="account-page"><Show when="signed-in"><div className="account-signed-in"><p className="eyebrow">Dein Konto</p><h1>Willkommen zurück!</h1><p>Du bist bereits angemeldet.</p><UserButton showName /></div></Show><Show when="signed-out"><div className="auth-switcher" role="group" aria-label="Anmeldung auswählen"><button className={mode === 'sign-in' ? 'active' : ''} type="button" onClick={() => setMode('sign-in')}>Anmelden</button><button className={mode === 'sign-up' ? 'active' : ''} type="button" onClick={() => setMode('sign-up')}>Registrieren</button></div>{mode === 'sign-in' ? <SignIn routing="hash" /> : <SignUp routing="hash" />}</Show></section>
