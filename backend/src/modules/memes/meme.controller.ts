@@ -2,9 +2,9 @@ import type { ApiHandler, ReadUserId } from "../../types/dependencies.js";
 import { handleRequest } from "../../middleware/handleRequest.js";
 import { isValidUuid } from "../../utils/isValidUuid.js";
 import type { createMemeService } from "./meme.service.js";
-import { createMemeSchema } from "../../validators/meme.js";
+import { createMemeSchema, updateMemeSchema } from "../../validators/meme.js";
 import { isPng } from "../../utils/isPng.js";
-import { paginationSchema } from "../../validators/pagination.js";
+import { memeListQuerySchema } from "../../validators/pagination.js";
 
 export function createMemeController(
   service: ReturnType<typeof createMemeService>,
@@ -12,10 +12,10 @@ export function createMemeController(
 ) {
   const listMemes: ApiHandler = handleRequest(
     async (req, res) => {
-      const pagination = paginationSchema.safeParse(req.query);
+      const pagination = memeListQuerySchema.safeParse(req.query);
       if (!pagination.success) {
         return res.status(400).json({
-          error: "page muss zwischen 1 und 10000, limit zwischen 1 und 100 liegen.",
+          error: "page muss zwischen 1 und 10000, limit zwischen 1 und 100 liegen; category muss eine bekannte Kategorie sein.",
         });
       }
       const clerkUserId = readUserId(req);
@@ -59,15 +59,15 @@ export function createMemeController(
         });
       }
 
-      const result = createMemeSchema.pick({ title: true }).safeParse(req.body);
+      const result = updateMemeSchema.safeParse(req.body);
 
       if (!result.success) {
         return res.status(400).json({
-          error: "Bitte einen Titel mit 1 bis 100 Zeichen angeben.",
+          error: "Bitte einen Titel mit 1 bis 100 Zeichen oder eine bekannte Kategorie angeben.",
         });
       }
 
-      const response = await service.updateMeme(id, clerkUserId, result.data.title);
+      const response = await service.updateMeme(id, clerkUserId, result.data);
       return res.status(200).json(response);
     },
     "Meme konnte nicht bearbeitet werden.",
@@ -133,11 +133,13 @@ export function createMemeController(
 
   const createMeme: ApiHandler = handleRequest(
     async (req, res) => {
-      const result = createMemeSchema.pick({ title: true }).safeParse(req.body);
+      const result = createMemeSchema
+        .pick({ title: true, category: true })
+        .safeParse(req.body);
 
       if (!result.success) {
         return res.status(400).json({
-          error: "Bitte einen Titel mit 1 bis 100 Zeichen angeben.",
+          error: "Bitte einen Titel mit 1 bis 100 Zeichen und eine bekannte Kategorie angeben.",
         });
       }
 
@@ -155,7 +157,9 @@ export function createMemeController(
 
       const clerkUserId = res.locals.clerkUserId;
 
-      const response = await service.createMeme(clerkUserId, result.data.title, req.file.buffer);
+      const response = await service.createMeme(
+        clerkUserId, result.data.title, req.file.buffer, result.data.category,
+      );
       return res.status(201).json(response);
     },
     "Meme konnte nicht gespeichert werden.",

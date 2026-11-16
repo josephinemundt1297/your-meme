@@ -3,6 +3,7 @@ import { Prisma } from "../generated/prisma/client.js";
 export const memeSelect = {
   id: true,
   title: true,
+  category: true,
   imageUrl: true,
   userId: true,
   createdAt: true,
