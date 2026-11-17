@@ -4,7 +4,7 @@ import { Show, SignIn, SignUp, UserButton, useAuth, useUser } from '@clerk/react
 import type { Meme, MemeComment } from './types/meme'
 import type { MemeFolder, MemeFolderDetail } from './types/folder'
 import { MemeState } from './components/ui/MemeState'
-import { createMemeComment, createMemeFormData, fetchMemeById, fetchMemeComments, fetchMemes, setMemeLike, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
+import { createMemeComment, createMemeFormData, deleteMeme, fetchMemeById, fetchMemeComments, fetchMemes, setMemeLike, syncCurrentUser, uploadMeme, validateMemeImage } from './api/memes'
 import { addMemeToFolder, createFolder, deleteFolder, fetchFolderById, fetchFolders, removeMemeFromFolder, renameFolder } from './api/folders'
 import './App.css'
 
@@ -423,6 +423,7 @@ export function UploadPage() {
 }
 export function MemeDetailPage() {
   const { memeId } = useParams({ from: '/memes/$memeId' })
+  const navigate = useNavigate()
   const { getToken, isLoaded, isSignedIn } = useAuth()
   const { user } = useUser()
   const [detailState, setDetailState] = useState<{ id: string; status: 'loading' | 'loaded' | 'not-found' | 'error'; meme?: Meme }>({ id: '', status: 'loading' })
@@ -433,6 +434,9 @@ export function MemeDetailPage() {
   const [detailLike, setDetailLike] = useState({ id: '', liked: false, likeCount: 0 })
   const [likeError, setLikeError] = useState('')
   const [isUpdatingLike, setIsUpdatingLike] = useState(false)
+  const [localUserId, setLocalUserId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState('')
+  const [isDeletingMeme, setIsDeletingMeme] = useState(false)
   const [detailFolders, setDetailFolders] = useState<MemeFolder[] | null>(null)
   const [detailFoldersUserId, setDetailFoldersUserId] = useState<string | null>(null)
   const [selectedFolderId, setSelectedFolderId] = useState('')
@@ -449,7 +453,15 @@ export function MemeDetailPage() {
       .then((token) => {
         setDetailState({ id: memeId, status: 'loading' })
         setDetailLike({ id: '', liked: false, likeCount: 0 })
-        return fetchMemeById(memeId, token ?? undefined, controller.signal)
+        setDeleteError('')
+        if (!token) {
+          setLocalUserId(null)
+          return fetchMemeById(memeId, undefined, controller.signal)
+        }
+        return syncCurrentUser(token).then(({ id }) => {
+          setLocalUserId(id)
+          return fetchMemeById(memeId, token, controller.signal)
+        })
       })
       .then((data) => {
         setDetailState(data ? { id: memeId, status: 'loaded', meme: data } : { id: memeId, status: 'not-found' })
@@ -527,6 +539,23 @@ export function MemeDetailPage() {
     }
   }
 
+  const handleDeleteMeme = async () => {
+    if (!window.confirm('Möchtest du dein Meme wirklich löschen? Dieser Schritt kann nicht rückgängig gemacht werden.')) return
+
+    setDeleteError('')
+    setIsDeletingMeme(true)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Bitte melde dich an, um dein Meme zu löschen.')
+      await deleteMeme(memeId, token)
+      await navigate({ to: '/' })
+    } catch (error: unknown) {
+      setDeleteError(error instanceof Error ? error.message : 'Das Meme konnte nicht gelöscht werden.')
+    } finally {
+      setIsDeletingMeme(false)
+    }
+  }
+
   const handleSaveToFolder = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!selectedFolderId) {
@@ -588,7 +617,7 @@ export function MemeDetailPage() {
         <span className="category">{meme.category}</span>
         <h1>{meme.title}</h1>
         <p className="detail-author">Von <strong>{meme.author.username}</strong> · {new Date(meme.createdAt).toLocaleDateString('de-DE')}</p>
-        <div className="detail-actions"><button className={`like-button${displayedLike.liked ? ' liked' : ''}`} type="button" aria-pressed={displayedLike.liked} onClick={handleLike} disabled={isUpdatingLike}><span aria-hidden="true">{displayedLike.liked ? '♥' : '♡'}</span>{displayedLike.likeCount} Likes</button><span className="comment-count">💬 {commentCount} Kommentare</span></div>{likeError && <p className="like-error" role="alert">{likeError}</p>}
+        <div className="detail-actions"><button className={`like-button${displayedLike.liked ? ' liked' : ''}`} type="button" aria-pressed={displayedLike.liked} onClick={handleLike} disabled={isUpdatingLike}><span aria-hidden="true">{displayedLike.liked ? '♥' : '♡'}</span>{displayedLike.likeCount} Likes</button><span className="comment-count">💬 {commentCount} Kommentare</span>{isSignedIn && localUserId === meme.author.id && <button className="delete-meme-button" type="button" onClick={() => void handleDeleteMeme()} disabled={isDeletingMeme}>{isDeletingMeme ? 'Wird gelöscht …' : 'Eigenes Meme löschen'}</button>}</div>{likeError && <p className="like-error" role="alert">{likeError}</p>}{deleteError && <p className="like-error" role="alert">{deleteError}</p>}
         {isSignedIn && <section className="save-folder-section" aria-labelledby="save-folder-heading"><h2 id="save-folder-heading">In meinen Ordner speichern</h2>{foldersForCurrentUser === null && !folderSaveError && <p className="folder-form-note">Ordner werden geladen …</p>}{folderSaveError && <p className="folder-form-error" role="alert">{folderSaveError}</p>}{foldersForCurrentUser?.length === 0 && <p className="folder-form-note">Du hast noch keinen Ordner angelegt. Lege zuerst links unter „Meine Ordner“ einen Ordner an.</p>}{foldersForCurrentUser && foldersForCurrentUser.length > 0 && <form className="save-folder-form" onSubmit={handleSaveToFolder}><label htmlFor="detail-folder">Ordner auswählen</label><div><select id="detail-folder" value={selectedFolderId} onChange={(event) => { setSelectedFolderId(event.target.value); setFolderSaveError(''); setFolderSaveMessage('') }} disabled={isSavingToFolder}><option value="">Ordner auswählen …</option>{foldersForCurrentUser.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select><button className="primary-link" type="submit" disabled={isSavingToFolder}>{isSavingToFolder ? 'Wird gespeichert …' : 'Speichern'}</button></div>{folderSaveMessage && <p className="folder-form-success" role="status">{folderSaveMessage}</p>}</form>}</section>}
         <section className="comments-section" aria-labelledby="comments-heading"><h2 id="comments-heading">Kommentare</h2>{isSignedIn ? <form className="comment-form" onSubmit={handleCommentSubmit}><label htmlFor="comment-content">Dein Kommentar</label><textarea id="comment-content" value={commentText} onChange={(event) => { setCommentText(event.target.value); setCommentError('') }} maxLength={1000} rows={4} placeholder="Schreibe einen Kommentar …" required /><button className="primary-link" type="submit" disabled={isSendingComment}>{isSendingComment ? 'Wird gesendet …' : 'Kommentar senden'}</button>{commentError && <p className="comment-error" role="alert">{commentError}</p>}</form> : <p className="comment-placeholder">Bitte <Link to="/account">melde dich an</Link>, um zu kommentieren.</p>}{currentCommentState.status === 'loading' && <p className="comment-placeholder">Kommentare werden geladen …</p>}{currentCommentState.status === 'error' && <p className="comment-placeholder">Kommentare konnten nicht geladen werden.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments?.length === 0 && <p className="comment-placeholder">Noch keine Kommentare.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments && currentCommentState.comments.length > 0 && <div className="comment-list">{currentCommentState.comments.map((comment) => <article className="comment-item" key={comment.id}><p>{comment.content}</p><small>Von {comment.author.username} · {new Date(comment.createdAt).toLocaleDateString('de-DE')}</small></article>)}</div>}</section>
       </div>
