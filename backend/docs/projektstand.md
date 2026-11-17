@@ -1,5 +1,22 @@
 # Your Meme – Projektstand und Arbeitsweise
 
+## Feierabend-Nachtrag – Merge und Präsentationsplanung am 16.11.2026
+
+Remote-main 5c2da88 (Merge #57, Frontend 302f576) gelesen. Oberes Menü und Routen Heute/meist kommentiert ergänzt; Tagesfilter sowie Sortierung laufen aktuell im Frontend nur über die erste API-Seite. Dieser Teil der früheren Fehlstellen ist damit überholt. Alte Kategorien, fehlende eigene Detailaktionen und verworfene lokale Sync-ID bleiben bestehen. Grobe gerundete Schätzung weiterhin Backend ca. 80 %, Frontend ca. 60 %, insgesamt ca. 70 %; kein neuer Build-/Browser-Test dieses Merges heute. Lokaler Checkout nicht mit dem Remote-Stand zusammengeführt.
+
+Von Josi bestätigt: Heute Feierabend. Morgen, Dienstag 17.11., Schwerpunkt gemeinsame PowerPoint. Donnerstag 19.11. gegebenenfalls nur Feinschliff und Probe. Damit das realistisch bleibt, müssen offene Pflichtfunktionen und Demo-Probleme vorher geklärt sein; keine neue Fertigstellungszusage. Trello-Menüpunkt nach Codeprüfung abgehakt, Feed-Abhängigkeit separat offen; Zeitplan entsprechend angepasst. Keine Implementierung, Datenänderung oder Präsentationserstellung heute begonnen.
+
+## Aktueller Review vom 16.11.2026 – Backend, Frontend und Trello
+
+Auf Josephines Auftrag Backend kritisch geprüft, mit aktuellem Frontend und Trello abgeglichen und ihre sieben zusätzlichen Frontend-Wünsche aufgenommen. Repository 8cebba0; Remote-Frontend-Stand 04312a5 enthalten. Backend ca. 80 %, Frontend ca. 60 %, Gesamt ca. 70 % als grobe gewichtete Schätzung einschließlich der neuen Wünsche, Unsicherheit etwa ±5–10 Prozentpunkte. Keine Abnahmequote.
+
+Prüfungen: 105 Backend-Tests erfolgreich, zwei PostgreSQL-Tests bewusst übersprungen; Typprüfung/Prisma-Schema und Frontend lint/build erfolgreich. Lesend live Health/DB 200, Programmieren 200 mit 3 Treffern, Gaming 400. 30 Memes, keine doppelten imageStorageId-Werte und keine offenen Bildaufträge zum Prüfzeitpunkt. Keine echte Schreib-/Lösch- oder neue Browserabnahme.
+
+Hauptbefunde: alte Kategorien im Frontend; verworfene lokale Profil-ID/Rolle als Hindernis für eigene Aktionen; fehlende serverseitige Feed-Sortierung/Tagesfilter und Frontend-Seitennavigation; offene Kontolöschung; Upload-Bereinigung bei doppeltem Ausfall und nachträgliche Like-Abfrage nach PATCH. Vorhandene Ordnerverwaltung nicht erneut bauen. Trello anhand belegter Umsetzung aktualisiert; neue UI-Wünsche separat erfasst und reale Abnahmen offen gelassen.
+
+[Review, Belege, Bewertung und Reihenfolge](review-2026-11-16.md). Kein Anwendungscode, keine Geheimnisse, Migrationen oder gemeinsamen Daten geändert; nur Review-Dokumentation und ausdrücklich beauftragte Trello-Pflege. Kein Commit, Push oder Merge. Ältere Prozentangaben unten gelten für deren damaligen Umfang und Stand.
+
+
 ## Aktueller Nachtrag vom 16.11.2026 – Backend bereinigt
 
 Auf Josephines ausdrücklichen Auftrag ausschließlich das Backend bereinigt, ohne neue Pakete oder zusätzliche Architekturschichten:
