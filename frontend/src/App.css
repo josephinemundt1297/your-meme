@@ -91,6 +91,13 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .detail-content h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin: 10px 0 14px; }
 .detail-author, .comment-count { color: var(--muted); font-size: .9rem; }
 .detail-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 16px; margin: 26px 0 38px; }
+.save-folder-section { border-top: 1px solid var(--line); margin-bottom: 28px; padding-top: 24px; }
+.save-folder-section h2 { font-size: 1.2rem; }
+.save-folder-form { display: grid; gap: 8px; }
+.save-folder-form label { font-weight: 700; }
+.save-folder-form > div { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
+.save-folder-form select { background: white; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); flex: 1 1 220px; min-width: 0; padding: 11px 12px; }
+.folder-form-success { color: var(--green); font-size: .85rem; margin: 0; }
 .comments-section { border-top: 1px solid var(--line); padding-top: 24px; }
 .comments-section h2 { font-size: 1.2rem; }
 .comment-placeholder { border: 1px dashed var(--line); color: var(--muted); font-size: .88rem; padding: 18px; }

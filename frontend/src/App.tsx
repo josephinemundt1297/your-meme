@@ -433,6 +433,12 @@ export function MemeDetailPage() {
   const [detailLike, setDetailLike] = useState({ id: '', liked: false, likeCount: 0 })
   const [likeError, setLikeError] = useState('')
   const [isUpdatingLike, setIsUpdatingLike] = useState(false)
+  const [detailFolders, setDetailFolders] = useState<MemeFolder[] | null>(null)
+  const [detailFoldersUserId, setDetailFoldersUserId] = useState<string | null>(null)
+  const [selectedFolderId, setSelectedFolderId] = useState('')
+  const [folderSaveError, setFolderSaveError] = useState('')
+  const [folderSaveMessage, setFolderSaveMessage] = useState('')
+  const [isSavingToFolder, setIsSavingToFolder] = useState(false)
 
   useEffect(() => {
     if (!isLoaded) return
@@ -469,6 +475,29 @@ export function MemeDetailPage() {
     return () => controller.abort()
   }, [memeId])
 
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) {
+      return
+    }
+
+    const controller = new AbortController()
+    void getToken()
+      .then((token) => {
+        if (!token) throw new Error('Bitte melde dich an, um deine Ordner zu sehen.')
+        return fetchFolders(token, controller.signal)
+      })
+      .then((folders) => {
+        setDetailFolders(folders)
+        setDetailFoldersUserId(user?.id ?? null)
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setFolderSaveError(error instanceof Error ? error.message : 'Ordner konnten nicht geladen werden.')
+      })
+
+    return () => controller.abort()
+  }, [getToken, isLoaded, isSignedIn, user?.id])
+
   const currentState = detailState.id === memeId ? detailState : { id: memeId, status: 'loading' as const }
   const currentCommentState = commentState.id === memeId ? commentState : { id: memeId, status: 'loading' as const }
   if (currentState.status === 'error') return <section className="placeholder-page"><MemeState type="error" onRetry={() => window.location.reload()} /><Link className="primary-link" to="/">Zur Übersicht</Link></section>
@@ -476,6 +505,7 @@ export function MemeDetailPage() {
   if (currentState.status === 'loading' || !currentState.meme) return <section className="placeholder-page"><MemeState type="loading" /></section>
 
   const meme = currentState.meme
+  const foldersForCurrentUser = detailFoldersUserId === user?.id ? detailFolders : null
 
   const displayedLike = detailLike.id === memeId ? detailLike : { id: memeId, liked: meme.likedByMe, likeCount: meme.likeCount }
   const handleLike = async () => {
@@ -494,6 +524,30 @@ export function MemeDetailPage() {
       setLikeError(error instanceof Error ? error.message : 'Der Like konnte nicht gespeichert werden.')
     } finally {
       setIsUpdatingLike(false)
+    }
+  }
+
+  const handleSaveToFolder = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedFolderId) {
+      setFolderSaveError('Bitte wähle einen Ordner aus.')
+      setFolderSaveMessage('')
+      return
+    }
+
+    setFolderSaveError('')
+    setFolderSaveMessage('')
+    setIsSavingToFolder(true)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Bitte melde dich an, um Memes zu speichern.')
+      await addMemeToFolder(selectedFolderId, memeId, token)
+      setSelectedFolderId('')
+      setFolderSaveMessage('Das Meme wurde in deinem Ordner gespeichert.')
+    } catch (error: unknown) {
+      setFolderSaveError(error instanceof Error ? error.message : 'Das Meme konnte nicht gespeichert werden.')
+    } finally {
+      setIsSavingToFolder(false)
     }
   }
 
@@ -535,6 +589,7 @@ export function MemeDetailPage() {
         <h1>{meme.title}</h1>
         <p className="detail-author">Von <strong>{meme.author.username}</strong> · {new Date(meme.createdAt).toLocaleDateString('de-DE')}</p>
         <div className="detail-actions"><button className={`like-button${displayedLike.liked ? ' liked' : ''}`} type="button" aria-pressed={displayedLike.liked} onClick={handleLike} disabled={isUpdatingLike}><span aria-hidden="true">{displayedLike.liked ? '♥' : '♡'}</span>{displayedLike.likeCount} Likes</button><span className="comment-count">💬 {commentCount} Kommentare</span></div>{likeError && <p className="like-error" role="alert">{likeError}</p>}
+        {isSignedIn && <section className="save-folder-section" aria-labelledby="save-folder-heading"><h2 id="save-folder-heading">In meinen Ordner speichern</h2>{foldersForCurrentUser === null && !folderSaveError && <p className="folder-form-note">Ordner werden geladen …</p>}{folderSaveError && <p className="folder-form-error" role="alert">{folderSaveError}</p>}{foldersForCurrentUser?.length === 0 && <p className="folder-form-note">Du hast noch keinen Ordner angelegt. Lege zuerst links unter „Meine Ordner“ einen Ordner an.</p>}{foldersForCurrentUser && foldersForCurrentUser.length > 0 && <form className="save-folder-form" onSubmit={handleSaveToFolder}><label htmlFor="detail-folder">Ordner auswählen</label><div><select id="detail-folder" value={selectedFolderId} onChange={(event) => { setSelectedFolderId(event.target.value); setFolderSaveError(''); setFolderSaveMessage('') }} disabled={isSavingToFolder}><option value="">Ordner auswählen …</option>{foldersForCurrentUser.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select><button className="primary-link" type="submit" disabled={isSavingToFolder}>{isSavingToFolder ? 'Wird gespeichert …' : 'Speichern'}</button></div>{folderSaveMessage && <p className="folder-form-success" role="status">{folderSaveMessage}</p>}</form>}</section>}
         <section className="comments-section" aria-labelledby="comments-heading"><h2 id="comments-heading">Kommentare</h2>{isSignedIn ? <form className="comment-form" onSubmit={handleCommentSubmit}><label htmlFor="comment-content">Dein Kommentar</label><textarea id="comment-content" value={commentText} onChange={(event) => { setCommentText(event.target.value); setCommentError('') }} maxLength={1000} rows={4} placeholder="Schreibe einen Kommentar …" required /><button className="primary-link" type="submit" disabled={isSendingComment}>{isSendingComment ? 'Wird gesendet …' : 'Kommentar senden'}</button>{commentError && <p className="comment-error" role="alert">{commentError}</p>}</form> : <p className="comment-placeholder">Bitte <Link to="/account">melde dich an</Link>, um zu kommentieren.</p>}{currentCommentState.status === 'loading' && <p className="comment-placeholder">Kommentare werden geladen …</p>}{currentCommentState.status === 'error' && <p className="comment-placeholder">Kommentare konnten nicht geladen werden.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments?.length === 0 && <p className="comment-placeholder">Noch keine Kommentare.</p>}{currentCommentState.status === 'loaded' && currentCommentState.comments && currentCommentState.comments.length > 0 && <div className="comment-list">{currentCommentState.comments.map((comment) => <article className="comment-item" key={comment.id}><p>{comment.content}</p><small>Von {comment.author.username} · {new Date(comment.createdAt).toLocaleDateString('de-DE')}</small></article>)}</div>}</section>
       </div>
     </article>
