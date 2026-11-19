@@ -38,7 +38,27 @@ Am **13.11.2026** habe ich mit der Frontend-Ordneroberfläche begonnen. Zuerst h
 
 Danach habe ich das Erstellen eines persönlichen Ordners umgesetzt. Der `＋`-Button öffnet jetzt ein beschriftetes Formular direkt in der Seitenleiste. Der Ordnername wird vor dem Absenden geprüft: Er darf nicht leer sein und höchstens 100 Zeichen enthalten. Das Formular sendet den Namen mit dem Clerk-Token an `POST /api/folders`, deaktiviert den Speichern-Button während der Anfrage und zeigt Fehler verständlich an. Nach erfolgreichem Speichern wird die Ordnerliste erneut geladen, der neue Ordner erscheint sofort und das Formular schließt sich. Mit „Abbrechen“ kann das Formular ohne Speichern geschlossen werden. Die Änderung wurde mit `42511c6 feat(frontend): add folder creation form` auf `Frontend` gepusht und PR #45 aktualisiert.
 
-Anschließend habe ich die Ordner-Detailseite umgesetzt. Die bisherige Platzhalterseite `/folders/$folderId` lädt nun mit `GET /api/folders/:id` den eigenen Ordner und dessen gespeicherte Memes. Der Ordnername, die Anzahl der Memes und typisierte Meme-Karten mit Bild, Titel und Ersteller werden angezeigt. Für Lade-, Fehler-, leere und nicht gefundene Ordner gibt es verständliche Zustände sowie einen Link zurück zur Übersicht. `npm run lint`, `npm run build` und `git diff --check` liefen erfolgreich. Diese Änderung ist geprüft und wartet noch auf deinen Commit und Push.
+Anschließend habe ich die Ordner-Detailseite umgesetzt. Die bisherige Platzhalterseite `/folders/$folderId` lädt nun mit `GET /api/folders/:id` den eigenen Ordner und dessen gespeicherte Memes. Der Ordnername, die Anzahl der Memes und typisierte Meme-Karten mit Bild, Titel und Ersteller werden angezeigt. Für Lade-, Fehler-, leere und nicht gefundene Ordner gibt es verständliche Zustände sowie einen Link zurück zur Übersicht. `npm run lint`, `npm run build` und `git diff --check` liefen erfolgreich. Die Ordner-Detailseite wurde anschließend gemeinsam mit den übrigen Ordner-Funktionen auf `Frontend` übernommen und im Browser geprüft.
+
+Am **16.11.2026** habe ich die persönlichen Ordner im Frontend weiter vervollständigt. Auf der Ordner-Detailseite können angemeldete Nutzer Memes über `POST /api/folders/:id/memes` in einen eigenen Ordner aufnehmen. Die Auswahl enthält nur passende Meme-Daten, der Clerk-Token wird mitgesendet und der Button wird während der Anfrage deaktiviert. Nach erfolgreichem Hinzufügen wird die Ordneransicht neu geladen. Bereits gespeicherte Memes können über `DELETE /api/folders/:id/memes/:memeId` wieder entfernt werden. Während der Entfernung wird der jeweilige Button deaktiviert und bei Fehlern erscheint eine verständliche Meldung. Die beiden Funktionen wurden im Browser mit echten Meme-Bildern geprüft.
+
+Ebenfalls am **16.11.2026** habe ich die Kategorien und die Navigation an den aktuellen Backend-Stand angepasst. Die vorhandenen Kategorien werden aus den Frontend-Adressen wie `?category=Arbeit` gelesen und beim Laden an `GET /api/memes?category=...` weitergegeben. Die aktive Kategorie wird nicht mehr dauerhaft auf „Alle Memes“ festgesetzt. Die Kategorien im linken Menü verwenden wieder die mit Josi abgestimmten Werte und erhalten passende, einheitliche Symbole. Zusätzlich wurden die Hover-Zustände der Hauptnavigation und der Filter verbessert: Startseite, Neu, Beliebt, Heute und „Meist kommentiert“ zeigen beim Hover bzw. bei der Auswahl die passende grüne Hervorhebung. Kategorien und Community wurden aus der Hauptnavigation entfernt.
+
+Die Änderungen vom **16.11.2026** wurden mit `npm run lint`, `npm run build` und `git diff --check` geprüft. Relevante Commits waren `c9ef8b1` für das Hinzufügen von Memes zu Ordnern, `6b54deb` für das Entfernen, `071ccd3` für Navigation und Kategorie-Symbole, `8b383f0` für die Kategoriegestaltung, `ea202d0` für die Ordner-Detailansicht, `04312a5` für die Kategorie-API und `302f576` für Navigation und Meme-Filter.
+
+Am **17.11.2026** habe ich die persönlichen Meme-Aktionen und die mobile Bedienung weiter abgesichert. Eigentümer können ihr eigenes Meme von der Detailseite aus löschen. Die Löschaktion wird nur angezeigt, wenn der angemeldete Benutzer mit dem Ersteller des Memes übereinstimmt. Vor dem Löschen wird eine Bestätigung verlangt; während der Anfrage wird der Button deaktiviert und bei Erfolg führt die Oberfläche zurück zur Meme-Übersicht.
+
+Für die mobile Ansicht habe ich die geöffnete Navigation als gut erkennbaren Bereich gestaltet. Der Menü-Button hat einen ausreichenden Kontrast und einen sichtbaren Fokuszustand. Kategorien und persönliche Ordner bleiben auch auf kleinen Bildschirmen erreichbar, ohne dass die Meme-Übersicht unnötig verschoben wird. Die responsive Darstellung wurde auf Desktop, Tablet und Handy kontrolliert. Die Änderungen wurden mit `71c6da7` und `efb86d0` auf `Frontend` gesichert und über den gemeinsamen Pull-Request-Prozess bereitgestellt.
+
+Am **19.11.2026** habe ich die Meme-Karten und die Meme-Detailseite weiter verbessert. Neben dem Like-Button wird jetzt die Kommentaranzahl direkt auf jeder Karte angezeigt. Der Kommentarhinweis führt direkt zum Kommentarbereich des jeweiligen Memes. Für die neue Verknüpfung wurden Hover- und Fokuszustände ergänzt, damit sie auch mit der Tastatur verständlich bedienbar bleibt.
+
+Zusätzlich habe ich den Hover-Zoom der Meme-Bilder auf 8 % angepasst. Der feste Bildrahmen bleibt dabei erhalten, sodass die Karten nicht springen und sich das Seitenlayout nicht verschiebt. Die Übersicht wurde anschließend mit echten Meme-Daten im Browser geprüft.
+
+Danach habe ich die Detailseite visuell überarbeitet. Das Bild liegt in einem ruhigen Rahmen ohne große leere Flächen. Nicht vorhandene Kategorien werden verständlich als `Community-Meme` dargestellt. Die Aktionen für Likes und Kommentare bleiben zusammen und gut sichtbar. Kommentare und „Für später speichern“ wurden als klar getrennte Bereiche gestaltet und die Reihenfolge für die Nutzung auf kleinen Bildschirmen verbessert.
+
+Für eigene Inhalte gibt es jetzt einen eigenen Verwaltungsbereich. Der Bereich trägt die Überschrift „Eigenes Meme verwalten“, erklärt die dauerhafte Löschung und enthält die zurückhaltende Schaltfläche „Löschen“. Der Bereich steht nicht mehr oben bei den Hauptaktionen, damit eine versehentliche Löschung weniger wahrscheinlich ist. Kontrast, Abstände, Rahmen und die mobile Darstellung wurden angepasst.
+
+Die Änderungen wurden mit `npm run lint`, `npm run build` und `git diff --check` geprüft. Der Commit `361e149` mit der Message `Improve meme detail actions and mobile layout` wurde auf `Frontend` gepusht. Die Änderungen wurden in PR #61 beschrieben und gemergt.
 
 ## Gemeinsamer Statusabgleich
 
@@ -46,7 +66,7 @@ Dieser Abschnitt übernimmt die gemeinsamen Statusinformationen aus `main`, ohne
 
 Josis Backend unterstützt inzwischen die Benutzer-Synchronisierung über `/api/me/sync`, den PNG-Upload, Titeländerungen, das Löschen eigener Memes, Kommentar-Schreibaktionen sowie Like- und Unlike-Anfragen. Im Frontend sind der Benutzer-Sync vor dem Upload, der authentifizierte Upload-Ablauf, das Kommentarformular und die Like-Anbindung umgesetzt. Der vollständige gemeinsame Erstlogin-Test mit einem echten Benutzer steht noch aus.
 
-Die Übersicht, die Detailseite und die Kommentar-Anzeige laden echte API-Daten. Die Kategorie-Zuordnung bleibt zurückgestellt, weil das Backend derzeit kein Kategorie-Feld speichert. Der persönliche Like-Status nach dem Neuladen und bei einem Kontowechsel muss noch mit einem angemeldeten Testkonto geprüft werden. Die echten Interaktionen liegen jeweils in der lokalen Datenbank; Testdaten und Bild-Fixtures übertragen keine persönlichen Kommentare oder Likes automatisch.
+Die Übersicht, die Detailseite und die Kommentar-Anzeige laden echte API-Daten. Der Kategorie-Filter und die Kategorie-Auswahl beim Upload sind im Frontend vorbereitet und mit Josis Backend abgestimmt. Der persönliche Like-Status nach dem Neuladen und bei einem Kontowechsel muss noch mit zwei angemeldeten Testkonten im gemeinsamen Test geprüft werden. Die echten Interaktionen liegen jeweils in der lokalen Datenbank; Testdaten und Bild-Fixtures übertragen keine persönlichen Kommentare oder Likes automatisch.
 
 Als nächste gemeinsame Punkte bleiben der vollständige End-to-End-Test für Anmeldung, Sync, Upload, Kommentar und Like sowie die weiteren Backend-Routen für persönliche Ordner, Moderation und Kontolöschung. Die Frontend-Architektur, die API-Anbindung und die ausführlichen Tagesberichte bleiben auf Dileks `Frontend`-Branch.
 
@@ -54,8 +74,8 @@ Als nächste gemeinsame Punkte bleiben der vollständige End-to-End-Test für An
 
 - Ein vollständiger Browser-Test mit angemeldetem Upload, Kommentar und Like steht noch aus.
 - Die persönliche Like-Anzeige nach einem Neuladen und bei einem Kontowechsel muss mit einem angemeldeten Testkonto geprüft werden.
-- Kategorien bleiben vorerst zurückgestellt, da das Backend aktuell kein Kategorie-Feld speichert.
-- Die Ordnerliste, das Erstellen und die Detailansicht sind im Frontend eingebaut; das Hinzufügen und Entfernen von Memes in Ordnern ist noch offen.
+- Die gemeinsame Prüfung des Kategorie-Filters und der Upload-Kategorie steht noch als End-to-End-Test aus.
+- Die Ordnerliste, das Erstellen, die Detailansicht sowie das Hinzufügen und Entfernen von Memes in Ordnern sind im Frontend eingebaut und im Browser geprüft.
 - Umbenennen und Löschen von Ordnern bleiben offen, bis Josis Backend-Änderungen dafür in `main` bestätigt sind.
 
 ## Zuständigkeiten
