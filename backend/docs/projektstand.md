@@ -1,3 +1,5 @@
+> **Nachtrag 19.11.2026:** Der aktuelle Kategorienvertrag wurde an das Frontend-Menue angepasst: Programmieren, Alltag, Arbeit, Sport, Spiele, Technik, Tiere, Filme, Draußen, Lernen, Getränke, Essen, Urlaub, Bücher und Besprechungen, zusaetzlich `Ohne Kategorie`. Neue additive Migration `20261119120000_frontend_categories` liegt vor, wurde noch nicht auf Neon angewandt. Angaben zur alten Kategorienliste und zu Testlaeufen weiter unten sind historische Momentaufnahmen.
+
 # Your Meme – Projektstand und Arbeitsweise
 
 ## Feierabend-Nachtrag – Merge und Präsentationsplanung am 16.11.2026
