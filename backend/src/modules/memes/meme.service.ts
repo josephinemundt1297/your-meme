@@ -87,13 +87,15 @@ export function createMemeService(
       throw new HttpError(403, "Du darfst nur eigene Memes bearbeiten.");
     }
 
+    // Den Like-Status vor dem Schreiben lesen: ein nachgelagerter Lesefehler
+    // darf eine bereits gespeicherte Änderung nicht als fehlgeschlagen melden.
+    const likedMemeIds = await getLikedMemeIds(prisma, [id], clerkUserId);
     const updatedMeme = await prisma.meme.update({
       where: { id, userId: meme.userId },
       data: changes,
       select: memeSelect,
     });
 
-    const likedMemeIds = await getLikedMemeIds(prisma, [id], clerkUserId);
     return formatMeme(updatedMeme, likedMemeIds.has(id));
   }
 
