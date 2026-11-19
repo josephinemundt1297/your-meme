@@ -182,7 +182,7 @@ function normalizeMeme(item: MemeApiResponse): Meme {
     imageUrl: item.imageUrl,
     createdAt: item.createdAt,
     author: { id: item.author?.id ?? item.userId, username: item.author?.username ?? 'Community' },
-    category: item.category ?? 'Community',
+    category: item.category ?? 'Ohne Kategorie',
     likeCount: item.likeCount,
     commentCount: item.commentCount ?? 0,
     likedByMe: item.likedByMe ?? false,

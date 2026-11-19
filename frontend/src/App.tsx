@@ -21,20 +21,14 @@ type MemeCardProps = {
 
 type CategoryIconName = 'grid' | 'briefcase' | 'code' | 'coffee' | 'paw' | 'food' | 'book' | 'gamepad' | 'home' | 'calendar'
 
-const categoryOptions = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Spiele', 'Technik', 'Tiere', 'Filme', 'Draußen', 'Lernen', 'Getränke', 'Essen', 'Urlaub', 'Bücher', 'Besprechungen']
-const categoryApiValues: Record<string, string> = {
-  Programmieren: 'Programmieren', Alltag: 'Alltag', Arbeit: 'Arbeit', Sport: 'Sport', Spiele: 'Gaming', Technik: 'Tech', Tiere: 'Animal', Filme: 'Movies', Draußen: 'Outdoor', Lernen: 'Study', Getränke: 'Drinks', Essen: 'Food', Urlaub: 'Holiday', Bücher: 'Book', Besprechungen: 'Meeting',
-}
-const categoryLabels: Record<string, string> = {
-  Programmieren: 'Programmieren', Alltag: 'Alltag', Arbeit: 'Arbeit', Sport: 'Sport', Gaming: 'Spiele', Tech: 'Technik', Animal: 'Tiere', Movies: 'Filme', Outdoor: 'Draußen', Study: 'Lernen', Drinks: 'Getränke', Food: 'Essen', Holiday: 'Urlaub', Book: 'Bücher', Meeting: 'Besprechungen',
-}
-const categoryIcons: Record<string, CategoryIconName> = {
-  Programmieren: 'code', Alltag: 'calendar', Arbeit: 'briefcase', Sport: 'gamepad', Gaming: 'gamepad', Tech: 'code', Animal: 'paw', Movies: 'calendar', Outdoor: 'home', Study: 'book', Drinks: 'coffee', Food: 'food', Holiday: 'calendar', Book: 'book', Meeting: 'briefcase',
+const categoryOptions = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Spiele', 'Technik', 'Tiere', 'Filme', 'Draußen', 'Lernen', 'Getränke', 'Essen', 'Urlaub', 'Bücher', 'Besprechungen'] as const
+const categoryIcons: Record<(typeof categoryOptions)[number], CategoryIconName> = {
+  Programmieren: 'code', Alltag: 'calendar', Arbeit: 'briefcase', Sport: 'gamepad', Spiele: 'gamepad', Technik: 'code', Tiere: 'paw', Filme: 'calendar', Draußen: 'home', Lernen: 'book', Getränke: 'coffee', Essen: 'food', Urlaub: 'calendar', Bücher: 'book', Besprechungen: 'briefcase',
 }
 
 function getDisplayCategory(category?: string) {
-  const normalizedCategory = category?.trim()
-  return normalizedCategory && normalizedCategory.toLowerCase() !== 'ohne kategorie' ? categoryLabels[normalizedCategory] ?? normalizedCategory : 'Community-Meme'
+  const value = category?.trim()
+  return value && value !== 'Ohne Kategorie' ? value : 'Community-Meme'
 }
 
 function CategoryIcon({ name }: { name: CategoryIconName }) {
@@ -71,7 +65,7 @@ export function Layout() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const { getToken, isSignedIn } = useAuth()
   const { user } = useUser()
-  const categories = [{ value: 'Alle Memes', label: 'Alle Memes', icon: 'grid' as const }, ...categoryOptions.map((label) => ({ value: categoryApiValues[label], label, icon: categoryIcons[categoryApiValues[label]] }))]
+  const categories = [{ value: 'Alle Memes', label: 'Alle Memes', icon: 'grid' as const }, ...categoryOptions.map((name) => ({ value: name, label: name, icon: categoryIcons[name] }))]
   const currentSearch = useRouterState({ select: (state) => state.location.search as { category?: string } })
   const selectedCategory = currentSearch.category ?? 'Alle Memes'
 
@@ -425,7 +419,7 @@ export function UploadPage() {
     <form className="upload-form" onSubmit={handleSubmit}>
       <label className="upload-field"><span>Meme-Bild</span><input type="file" accept="image/png" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSelectedFile(file); setFileError(file ? validateMemeImage(file) ?? '' : '') }} required />{previewUrl && <img className="upload-preview" src={previewUrl} alt="Vorschau des ausgewählten Memes" loading="lazy" decoding="async" />}{fileError && <span className="upload-error" role="alert">{fileError}</span>}</label>
       <label className="upload-field"><span>Titel</span><input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Gib deinem Meme einen Titel" maxLength={100} required /></label>
-      <label className="upload-field"><span>Kategorie</span><select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Kategorie auswählen …</option>{categoryOptions.map((option) => <option key={option} value={categoryApiValues[option]}>{option}</option>)}</select></label>
+      <label className="upload-field"><span>Kategorie</span><select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Kategorie auswählen …</option>{categoryOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
       <p className="upload-hint">Erlaubt ist eine PNG-Datei mit maximal 5 MiB.</p>
       {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
       <button className="primary-link upload-submit" type="submit" disabled={isUploading}>{isUploading ? 'Wird hochgeladen …' : 'Meme hochladen'}</button>
