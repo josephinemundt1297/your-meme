@@ -1,10 +1,10 @@
 # Your Meme – API-Vertrag
 
-## Aktuell: neun deutsche Kategorien und gemeinsame Datenbank – 16.11.2026
+## Aktuell: Kategorien gemaess Frontend-Menue – 19.11.2026
 
-Verbindliche API-Werte: `Arbeit`, `Programmieren`, `Kaffee`, `Tiere`, `Essen`, `Lernen`, `Spiele`, `Zuhause`, `Wochenende`; zusätzlich `Ohne Kategorie` als neutraler Standard. `Alle Memes` ist kein gespeicherter Wert: dafür `category` weglassen. Beispiel: `GET /api/memes?category=Tiere`. Englische und gestrichene alte Werte werden mit 400 abgewiesen; insbesondere `Gaming` heißt jetzt `Spiele`.
+Verbindliche API-Werte: `Programmieren`, `Alltag`, `Arbeit`, `Sport`, `Spiele`, `Technik`, `Tiere`, `Filme`, `Draußen`, `Lernen`, `Getränke`, `Essen`, `Urlaub`, `Bücher`, `Besprechungen`; zusaetzlich `Ohne Kategorie` als neutraler Standard. `Alle Memes` ist keine gespeicherte Kategorie: Beim Filtern den Query-Parameter `category` weglassen.
 
-Migration `20261116180000_german_categories` ersetzt den CHECK und übernimmt ausschließlich bestätigte Zuordnungen: Animal→Tiere, Food→Essen, Study→Lernen, Gaming→Spiele, Meeting→Arbeit. Arbeit und Programmieren bleiben erhalten. Alte Kategorien ohne eindeutigen Nachfolger werden `Ohne Kategorie`; insbesondere keine automatische Zuordnung von Drinks zu Kaffee oder von Holiday/Outdoor zu Wochenende. Bereits gültige neue Werte bleiben erhalten. Migration lokal und auf dem gemeinsamen Neon-Ziel enthalten.
+Die neue additive Migration `20261119120000_frontend_categories` ersetzt den SQL-CHECK und ueberfuehrt die drei bisherigen Kategorien, die nicht mehr im Menue vorkommen: `Kaffee` -> `Getränke`, `Zuhause` -> `Alltag`, `Wochenende` -> `Alltag`. Letzteres ist eine vorlaeufige technische Zuordnung, keine inhaltlich eindeutige Entsprechung. Vor Anwendung auf produktive Daten bitte pruefen. Die historischen Migrationen bleiben unveraendert.
 
 Backend-Filter, Upload und PATCH verwenden dieselbe Liste. Alle Meme-Antworten einschließlich Ordnerinhalten enthalten `category`. Der Filter wird vor Offset/Limit in PostgreSQL angewendet. Ein reines Titel-Update lässt die Kategorie unverändert.
 

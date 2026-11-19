@@ -1,17 +1,23 @@
 import { z } from "zod";
 
-// Vereinbarte deutsche Kategorien; Dileks Frontend verwendet dieselben API-Werte.
+// API-Kategorien entsprechen dem Frontend-Menue; "Alle Memes" ist nur ein Filter.
 export const categories = [
   "Ohne Kategorie",
-  "Arbeit",
   "Programmieren",
-  "Kaffee",
-  "Tiere",
-  "Essen",
-  "Lernen",
+  "Alltag",
+  "Arbeit",
+  "Sport",
   "Spiele",
-  "Zuhause",
-  "Wochenende",
+  "Technik",
+  "Tiere",
+  "Filme",
+  "Draußen",
+  "Lernen",
+  "Getränke",
+  "Essen",
+  "Urlaub",
+  "Bücher",
+  "Besprechungen",
 ] as const;
 
 // z ist der importierte Zod-Zugriff. enum (Enumeration = Aufzählung) ist ein

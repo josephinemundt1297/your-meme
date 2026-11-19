@@ -7,15 +7,21 @@ import { createRouteTest, resourceId, png } from "./helpers/testApp.mjs";
 // Unabhängiger Vertrag: Entfernte Kategorien dürfen nicht unbemerkt Tests entfernen.
 const expectedCategories = [
   "Ohne Kategorie",
-  "Arbeit",
   "Programmieren",
-  "Kaffee",
-  "Tiere",
-  "Essen",
-  "Lernen",
+  "Alltag",
+  "Arbeit",
+  "Sport",
   "Spiele",
-  "Zuhause",
-  "Wochenende",
+  "Technik",
+  "Tiere",
+  "Filme",
+  "Draußen",
+  "Lernen",
+  "Getränke",
+  "Essen",
+  "Urlaub",
+  "Bücher",
+  "Besprechungen",
 ];
 
 test("API supports the complete agreed category contract", () => {
@@ -24,7 +30,7 @@ test("API supports the complete agreed category contract", () => {
 
 test("SQL category constraint matches the agreed category contract", async () => {
   const sql = await readFile(new URL(
-    "../prisma/migrations/20261116180000_german_categories/migration.sql", import.meta.url,
+    "../prisma/migrations/20261119120000_frontend_categories/migration.sql", import.meta.url,
   ), "utf8");
   const constraint = sql.match(/ADD CONSTRAINT "Meme_category_check"\s+CHECK\s*\("category" IN \(([^;]+)\)\);/);
   assert.ok(constraint, "Der Kategorien-CHECK muss vorhanden sein.");
