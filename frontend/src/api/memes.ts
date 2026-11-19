@@ -127,6 +127,36 @@ export async function createMemeComment(id: string, content: string, token: stri
   return normalizeComment(data as CommentApiResponse)
 }
 
+export async function updateMemeComment(id: string, content: string, token: string): Promise<MemeComment> {
+  const response = await fetch(`${apiBaseUrl}/api/comments/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: content.trim() }),
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um deinen Kommentar zu bearbeiten.' : response.status === 403 ? 'Du darfst diesen Kommentar nicht bearbeiten.' : response.status === 404 ? 'Der Kommentar wurde nicht gefunden.' : `Der Kommentar konnte nicht geändert werden (${response.status}).`)
+  }
+
+  const data: unknown = await response.json()
+  if (!data || typeof data !== 'object' || !('id' in data) || !('content' in data) || !('userId' in data) || !('createdAt' in data)) {
+    throw new Error('Die Antwort des Servers enthält keinen gültigen Kommentar.')
+  }
+
+  return normalizeComment(data as CommentApiResponse)
+}
+
+export async function deleteMemeComment(id: string, token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/comments/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um deinen Kommentar zu löschen.' : response.status === 403 ? 'Du darfst diesen Kommentar nicht löschen.' : response.status === 404 ? 'Der Kommentar wurde nicht gefunden.' : `Der Kommentar konnte nicht gelöscht werden (${response.status}).`)
+  }
+}
+
 export async function setMemeLike(id: string, liked: boolean, token: string): Promise<{ liked: boolean; likeCount: number }> {
   const response = await fetch(`${apiBaseUrl}/api/memes/${encodeURIComponent(id)}/like`, {
     method: liked ? 'POST' : 'DELETE',

@@ -127,6 +127,12 @@ h1, h2, h3 { margin-top: 0; } h1 { font-size: clamp(1.8rem, 4vw, 3rem); margin-b
 .comment-item { border-bottom: 1px solid var(--line); padding: 4px 0 12px; }
 .comment-item p { margin: 0 0 6px; }
 .comment-item small { color: var(--muted); font-size: .78rem; }
+.comment-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.comment-edit-form { display: grid; gap: 8px; }
+.comment-edit-form label { color: var(--muted); font-size: .8rem; font-weight: 700; }
+.comment-edit-form textarea { border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: inherit; min-height: 72px; padding: 10px; resize: vertical; }
+.comment-delete-button { background: transparent; border: 1px solid #d96a59; border-radius: 6px; color: #a52f2f; cursor: pointer; font: inherit; font-size: .8rem; font-weight: 700; padding: 8px 12px; }
+.comment-delete-button:hover, .comment-delete-button:focus-visible { background: #fff1ee; }
 .comment-form { display: grid; gap: 8px; margin: 18px 0 24px; }
 .comment-form label { font-weight: 700; }
 .comment-form textarea { border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: inherit; min-height: 96px; padding: 10px; resize: vertical; }
