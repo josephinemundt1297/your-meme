@@ -65,6 +65,18 @@ export async function deleteMeme(id: string, token: string): Promise<void> {
   }
 }
 
+export async function updateMemeTitle(id: string, title: string, token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/memes/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: title.trim() }),
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um dein Meme zu bearbeiten.' : response.status === 403 ? 'Du darfst dieses Meme nicht bearbeiten.' : response.status === 404 ? 'Das Meme wurde nicht gefunden.' : `Der Meme-Titel konnte nicht geändert werden (${response.status}).`)
+  }
+}
+
 type MemeApiResponse = {
   id: string
   title: string
