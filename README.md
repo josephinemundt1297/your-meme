@@ -13,7 +13,7 @@ Your Meme ist eine Webanwendung zum Teilen und Organisieren von Memes. Angemelde
 | ----------------- | ------------------------------------------- | -------------------- |
 | Frontend          | React 19, TypeScript, Vite, TanStack Router | Dilek                |
 | Backend           | Node.js 24, Express 5, TypeScript, Zod      | Josephine            |
-| Persistenz        | PostgreSQL (Neon), Prisma 7                 | Backend              |
+| Datenbankspeicherung        | PostgreSQL (Neon), Prisma 7                 | Backend              |
 | Authentifizierung | Clerk                                       | Frontend und Backend |
 | Bildspeicher      | Cloudinary                                  | Backend              |
 
@@ -131,7 +131,7 @@ Vollständige Endpunktdefinitionen, Felder, Rechte und Statuscodes: [API-Vertrag
 | Kategorienfilter      | Gültige Kategorie HTTP 200, ungültige Kategorie HTTP 400                            |
 | Pagination            | HTTP 200, Seiten-Header geprüft                                                     |
 | Browserintegration    | Anmeldung, Upload, Like/Unlike, Kommentare, Ordner und eigene Meme-Löschung geprüft |
-| Persistenz            | Meme-Anlage und -Löschung in Prisma Studio nachvollzogen                            |
+| Datenbankspeicherung            | Meme-Anlage und -Löschung in Prisma Studio nachvollzogen                            |
 
 Backend-Prüfungen im Verzeichnis `backend/`:
 
