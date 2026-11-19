@@ -1,7 +1,7 @@
 # Your Meme
 
 **Fullstack-Abschlussprojekt von Dilek (Frontend) und Josephine (Backend)**  
-**Dokumentationsstand:** 19.11.2026 · **Abgabe:** 23.11.2026
+**Dokumentationsstand:** 19.11.2026 · **Abgabe:** 20.11.2026
 
 Your Meme ist eine Webanwendung zum Teilen und Organisieren von Memes. Angemeldete Nutzerinnen und Nutzer können eigene PNG-Bilder hochladen, Memes kategorisieren, liken, kommentieren und in persönlichen Ordnern sammeln. Die Anwendung verbindet ein React-Frontend mit einer eigenständigen REST-API, PostgreSQL als Datenbank, Clerk für die Anmeldung und Cloudinary als Bildspeicher.
 
@@ -9,13 +9,13 @@ Your Meme ist eine Webanwendung zum Teilen und Organisieren von Memes. Angemelde
 
 ## Technologie und Architektur
 
-| Bereich | Technologien | Verantwortung |
-| --- | --- | --- |
-| Frontend | React 19, TypeScript, Vite, TanStack Router | Dilek |
-| Backend | Node.js 24, Express 5, TypeScript, Zod | Josephine |
-| Persistenz | PostgreSQL (Neon), Prisma 7 | Backend |
-| Authentifizierung | Clerk | Frontend und Backend |
-| Bildspeicher | Cloudinary | Backend |
+| Bereich           | Technologien                                | Verantwortung        |
+| ----------------- | ------------------------------------------- | -------------------- |
+| Frontend          | React 19, TypeScript, Vite, TanStack Router | Dilek                |
+| Backend           | Node.js 24, Express 5, TypeScript, Zod      | Josephine            |
+| Persistenz        | PostgreSQL (Neon), Prisma 7                 | Backend              |
+| Authentifizierung | Clerk                                       | Frontend und Backend |
+| Bildspeicher      | Cloudinary                                  | Backend              |
 
 ```text
 Browser / React
@@ -34,16 +34,16 @@ Weitere technische Details: [Backend-Architektur](backend/docs/architektur.md), 
 
 ## Funktionsumfang
 
-| Bereich | Backend | Frontend / Abnahme |
-| --- | --- | --- |
-| Anmeldung und lokales Profil | Clerk-Authentifizierung, Profilsynchronisierung | Login im Browser geprüft |
-| Memes | Upload, Liste, Detail, Titel-/Kategorieänderung, Löschung | Upload, Anzeige und eigene Löschung im Browser geprüft |
-| Kategorien | Validierung und Filterung vor Pagination | API-Filter geprüft; vollständige UI-Abnahme offen |
-| Likes | Setzen, Entfernen und persönlicher Like-Status | Like/Unlike inklusive Neuladen geprüft |
-| Kommentare | Erstellen, Bearbeiten, Löschen mit Berechtigungsprüfung | Erstellen/Anzeigen geprüft; Bearbeiten/Löschen in der UI noch nicht verfügbar |
-| Persönliche Ordner | Erstellen, Anzeigen, Umbenennen, Löschen; Meme-Zuordnungen | Ordnererstellung und Zuordnung im Browser geprüft |
-| Moderation | Administrator-Löschrechte für Memes und Kommentare | Backend-seitig getestet; keine vollständige Admin-UI-Abnahme |
-| Pagination | Meme-Liste mit `page`, `limit` und Seiten-Headern | HTTP geprüft; vollständiges Nachladen im Frontend offen |
+| Bereich                      | Backend                                                    | Frontend / Abnahme                                                            |
+| ---------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Anmeldung und lokales Profil | Clerk-Authentifizierung, Profilsynchronisierung            | Login im Browser geprüft                                                      |
+| Memes                        | Upload, Liste, Detail, Titel-/Kategorieänderung, Löschung  | Upload, Anzeige und eigene Löschung im Browser geprüft                        |
+| Kategorien                   | Validierung und Filterung vor Pagination                   | API-Filter geprüft; vollständige UI-Abnahme offen                             |
+| Likes                        | Setzen, Entfernen und persönlicher Like-Status             | Like/Unlike inklusive Neuladen geprüft                                        |
+| Kommentare                   | Erstellen, Bearbeiten, Löschen mit Berechtigungsprüfung    | Erstellen/Anzeigen geprüft; Bearbeiten/Löschen in der UI noch nicht verfügbar |
+| Persönliche Ordner           | Erstellen, Anzeigen, Umbenennen, Löschen; Meme-Zuordnungen | Ordnererstellung und Zuordnung im Browser geprüft                             |
+| Moderation                   | Administrator-Löschrechte für Memes und Kommentare         | Backend-seitig getestet; keine vollständige Admin-UI-Abnahme                  |
+| Pagination                   | Meme-Liste mit `page`, `limit` und Seiten-Headern          | HTTP geprüft; vollständiges Nachladen im Frontend offen                       |
 
 **Unterstützte Kategorien:** Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause, Wochenende und Ohne Kategorie. Ohne Filter werden Memes aller Kategorien abgefragt; unbekannte Kategorien führen zu HTTP 400.
 
@@ -78,11 +78,11 @@ Die Backend-Konfiguration liegt in `backend/.env`. Die erforderlichen Variablen 
 
 Standardmäßige Endpunkte:
 
-| URL | Zweck |
-| --- | --- |
-| `http://localhost:3000/api/health` | Erreichbarkeit des Servers |
-| `http://localhost:3000/api/health/db` | Datenbankverbindung |
-| `http://localhost:3000/api/memes` | Öffentliche Meme-Liste |
+| URL                                   | Zweck                      |
+| ------------------------------------- | -------------------------- |
+| `http://localhost:3000/api/health`    | Erreichbarkeit des Servers |
+| `http://localhost:3000/api/health/db` | Datenbankverbindung        |
+| `http://localhost:3000/api/memes`     | Öffentliche Meme-Liste     |
 
 ### 2. Frontend starten
 
@@ -120,18 +120,18 @@ Vollständige Endpunktdefinitionen, Felder, Rechte und Statuscodes: [API-Vertrag
 
 ### Backend – bestätigter Prüfstand vom 19.11.2026
 
-| Prüfung | Ergebnis |
-| --- | --- |
-| `npm run typecheck` | Erfolgreich |
-| `npm run build` | Erfolgreich |
-| `npx prisma validate` | Erfolgreich mit lokal konsistenter Prisma-7-Installation |
-| `npm test` | **105 bestanden, 2 optionale PostgreSQL-Tests übersprungen** |
-| `GET /api/health` | HTTP 200 |
-| `GET /api/health/db` | HTTP 200, Datenbank verbunden |
-| Kategorienfilter | Gültige Kategorie HTTP 200, ungültige Kategorie HTTP 400 |
-| Pagination | HTTP 200, Seiten-Header geprüft |
-| Browserintegration | Anmeldung, Upload, Like/Unlike, Kommentare, Ordner und eigene Meme-Löschung geprüft |
-| Persistenz | Meme-Anlage und -Löschung in Prisma Studio nachvollzogen |
+| Prüfung               | Ergebnis                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------- |
+| `npm run typecheck`   | Erfolgreich                                                                         |
+| `npm run build`       | Erfolgreich                                                                         |
+| `npx prisma validate` | Erfolgreich mit lokal konsistenter Prisma-7-Installation                            |
+| `npm test`            | **105 bestanden, 2 optionale PostgreSQL-Tests übersprungen**                        |
+| `GET /api/health`     | HTTP 200                                                                            |
+| `GET /api/health/db`  | HTTP 200, Datenbank verbunden                                                       |
+| Kategorienfilter      | Gültige Kategorie HTTP 200, ungültige Kategorie HTTP 400                            |
+| Pagination            | HTTP 200, Seiten-Header geprüft                                                     |
+| Browserintegration    | Anmeldung, Upload, Like/Unlike, Kommentare, Ordner und eigene Meme-Löschung geprüft |
+| Persistenz            | Meme-Anlage und -Löschung in Prisma Studio nachvollzogen                            |
 
 Backend-Prüfungen im Verzeichnis `backend/`:
 
