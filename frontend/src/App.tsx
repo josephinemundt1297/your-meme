@@ -21,7 +21,10 @@ type MemeCardProps = {
 
 type CategoryIconName = 'grid' | 'briefcase' | 'code' | 'coffee' | 'paw' | 'food' | 'book' | 'gamepad' | 'home' | 'calendar'
 
-const categoryOptions = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
+const categoryOptions = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Spiele', 'Technik', 'Tiere', 'Filme', 'Draußen', 'Lernen', 'Getränke', 'Essen', 'Urlaub', 'Bücher', 'Besprechungen']
+const categoryApiValues: Record<string, string> = {
+  Programmieren: 'Programmieren', Alltag: 'Alltag', Arbeit: 'Arbeit', Sport: 'Sport', Spiele: 'Gaming', Technik: 'Tech', Tiere: 'Animal', Filme: 'Movies', Draußen: 'Outdoor', Lernen: 'Study', Getränke: 'Drinks', Essen: 'Food', Urlaub: 'Holiday', Bücher: 'Book', Besprechungen: 'Meeting',
+}
 const categoryLabels: Record<string, string> = {
   Programmieren: 'Programmieren', Alltag: 'Alltag', Arbeit: 'Arbeit', Sport: 'Sport', Gaming: 'Spiele', Tech: 'Technik', Animal: 'Tiere', Movies: 'Filme', Outdoor: 'Draußen', Study: 'Lernen', Drinks: 'Getränke', Food: 'Essen', Holiday: 'Urlaub', Book: 'Bücher', Meeting: 'Besprechungen',
 }
@@ -68,7 +71,7 @@ export function Layout() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const { getToken, isSignedIn } = useAuth()
   const { user } = useUser()
-  const categories = [{ name: 'Alle Memes', icon: 'grid' as const }, ...categoryOptions.map((name) => ({ name, icon: categoryIcons[name] }))]
+  const categories = [{ value: 'Alle Memes', label: 'Alle Memes', icon: 'grid' as const }, ...categoryOptions.map((label) => ({ value: categoryApiValues[label], label, icon: categoryIcons[categoryApiValues[label]] }))]
   const currentSearch = useRouterState({ select: (state) => state.location.search as { category?: string } })
   const selectedCategory = currentSearch.category ?? 'Alle Memes'
 
@@ -145,7 +148,7 @@ export function Layout() {
     <nav id="main-navigation" className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Hauptnavigation"><Link to="/" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Startseite</Link><Link to="/new" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Neu</Link><Link to="/popular" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Beliebt</Link><Link to="/today" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Heute</Link><Link to="/commented" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Meist kommentiert</Link></nav>
     <div className="site-body">
       <aside id="site-sidebar" className="site-sidebar">
-        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category.name} className={`category-link${category.name === selectedCategory ? ' is-selected' : ''}`} to="/" search={category.name === 'Alle Memes' ? {} : { category: category.name }}><CategoryIcon name={category.icon} /><span>{categoryLabels[category.name] ?? category.name}</span></Link>)}</div>
+        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category.value} className={`category-link${category.value === selectedCategory ? ' is-selected' : ''}`} to="/" search={category.value === 'Alle Memes' ? {} : { category: category.value }}><CategoryIcon name={category.icon} /><span>{category.label}</span></Link>)}</div>
         <div className="sidebar-divider" />
         <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p>{isSignedIn ? <button className="add-folder" type="button" aria-label="Ordner anlegen" aria-expanded={isFolderFormOpen} onClick={() => { setIsFolderFormOpen((open) => !open); setCreateFolderError('') }}>＋</button> : <Link className="add-folder" to="/account" aria-label="Anmelden und Ordner anlegen">＋</Link>}</div>
           {isSignedIn && isFolderFormOpen && <form className="folder-form" onSubmit={handleCreateFolder}><label htmlFor="folder-name">Neuer Ordner</label><input id="folder-name" type="text" value={folderName} onChange={(event) => { setFolderName(event.target.value); setCreateFolderError('') }} maxLength={100} placeholder="Ordnername" autoFocus required /><div className="folder-form-actions"><button type="submit" disabled={isCreatingFolder}>{isCreatingFolder ? 'Speichern …' : 'Speichern'}</button><button type="button" onClick={() => { setIsFolderFormOpen(false); setFolderName(''); setCreateFolderError('') }}>Abbrechen</button></div>{createFolderError && <p className="sidebar-note" role="alert">{createFolderError}</p>}</form>}
@@ -422,7 +425,7 @@ export function UploadPage() {
     <form className="upload-form" onSubmit={handleSubmit}>
       <label className="upload-field"><span>Meme-Bild</span><input type="file" accept="image/png" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSelectedFile(file); setFileError(file ? validateMemeImage(file) ?? '' : '') }} required />{previewUrl && <img className="upload-preview" src={previewUrl} alt="Vorschau des ausgewählten Memes" loading="lazy" decoding="async" />}{fileError && <span className="upload-error" role="alert">{fileError}</span>}</label>
       <label className="upload-field"><span>Titel</span><input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Gib deinem Meme einen Titel" maxLength={100} required /></label>
-      <label className="upload-field"><span>Kategorie</span><select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Kategorie auswählen …</option>{categoryOptions.map((option) => <option key={option} value={option}>{categoryLabels[option]}</option>)}</select></label>
+      <label className="upload-field"><span>Kategorie</span><select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Kategorie auswählen …</option>{categoryOptions.map((option) => <option key={option} value={categoryApiValues[option]}>{option}</option>)}</select></label>
       <p className="upload-hint">Erlaubt ist eine PNG-Datei mit maximal 5 MiB.</p>
       {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
       <button className="primary-link upload-submit" type="submit" disabled={isUploading}>{isUploading ? 'Wird hochgeladen …' : 'Meme hochladen'}</button>
