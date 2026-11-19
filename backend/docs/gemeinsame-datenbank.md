@@ -28,6 +28,10 @@ Geprüfte Herstellerquellen: [Free-Tarif](https://neon.com/pricing), [Regionen](
 - Die ursprüngliche lokale Datenbank bleibt erhalten. Autoritatives Rückfallarchiv geschützt unter `/tmp/your-meme-final-move-Hv9FiQ/your-meme-final.dump`; dort liegt auch die bisherige lokale Datenbankverbindung. Nach gemeinsamer Abnahme Rückfallfrist vereinbaren und temporäre Kopien löschen. Keine erneute Übernahme aus der lokalen Quelle ohne Abgleich neuer gemeinsamer Daten.
 - Nach Josephines ausdrücklicher Freigabe zwei getrennte Backend-Logins eingerichtet: `your_meme_backend_a` für Josephine, `your_meme_backend_b` für Dilek. Nur CRUD auf den sieben Projekttabellen, SELECT auf der Migrationshistorie, kein CREATE im öffentlichen Schema. Beide Zugänge mit TLS/Zertifikatsprüfung und 30 lesbaren Memes geprüft. Josephines DATABASE_URL verwendet nun Rolle a; DIRECT_DATABASE_URL enthält getrennt den Migrations-/Eigentümerzugang. Prisma CLI nutzt DIRECT_DATABASE_URL, falls gesetzt, sonst DATABASE_URL. Dileks Rolle b steht nur in der geschützten lokalen `.env.dilek.local` (Git-ignoriert, Dateimodus 600). Keine Nachricht an Dilek versendet.
 
+## Neuer Kategorienvertrag (19.11.2026)
+
+Der Backend-Branch verwendet nun Programmieren, Alltag, Arbeit, Sport, Spiele, Technik, Tiere, Filme, Draußen, Lernen, Getränke, Essen, Urlaub, Bücher und Besprechungen, plus `Ohne Kategorie`. `Alle Memes` ist nur ein Filter. Migration `20261119120000_frontend_categories` ist im Repository, wurde durch diese Aenderung aber **nicht** auf Neon ausgefuehrt. Die nachfolgenden Schritte beschreiben den bisherigen Stand und sind vor dem neuen Deployment entsprechend anzupassen.
+
 ## Anschluss für Dilek
 
 1. Aktuellen Backend-Stand einschließlich `20261116180000_german_categories` verwenden. Die Kategorien lauten jetzt Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause und Wochenende plus Ohne Kategorie. Menü und Upload müssen diese Werte senden; Gaming wird Spiele. Frontend-Dateien wurden hier nicht geändert.
