@@ -60,6 +60,18 @@ Für eigene Inhalte gibt es jetzt einen eigenen Verwaltungsbereich. Der Bereich 
 
 Die Änderungen wurden mit `npm run lint`, `npm run build` und `git diff --check` geprüft. Der Commit `361e149` mit der Message `Improve meme detail actions and mobile layout` wurde auf `Frontend` gepusht. Die Änderungen wurden in PR #61 beschrieben und gemergt.
 
+Am **19.11.2026** habe ich die restlichen Frontend-Funktionen für die Meme-Detailseite vervollständigt. Eigentümer können jetzt ihren Meme-Titel direkt bearbeiten. Dafür wurden ein Bearbeitungsformular mit vorausgefülltem Titel, die Schaltflächen „Titel speichern“ und „Abbrechen“, ein Ladezustand während des Speicherns sowie verständliche Fehlermeldungen ergänzt. Die Änderung verwendet den geschützten Backend-Endpunkt `PATCH /api/memes/:id` und aktualisiert den Titel nach erfolgreicher Antwort direkt in der Detailansicht. Die vorhandene Löschfunktion für eigene Memes bleibt erhalten. Die Änderung wurde mit `2f3d96a feat(frontend): allow owners to edit meme titles` auf `Frontend` gepusht und in PR #65 aufgenommen.
+
+Im Anschluss habe ich die Kommentarverwaltung ergänzt. Für eigene Kommentare stehen jetzt „Bearbeiten“ und „Löschen“ zur Verfügung. Beim Bearbeiten wird der bisherige Inhalt in ein Formular übernommen; leere Kommentare und mehr als 1.000 Zeichen werden verhindert. Das Speichern ruft `PATCH /api/comments/:id` mit dem aktuellen Clerk-Token auf und ersetzt den Kommentar nach erfolgreicher Antwort in der Liste. Das Löschen verwendet `DELETE /api/comments/:id`, fragt vor der endgültigen Aktion nach einer Bestätigung und entfernt den Kommentar anschließend aus der Oberfläche. Beide Aktionen zeigen Ladezustände und verständliche Fehlermeldungen. `npm run lint`, `npm run build` und `git diff --check` liefen erfolgreich. Die Änderung wurde mit `d76047b feat(frontend): add comment editing and deletion` auf `Frontend` gepusht; der bestehende PR #65 wurde automatisch aktualisiert.
+
+Danach habe ich den Login- und Upload-Ablauf im Browser mit dem eigenen Testkonto geprüft. Die Anmeldung war aktiv, die Upload-Seite konnte geöffnet werden, ein PNG-Meme wurde erfolgreich hochgeladen und anschließend in der Übersicht sowie auf der Detailseite angezeigt. Das eigene Meme wurde danach wieder gelöscht. Die Prüfung war damit ein tatsächlicher Browser-Test und keine reine Codekontrolle.
+
+Die Ordnerverwaltung habe ich ebenfalls vollständig aus Nutzersicht getestet. Ich habe einen Testordner erstellt, ihn umbenannt, ein vorhandenes Test-Meme hinzugefügt, das Meme wieder entfernt und anschließend den Testordner gelöscht. Nach jedem Schritt wurde die sichtbare Oberfläche geprüft. Die verwendeten Testdaten wurden am Ende wieder entfernt.
+
+Für Lade-, Fehler- und Leerzustände habe ich die Detailseite mit einer ungültigen Meme-ID geöffnet. Während des Abrufs erschien „Memes werden geladen …“; danach wurde „Dieses Meme wurde nicht gefunden“ mit einem Link zurück zur Übersicht angezeigt. Den leeren Ordnerzustand habe ich nach dem Entfernen des letzten Memes geprüft: „Hier gibt es noch keine Memes. Schau später noch einmal vorbei.“ wurde korrekt angezeigt.
+
+Zum Abschluss habe ich die Sortierungsseiten `/new`, `/popular`, `/today` und `/commented` geöffnet. Die Überschriften „Neue Memes“, „Beliebte Memes“, „Memes von heute“ und „Meist kommentierte Memes“ wurden jeweils korrekt angezeigt. Die responsive Struktur wurde für Desktop, Tablet und Handy anhand der vorhandenen Layout-Regeln geprüft: vier, drei bzw. zwei Spalten auf größeren Breiten, eine Spalte auf kleinen Bildschirmen, eine mobile Navigation mit Menübutton und eine untereinander angeordnete Detailseite. `npm run lint`, `npm run build` und `git diff --check` liefen erneut erfolgreich.
+
 ## Gemeinsamer Statusabgleich
 
 Dieser Abschnitt übernimmt die gemeinsamen Statusinformationen aus `main`, ohne die ausführlichen Tagesberichte zu ersetzen. Er beschreibt den Projektstand und offene Abstimmungen zwischen Frontend und Backend.
@@ -72,11 +84,10 @@ Als nächste gemeinsame Punkte bleiben der vollständige End-to-End-Test für An
 
 ## Aktuell offene Punkte
 
-- Ein vollständiger Browser-Test mit angemeldetem Upload, Kommentar und Like steht noch aus.
-- Die persönliche Like-Anzeige nach einem Neuladen und bei einem Kontowechsel muss mit einem angemeldeten Testkonto geprüft werden.
-- Die gemeinsame Prüfung des Kategorie-Filters und der Upload-Kategorie steht noch als End-to-End-Test aus.
-- Die Ordnerliste, das Erstellen, die Detailansicht sowie das Hinzufügen und Entfernen von Memes in Ordnern sind im Frontend eingebaut und im Browser geprüft.
-- Umbenennen und Löschen von Ordnern bleiben offen, bis Josis Backend-Änderungen dafür in `main` bestätigt sind.
+- Ein gemeinsamer End-to-End-Test mit zwei unterschiedlichen Konten steht noch aus, insbesondere für persönliche Likes und private Ordner.
+- Ein absichtlich simulierter allgemeiner Serverfehler wurde nicht durchgeführt; die verständlichen Fehlerzustände sind im Frontend vorhanden und ein 404-/Leerzustand wurde geprüft.
+- Der bestehende Pull Request #65 mit Titel- und Kommentarverwaltung muss noch von Josi geprüft und gemergt werden.
+- Die gemeinsame Abschlussprüfung mit Josis Backend, die Aktualisierung des Trello-Boards und die Vorbereitung der Präsentation bleiben organisatorische nächste Schritte.
 
 ## Zuständigkeiten
 
