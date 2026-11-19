@@ -85,7 +85,11 @@ erDiagram
 
 `MemeImageDeletion` enthält nur Meme-ID (Primärschlüssel), lokale Besitzer-ID, exakte Cloudinary-public_id sowie Erstellungs-/nächsten Versuchszeitpunkt. Auftrag und Inhaltslöschung werden gemeinsam in einer Transaktion gespeichert. Nach erfolgreicher Dateibereinigung wird der Auftrag entfernt. Keine Inhaltskopien, keine zusätzlichen Clerk-/Kontaktdaten; keine Fremdschlüsselkaskade, die bei späterer Kontolöschung noch offene Aufträge verwerfen könnte. Verarbeitet über einen Index auf `nextAttemptAt`. [Ablauf, Aufbewahrung und Grenzen](bildloeschung.md).
 
-## Aktuelle Kategorien – deutsche verkürzte Liste
+## Aktuelle Kategorien – Frontend-Menue (19.11.2026)
+
+Aktueller API-Vertrag: Programmieren, Alltag, Arbeit, Sport, Spiele, Technik, Tiere, Filme, Draußen, Lernen, Getränke, Essen, Urlaub, Bücher und Besprechungen; dazu `Ohne Kategorie`. `Alle Memes` ist nur ein Filter. Die neue Migration `20261119120000_frontend_categories` erweitert den SQL-CHECK. Alte Werte werden wie folgt umgeordnet: Kaffee -> Getränke, Zuhause -> Alltag, Wochenende -> Alltag (letztere Zuordnung vor produktiver Anwendung pruefen). Die untenstehende Beschreibung dokumentiert den historischen Stand vom 16.11.2026.
+
+## Historischer Stand – deutsche verkuerzte Liste
 
 Seit Migration `20261116180000_german_categories`: Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause und Wochenende; zusätzlich Ohne Kategorie. Das Textfeld und der Standardwert bleiben bestehen. Die neue Migration ersetzt den SQL-CHECK atomar und überführt nur bestätigte Zuordnungen (Animal→Tiere, Food→Essen, Study→Lernen, Gaming→Spiele, Meeting→Arbeit). Übrige gestrichene Werte werden Ohne Kategorie. Keine Bilddatei oder Bildkennung wird dafür geändert.
 
