@@ -75,7 +75,7 @@ Diese Spezifikation beschreibt den vereinbarten Zielumfang; Anforderungen sind k
 
 Zusätzlich freigegeben und eingerichtet: gemeinsame PostgreSQL-Datenbank bei Neon Free in Frankfurt. Beide lokalen Backends verwenden getrennte ausdrücklich freigegebene CRUD-Zugänge; Schema-Migrationen erfolgen abgestimmt über den getrennten Migrationszugang. Lokale Integrationstests bleiben lokal.
 
-Verbindliche Kategorien: Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause und Wochenende; zusätzlich Ohne Kategorie. Nur bestätigte eindeutige Zuordnungen übernommen; keine Gleichsetzung von Drinks und Kaffee. [Datenmodell](docs/datenmodell.md) und [Anschluss](docs/gemeinsame-datenbank.md).
+Verbindliche Kategorien: Programmieren, Alltag, Arbeit, Sport, Spiele, Technik, Tiere, Filme, Draußen, Lernen, Getränke, Essen, Urlaub, Bücher und Besprechungen; zusätzlich Ohne Kategorie. Die additive Migration `20261119120000_frontend_categories` passt den Datenbank-CHECK an. Vor produktiver Ausführung die Zuordnung alter Kategorieeinträge prüfen. [Datenmodell](docs/datenmodell.md) und [Anschluss](docs/gemeinsame-datenbank.md).
 
 ## Bildlöschung nach Review vom 16.11.2026
 
