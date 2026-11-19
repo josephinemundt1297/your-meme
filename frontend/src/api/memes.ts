@@ -36,7 +36,7 @@ export async function uploadMeme(formData: FormData, token: string): Promise<{ i
   return { id: data.id }
 }
 
-export async function syncCurrentUser(token: string): Promise<void> {
+export async function syncCurrentUser(token: string): Promise<{ id: string }> {
   const response = await fetch(`${apiBaseUrl}/api/me/sync`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
@@ -44,6 +44,24 @@ export async function syncCurrentUser(token: string): Promise<void> {
 
   if (!response.ok) {
     throw new Error(`Benutzer konnte nicht synchronisiert werden (${response.status}).`)
+  }
+
+  const data: unknown = await response.json()
+  if (!data || typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') {
+    throw new Error('Die Sync-Antwort enthält keine gültige Benutzer-ID.')
+  }
+
+  return { id: data.id }
+}
+
+export async function deleteMeme(id: string, token: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/memes/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!response.ok) {
+    throw new Error(response.status === 401 ? 'Bitte melde dich an, um dein Meme zu löschen.' : response.status === 403 ? 'Du darfst dieses Meme nicht löschen.' : response.status === 404 ? 'Das Meme wurde nicht gefunden.' : `Das Meme konnte nicht gelöscht werden (${response.status}).`)
   }
 }
 
