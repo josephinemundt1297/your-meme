@@ -22,13 +22,16 @@ type MemeCardProps = {
 type CategoryIconName = 'grid' | 'briefcase' | 'code' | 'coffee' | 'paw' | 'food' | 'book' | 'gamepad' | 'home' | 'calendar'
 
 const categoryOptions = ['Programmieren', 'Alltag', 'Arbeit', 'Sport', 'Gaming', 'Tech', 'Animal', 'Movies', 'Outdoor', 'Study', 'Drinks', 'Food', 'Holiday', 'Book', 'Meeting']
+const categoryLabels: Record<string, string> = {
+  Programmieren: 'Programmieren', Alltag: 'Alltag', Arbeit: 'Arbeit', Sport: 'Sport', Gaming: 'Spiele', Tech: 'Technik', Animal: 'Tiere', Movies: 'Filme', Outdoor: 'Draußen', Study: 'Lernen', Drinks: 'Getränke', Food: 'Essen', Holiday: 'Urlaub', Book: 'Bücher', Meeting: 'Besprechungen',
+}
 const categoryIcons: Record<string, CategoryIconName> = {
   Programmieren: 'code', Alltag: 'calendar', Arbeit: 'briefcase', Sport: 'gamepad', Gaming: 'gamepad', Tech: 'code', Animal: 'paw', Movies: 'calendar', Outdoor: 'home', Study: 'book', Drinks: 'coffee', Food: 'food', Holiday: 'calendar', Book: 'book', Meeting: 'briefcase',
 }
 
 function getDisplayCategory(category?: string) {
   const normalizedCategory = category?.trim()
-  return normalizedCategory && normalizedCategory.toLowerCase() !== 'ohne kategorie' ? normalizedCategory : 'Community-Meme'
+  return normalizedCategory && normalizedCategory.toLowerCase() !== 'ohne kategorie' ? categoryLabels[normalizedCategory] ?? normalizedCategory : 'Community-Meme'
 }
 
 function CategoryIcon({ name }: { name: CategoryIconName }) {
@@ -142,7 +145,7 @@ export function Layout() {
     <nav id="main-navigation" className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Hauptnavigation"><Link to="/" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Startseite</Link><Link to="/new" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Neu</Link><Link to="/popular" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Beliebt</Link><Link to="/today" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Heute</Link><Link to="/commented" activeProps={{ className: 'is-active' }} onClick={() => setMenuOpen(false)}>Meist kommentiert</Link></nav>
     <div className="site-body">
       <aside id="site-sidebar" className="site-sidebar">
-        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category.name} className={`category-link${category.name === selectedCategory ? ' is-selected' : ''}`} to="/" search={category.name === 'Alle Memes' ? {} : { category: category.name }}><CategoryIcon name={category.icon} /><span>{category.name}</span></Link>)}</div>
+        <div className="sidebar-section"><p className="sidebar-title">Kategorien</p>{categories.map((category) => <Link key={category.name} className={`category-link${category.name === selectedCategory ? ' is-selected' : ''}`} to="/" search={category.name === 'Alle Memes' ? {} : { category: category.name }}><CategoryIcon name={category.icon} /><span>{categoryLabels[category.name] ?? category.name}</span></Link>)}</div>
         <div className="sidebar-divider" />
         <div className="sidebar-section"><div className="sidebar-heading"><p className="sidebar-title">Meine Ordner</p>{isSignedIn ? <button className="add-folder" type="button" aria-label="Ordner anlegen" aria-expanded={isFolderFormOpen} onClick={() => { setIsFolderFormOpen((open) => !open); setCreateFolderError('') }}>＋</button> : <Link className="add-folder" to="/account" aria-label="Anmelden und Ordner anlegen">＋</Link>}</div>
           {isSignedIn && isFolderFormOpen && <form className="folder-form" onSubmit={handleCreateFolder}><label htmlFor="folder-name">Neuer Ordner</label><input id="folder-name" type="text" value={folderName} onChange={(event) => { setFolderName(event.target.value); setCreateFolderError('') }} maxLength={100} placeholder="Ordnername" autoFocus required /><div className="folder-form-actions"><button type="submit" disabled={isCreatingFolder}>{isCreatingFolder ? 'Speichern …' : 'Speichern'}</button><button type="button" onClick={() => { setIsFolderFormOpen(false); setFolderName(''); setCreateFolderError('') }}>Abbrechen</button></div>{createFolderError && <p className="sidebar-note" role="alert">{createFolderError}</p>}</form>}
@@ -215,7 +218,7 @@ export function MemeList({ sortMode = 'latest', category }: MemeListProps) {
     }
   }
   const today = new Date().toDateString()
-  const visibleMemes = memes ? [...memes].filter((meme) => sortMode !== 'today' || new Date(meme.createdAt).toDateString() === today).sort((a, b) => sortMode === 'popular' ? b.likeCount - a.likeCount : sortMode === 'comments' ? b.commentCount - a.commentCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category}`.toLowerCase().includes(search.toLowerCase())) : []
+  const visibleMemes = memes ? [...memes].filter((meme) => sortMode !== 'today' || new Date(meme.createdAt).toDateString() === today).sort((a, b) => sortMode === 'popular' ? b.likeCount - a.likeCount : sortMode === 'comments' ? b.commentCount - a.commentCount : b.createdAt.localeCompare(a.createdAt)).filter((meme) => `${meme.title} ${meme.category} ${getDisplayCategory(meme.category)}`.toLowerCase().includes(search.toLowerCase())) : []
   const pageTitle = sortMode === 'popular' ? 'Beliebte Memes' : sortMode === 'today' ? 'Memes von heute' : sortMode === 'comments' ? 'Meist kommentierte Memes' : 'Finde dein nächstes Lieblingsmeme'
   const sectionTitle = sortMode === 'popular' ? 'Beliebt' : sortMode === 'today' ? 'Heute' : sortMode === 'comments' ? 'Meist kommentiert' : 'Neue Memes'
   return <>
@@ -234,7 +237,7 @@ export function HomePage() {
 export function PlaceholderPage({ title, text }: { title: string; text: string }) { return <section className="placeholder-page"><p className="eyebrow">Your Meme</p><h1>{title}</h1><p>{text}</p><Link className="primary-link" to="/">Zur Übersicht</Link></section> }
 
 function FolderMemeCard({ meme, onRemove, isRemoving }: { meme: Meme; onRemove: (memeId: string) => void; isRemoving: boolean }) {
-  return <article className="meme-card"><Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} loading="lazy" decoding="async" width="600" height="400" /> : <span aria-hidden="true">{meme.emoji}</span>}</div><div className="meme-card-content"><span className="category">{meme.category}</span><span className="meme-author">Von {meme.author.username}</span><h3>{meme.title}</h3></div></Link><button className="remove-folder-meme" type="button" onClick={() => onRemove(meme.id)} disabled={isRemoving}>{isRemoving ? 'Wird entfernt …' : 'Aus Ordner entfernen'}</button></article>
+  return <article className="meme-card"><Link to="/memes/$memeId" params={{ memeId: meme.id }}><div className="meme-image" role="img" aria-label={`Meme-Bild für ${meme.title}`}>{meme.imageUrl ? <img src={meme.imageUrl} alt={meme.title} loading="lazy" decoding="async" width="600" height="400" /> : <span aria-hidden="true">{meme.emoji}</span>}</div><div className="meme-card-content"><span className="category">{getDisplayCategory(meme.category)}</span><span className="meme-author">Von {meme.author.username}</span><h3>{meme.title}</h3></div></Link><button className="remove-folder-meme" type="button" onClick={() => onRemove(meme.id)} disabled={isRemoving}>{isRemoving ? 'Wird entfernt …' : 'Aus Ordner entfernen'}</button></article>
 }
 
 export function FolderPage() {
@@ -419,7 +422,7 @@ export function UploadPage() {
     <form className="upload-form" onSubmit={handleSubmit}>
       <label className="upload-field"><span>Meme-Bild</span><input type="file" accept="image/png" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSelectedFile(file); setFileError(file ? validateMemeImage(file) ?? '' : '') }} required />{previewUrl && <img className="upload-preview" src={previewUrl} alt="Vorschau des ausgewählten Memes" loading="lazy" decoding="async" />}{fileError && <span className="upload-error" role="alert">{fileError}</span>}</label>
       <label className="upload-field"><span>Titel</span><input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Gib deinem Meme einen Titel" maxLength={100} required /></label>
-      <label className="upload-field"><span>Kategorie</span><select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Kategorie auswählen …</option>{categoryOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+      <label className="upload-field"><span>Kategorie</span><select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Kategorie auswählen …</option>{categoryOptions.map((option) => <option key={option} value={option}>{categoryLabels[option]}</option>)}</select></label>
       <p className="upload-hint">Erlaubt ist eine PNG-Datei mit maximal 5 MiB.</p>
       {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
       <button className="primary-link upload-submit" type="submit" disabled={isUploading}>{isUploading ? 'Wird hochgeladen …' : 'Meme hochladen'}</button>
