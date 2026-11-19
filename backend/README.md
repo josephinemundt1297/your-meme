@@ -56,7 +56,7 @@ Backend: `http://localhost:3000`. CORS erlaubt `http://localhost:5173`.
 
 Geschützte Anfragen benötigen `Authorization: Bearer <SESSION_TOKEN>`. Der Clerk Secret Key ist kein Nutzer-Token. Vor Upload, Kommentar-Erstellung und Likes muss das lokale Profil über `/api/me/sync` vorhanden sein, sonst 409. Für persönliche Likes auch bei Meme-GETs den Token mitsenden. Lokale Profil-UUID und Clerk-ID sind verschiedene Werte.
 
-Kategorien: **Arbeit, Programmieren, Kaffee, Tiere, Essen, Lernen, Spiele, Zuhause, Wochenende** sowie **Ohne Kategorie**. „Alle Memes“ bedeutet: `category` weglassen. Ungültige Werte ergeben 400. Die Website-Adresse `/?category=Tiere` muss im Frontend als API-Parameter weitergegeben werden.
+Kategorien: **Programmieren, Alltag, Arbeit, Sport, Spiele, Technik, Tiere, Filme, Draußen, Lernen, Getränke, Essen, Urlaub, Bücher und Besprechungen** sowie **Ohne Kategorie**. „Alle Memes“ bedeutet: `category` weglassen. Ungültige Werte ergeben 400. Die Website-Adresse `/?category=Tiere` muss im Frontend als API-Parameter weitergegeben werden.
 
 Upload: `POST /api/memes` als FormData mit `title` (getrimmt 1–100 Zeichen), `image` (genau ein PNG bis 5 MiB) und optional `category` (Standard Ohne Kategorie). `imageUrl` und `imageStorageId` entstehen ausschließlich beim Upload. Besitzer ändern Titel/Kategorie per PATCH. Alle Methoden, Antwortfelder, Rechte und Statuscodes stehen im [API-Vertrag](docs/api-plan.md).
 
